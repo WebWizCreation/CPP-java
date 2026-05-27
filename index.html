@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title> — C++ &amp; Java Compendium</title>
+<title>C++ &amp; Java Compendium</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -327,6 +327,10 @@ input { font-family: var(--fb); }
 .bc-current { color: var(--t1); font-weight: 500; overflow: hidden; text-overflow: ellipsis; }
 .bc-cpp  { color: var(--cpp); }
 .bc-java { color: var(--java); }
+.bc-link { cursor: pointer; transition: color 0.15s; }
+.bc-link:hover { color: var(--t0); text-decoration: underline; }
+.bc-link.bc-cpp:hover { color: #ffaa80; }
+.bc-link.bc-java:hover { color: #90c8ff; }
 
 .top-bar-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 .ch-count-pill {
@@ -383,6 +387,7 @@ input { font-family: var(--fb); }
   border-radius: var(--r2);
   padding: 24px;
   transition: border-color 0.22s, transform 0.22s, box-shadow 0.22s;
+  cursor: pointer;
 }
 .track-card:hover { transform: translateY(-2px); }
 .cpp-card:hover  { border-color: rgba(255,107,43,0.35); box-shadow: 0 8px 36px rgba(255,107,43,0.07); }
@@ -845,13 +850,6 @@ input { font-family: var(--fb); }
   <!-- ════════════ SIDEBAR ════════════ -->
   <aside class="sidebar" id="sidebar">
 
-    <div class="sb-logo">
-      <div class="sb-logo-icon">⬡</div>
-      <div>
-       
-        <span class="sb-logo-sub">C++ &amp; Java Compendium</span>
-      </div>
-    </div>
 
     <div class="sb-controls">
       <div class="track-tabs" id="trackTabs">
@@ -880,7 +878,7 @@ input { font-family: var(--fb); }
         </svg>
       </button>
       <div class="breadcrumb" id="breadcrumb">
-        <span>Ashik's </span>
+        <span class="bc-link" onclick="goHome()">Home</span>
       </div>
       <div class="top-bar-right">
         <span class="ch-count-pill">40 Chapters</span>
@@ -1010,7 +1008,7 @@ function setBreadcrumb(id) {
   const tcls = ch.track==='cpp' ? 'bc-cpp' : 'bc-java';
   const tlbl = ch.track==='cpp' ? 'C++ Track' : 'Java Track';
   document.getElementById('breadcrumb').innerHTML =
-    `<span>Nexus</span><span class="bc-sep">›</span><span class="${tcls}">${tlbl}</span><span class="bc-sep">›</span><span class="bc-current">Ch${ch.num}: ${esc(ch.title)}</span>`;
+    `<span class="bc-link" onclick="goHome()">Home</span><span class="bc-sep">›</span><span class="bc-link ${tcls}" onclick="filterTrack('${ch.track}')">${tlbl}</span><span class="bc-sep">›</span><span class="bc-current">Ch${ch.num}: ${esc(ch.title)}</span>`;
 }
 
 /* ═══════════════════════════════════════════════════
@@ -1228,20 +1226,20 @@ function showError(id, err) {
    ⑪ WELCOME SCREEN
 ═══════════════════════════════════════════════════ */
 function showWelcome() {
-  document.getElementById('breadcrumb').innerHTML = '<span>Ashik\'s Nexus</span>';
+  document.getElementById('breadcrumb').innerHTML = '<span class="bc-link" onclick="goHome()">Home</span>';
   document.getElementById('contentArea').innerHTML = `
     <div class="welcome">
       <div class="welcome-eyebrow">📚 Interactive Textbook · 40 Chapters · 2 Tracks · 100+ Exercises</div>
-      <h1 class="welcome-title">Ashik's <span class="g-cpp">Nexus</span><br>C++ &amp; <span class="g-java">Java</span> Compendium</h1>
+      <h1 class="welcome-title"><span class="g-cpp">C++</span> &amp; <span class="g-java">Java</span> Compendium</h1>
       <p class="welcome-desc">A comprehensive, interactive programming textbook engineered for two distinct goals: competitive C++ mastery targeting Codeforces 1400+ ratings, and rigorous Java OOP excellence per CSE110 academic standards. Click any chapter in the sidebar to begin.</p>
       <div class="welcome-tracks">
-        <div class="track-card cpp-card">
+        <div class="track-card cpp-card" onclick="filterTrack('cpp')">
           <div class="tc-icon">⚡</div>
           <div class="tc-name">C++ Track</div>
           <div class="tc-desc">STL mastery, algorithmic strategies, and competitive programming patterns. From foundations to graphs and dynamic programming.</div>
           <div class="tc-count">20 Chapters · Algorithms & Data Structures</div>
         </div>
-        <div class="track-card java-card">
+        <div class="track-card java-card" onclick="filterTrack('java')">
           <div class="tc-icon">☕</div>
           <div class="tc-name">Java Track</div>
           <div class="tc-desc">Academic OOP per CSE110 standards. Rigorous output prediction, error identification, inheritance, and polymorphism.</div>
@@ -1294,6 +1292,28 @@ document.addEventListener('keydown', e => {
   if ((e.ctrlKey||e.metaKey) && e.key==='k') { e.preventDefault(); document.getElementById('searchInput').focus(); }
   if (e.key === 'Escape') closeSidebar();
 });
+
+function goHome() {
+  state.activeId = null;
+  buildSidebar();
+  showWelcome();
+}
+
+function filterTrack(track) {
+  state.filter = track;
+  const tabs = document.getElementById('trackTabs');
+  if (tabs) {
+    tabs.querySelectorAll('.tab-btn').forEach(btn => {
+      if (btn.dataset.filter === track) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+  }
+  buildSidebar();
+  showWelcome();
+}
 
 /* ═══════════════════════════════════════════════════
    ⑬ INIT
