@@ -1,0 +1,250 @@
+{
+  "id": "CPP_Ch6_STL_Maps_Sets",
+  "track": "cpp",
+  "chapter": 6,
+  "title": "STL: Maps & Sets",
+  "description": "Master the ordered and unordered associative containers — map, set, unordered_map, unordered_set, multimap, multiset. These are the workhorses of Codeforces problems at the 1200–1800 range. You will learn when to use each, the exact complexity of every operation, and the idiomatic CP patterns that appear in contest after contest.",
+  "sections": [
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🗺️ map<K, V> — The Ordered Dictionary"
+    },
+    {
+      "type": "paragraph",
+      "content": "A `map<K,V>` stores **key-value pairs sorted by key** using a self-balancing BST (red-black tree). Every operation — insert, lookup, erase — is **O(log n)**. In CP, maps are used for frequency counting, memoization, and coordinate compression. The key must have `operator<` defined (all built-in types do)."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "map — Complete CP Reference",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    map<string, int> freq;\n\n    // ── Insert / Update ──\n    freq[\"apple\"]++;          // If key absent, default-initializes to 0, then ++\n    freq[\"banana\"] = 5;\n    freq.insert({\"cherry\", 3});  // insert() does NOT overwrite existing keys\n    freq[\"apple\"]++;          // apple is now 2\n\n    // ── Lookup ──\n    cout << freq[\"banana\"] << \"\\n\";  // 5\n    // WARNING: freq[\"grape\"] creates the key with value 0!\n    // Use .count() or .find() to check without inserting:\n    if (freq.count(\"grape\"))  cout << \"exists\\n\";\n    else                      cout << \"not found\\n\";  // this prints\n\n    auto it = freq.find(\"apple\");\n    if (it != freq.end()) {\n        cout << it->first << \": \" << it->second << \"\\n\";  // apple: 2\n    }\n\n    // ── Erase ──\n    freq.erase(\"banana\");    // by key\n    // freq.erase(it);       // by iterator — O(1) amortized\n\n    // ── Iterate (always in sorted key order) ──\n    for (auto& [key, val] : freq) {   // C++17 structured bindings\n        cout << key << \" -> \" << val << \"\\n\";\n    }\n\n    // ── Useful meta ──\n    cout << freq.size() << \"\\n\";   // number of pairs\n    cout << freq.empty() << \"\\n\";  // 0 or 1\n    freq.clear();                  // remove all\n    return 0;\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "danger",
+      "label": "The Subscript Operator Trap",
+      "content": "Using `map[key]` to **check** a key silently inserts it with a default value (0 for int, empty string for string). Always use `.count(key)` or `.find(key)` to check existence without side effects. This bug causes WA in many contest submissions."
+    },
+    {
+      "type": "callout",
+      "variant": "tip",
+      "label": "lower_bound on map",
+      "content": "`map.lower_bound(k)` returns an iterator to the first key >= k in O(log n). This is the clean way to answer 'find the smallest key that is at least x' — a pattern that appears in problems involving coordinate compression and offline queries."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔢 set<T> — Sorted Unique Elements"
+    },
+    {
+      "type": "paragraph",
+      "content": "A `set<T>` stores **unique elements in sorted order**, again backed by a red-black tree. Think of it as a `map` with no values — all the same O(log n) guarantees apply. The killer feature in CP: `lower_bound` and `upper_bound` on a set for nearest-neighbor queries."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "set — All Operations",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    set<int> s;\n\n    // ── Insert ──\n    s.insert(5);\n    s.insert(3);\n    s.insert(8);\n    s.insert(3);  // Ignored — duplicates not stored\n    // s = {3, 5, 8}\n\n    // ── Lookup ──\n    cout << s.count(5) << \"\\n\";   // 1 (present)\n    cout << s.count(7) << \"\\n\";   // 0 (absent)\n\n    // ── Nearest Neighbor (KEY CP PATTERN) ──\n    auto it = s.lower_bound(6);   // First element >= 6: iterator to 8\n    if (it != s.end())   cout << *it << \"\\n\";  // 8\n    if (it != s.begin()) { --it; cout << *it << \"\\n\"; }  // 5 (largest < 6)\n\n    // ── Erase ──\n    s.erase(3);                   // by value\n    s.erase(s.begin());           // erase smallest: 5\n    // s = {8}\n\n    // ── min/max in O(1) ──\n    cout << *s.begin()  << \"\\n\";  // smallest\n    cout << *s.rbegin() << \"\\n\"; // largest\n\n    // ── Iterate ──\n    for (int x : s) cout << x << \" \";  // always sorted ascending\n    return 0;\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "⚡ unordered_map & unordered_set — Hash-Based Speed"
+    },
+    {
+      "type": "paragraph",
+      "content": "When you need **O(1) average** insert/lookup instead of O(log n), switch to `unordered_map` or `unordered_set`. The trade-offs: no ordering, worst-case O(n) if hash collisions occur, and they cannot use `lower_bound`. Use them for frequency tables and visited sets where order doesn't matter."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "unordered_map — Frequency Counting Pattern",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    int n;\n    cin >> n;\n    vector<int> a(n);\n    for (int& x : a) cin >> x;\n\n    // Count frequencies in O(n) average\n    unordered_map<int,int> freq;\n    for (int x : a) freq[x]++;\n\n    // Find the most frequent element\n    int best_val = -1, best_cnt = 0;\n    for (auto& [val, cnt] : freq) {\n        if (cnt > best_cnt) {\n            best_cnt = cnt;\n            best_val = val;\n        }\n    }\n    cout << best_val << \" appears \" << best_cnt << \" times\\n\";\n\n    // Two-Sum problem: O(n) with unordered_map\n    int target;\n    cin >> target;\n    unordered_set<int> seen;\n    for (int x : a) {\n        if (seen.count(target - x)) {\n            cout << \"Pair found: \" << x << \" + \" << (target-x) << \"\\n\";\n            break;\n        }\n        seen.insert(x);\n    }\n    return 0;\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "warning",
+      "label": "Anti-Hash Attacks on Codeforces",
+      "content": "Codeforces problemsetters sometimes craft test cases that cause maximum hash collisions in `unordered_map`, turning O(n) into O(n²) and causing TLE. The fix: use a custom hash — `unordered_map<int,int,custom_hash>` where custom_hash uses a random splitmix64 seed. At 1600+ rating, this becomes necessary knowledge."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📚 multiset & multimap — Allowing Duplicates"
+    },
+    {
+      "type": "paragraph",
+      "content": "A `multiset` allows duplicate values; a `multimap` allows duplicate keys. The critical CP use case for `multiset` is maintaining a **sorted bag of elements** where you can efficiently find/remove any single occurrence. The `erase(value)` call removes **all** copies — use `erase(find(value))` to remove just one."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "multiset — Sorted Bag Pattern",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    multiset<int> ms = {3, 1, 4, 1, 5, 9, 2, 6, 5, 3};\n    // ms = {1, 1, 2, 3, 3, 4, 5, 5, 6, 9}\n\n    // ── Count occurrences ──\n    cout << ms.count(1) << \"\\n\";   // 2\n    cout << ms.count(7) << \"\\n\";   // 0\n\n    // ── CRITICAL: erase ONE element vs ALL ──\n    ms.erase(1);                   // Removes ALL 1s!\n    // ms = {2, 3, 3, 4, 5, 5, 6, 9}\n\n    ms.insert(7);\n    ms.erase(ms.find(3));          // Removes ONE 3 — this is the safe pattern\n    // ms = {2, 3, 4, 5, 5, 6, 7, 9}\n\n    // ── Sliding window median pattern: two multisets ──\n    // lo holds the smaller half, hi holds the larger half\n    multiset<int> lo, hi;\n    auto get_median = [&]() -> double {\n        if (lo.size() == hi.size()) return (*lo.rbegin() + *hi.begin()) / 2.0;\n        return (lo.size() > hi.size()) ? *lo.rbegin() : *hi.begin();\n    };\n    (void)get_median; // suppress unused warning\n    return 0;\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔧 CP Patterns Using Maps & Sets"
+    },
+    {
+      "type": "paragraph",
+      "content": "These patterns are templates you should memorize. They appear in disguised forms in hundreds of Codeforces problems from Div. 2 B to D."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Pattern 1 — Coordinate Compression",
+      "code": "// Given values up to 10^9, remap them to [0, k-1] for use as array indices\nvector<int> a = {1000000, 5, 300, 5, 1000000, 42};\n\n// Step 1: Get sorted unique values\nvector<int> vals(a.begin(), a.end());\nsort(vals.begin(), vals.end());\nvals.erase(unique(vals.begin(), vals.end()), vals.end());\n// vals = {5, 42, 300, 1000000} → indices 0,1,2,3\n\n// Step 2: Compress using lower_bound\nvector<int> compressed(a.size());\nfor (int i = 0; i < (int)a.size(); i++) {\n    compressed[i] = lower_bound(vals.begin(), vals.end(), a[i]) - vals.begin();\n}\n// compressed = {3, 0, 2, 0, 3, 1}"
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Pattern 2 — Group by Key (Anagram / Frequency Signature)",
+      "code": "// Group strings that are anagrams of each other\nvector<string> words = {\"eat\", \"tea\", \"tan\", \"ate\", \"nat\", \"bat\"};\nmap<string, vector<string>> groups;\nfor (const string& w : words) {\n    string key = w;\n    sort(key.begin(), key.end());  // Canonical form: sorted chars\n    groups[key].push_back(w);\n}\nfor (auto& [key, grp] : groups) {\n    for (const string& s : grp) cout << s << \" \";\n    cout << \"\\n\";\n}\n// Output (order may vary by canonical key):\n// ate eat tea\n// bat\n// nat tan"
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Pattern 3 — Count Distinct in Sliding Window",
+      "code": "// Count number of distinct elements in each window of size k\nvector<int> a = {1, 2, 1, 3, 2, 2, 1};\nint k = 3;\nmap<int,int> window;   // value -> count in current window\n\n// Initialize first window\nfor (int i = 0; i < k; i++) window[a[i]]++;\ncout << window.size() << \"\\n\";   // distinct count in first window\n\nfor (int i = k; i < (int)a.size(); i++) {\n    // Add new element\n    window[a[i]]++;\n    // Remove leftmost element\n    int left = a[i - k];\n    window[left]--;\n    if (window[left] == 0) window.erase(left);  // Remove key when count hits 0\n    cout << window.size() << \"\\n\";\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "note",
+      "label": "map vs unordered_map Decision Guide",
+      "content": "Use **`map`** when: you need sorted iteration, lower/upper bound queries, or keys are pairs/custom types. Use **`unordered_map`** when: you only need lookup/insert/count and n > 10^5 (log n factor matters). When in doubt with n ≤ 10^5, `map` is fine — the constant factor of log(10^5) ≈ 17 is small."
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🧪 Interactive Exercises"
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 1: map Subscript Behavior",
+      "language": "cpp",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    map<string, int> m;\n    m[\"a\"] = 1;\n    m[\"b\"] = 2;\n    cout << m.size() << \"\\n\";\n    cout << m[\"c\"] << \"\\n\";\n    cout << m.size() << \"\\n\";\n    m[\"a\"]++;\n    cout << m[\"a\"] << \"\\n\";\n    cout << m.count(\"d\") << \"\\n\";\n    cout << m.size() << \"\\n\";\n    return 0;\n}",
+      "answer": "2\n0\n3\n2\n0\n3",
+      "explanation": "Initially m has 2 keys. `m[\"c\"]` INSERTS key \"c\" with default value 0 and returns 0 — so size becomes 3. `m[\"a\"]++` changes 1 to 2. `m.count(\"d\")` checks existence WITHOUT inserting (returns 0). Size stays 3. This is the critical subscript-vs-count distinction."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 2: set lower_bound Navigation",
+      "language": "cpp",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    set<int> s = {10, 20, 30, 40, 50};\n    auto it = s.lower_bound(25);\n    cout << *it << \"\\n\";\n    --it;\n    cout << *it << \"\\n\";\n    it = s.upper_bound(30);\n    cout << *it << \"\\n\";\n    cout << *s.rbegin() << \"\\n\";\n    return 0;\n}",
+      "answer": "30\n20\n40\n50",
+      "explanation": "`lower_bound(25)` returns iterator to first element >= 25, which is 30. `--it` moves to 20. `upper_bound(30)` returns iterator to first element > 30, which is 40. `*s.rbegin()` is the last (largest) element: 50."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 3: multiset Erase Trap",
+      "language": "cpp",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    multiset<int> ms = {2, 4, 4, 4, 6};\n    cout << ms.count(4) << \"\\n\";\n    ms.erase(ms.find(4));\n    cout << ms.count(4) << \"\\n\";\n    ms.erase(4);\n    cout << ms.count(4) << \"\\n\";\n    cout << ms.size() << \"\\n\";\n    return 0;\n}",
+      "answer": "3\n2\n0\n2",
+      "explanation": "Initially 3 copies of 4. `erase(find(4))` erases just ONE occurrence → 2 copies remain. `erase(4)` erases ALL copies of value 4 → 0 remain. Remaining elements are {2, 6}, so size is 2."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 4: Codeforces-Style — Most Frequent Element in Range",
+      "language": "cpp",
+      "code": "// Given an array of N integers, process Q queries.\n// Each query gives (l, r): find the most frequent value\n// in arr[l..r] (0-indexed). If tie, report the smallest value.\n// Constraints: N, Q <= 1000 (O(N*Q) is acceptable here).",
+      "approach": "For each query, build a frequency map over the subarray in O(N). Track the best (max_count, min_value) pair as you iterate. Use a `map<int,int>` so iteration is sorted — the first key with the max count is automatically the smallest.",
+      "solution": "#include <bits/stdc++.h>\nusing namespace std;\n\nvoid solve() {\n    int n;\n    cin >> n;\n    vector<int> a(n);\n    for (int& x : a) cin >> x;\n\n    int q;\n    cin >> q;\n    while (q--) {\n        int l, r;\n        cin >> l >> r;\n\n        map<int,int> freq;\n        for (int i = l; i <= r; i++) freq[a[i]]++;\n\n        int best_val = -1, best_cnt = 0;\n        for (auto& [val, cnt] : freq) {\n            // Map iterates in sorted key order;\n            // first key with max count wins the tie.\n            if (cnt > best_cnt) {\n                best_cnt = cnt;\n                best_val = val;\n            }\n        }\n        cout << best_val << \"\\n\";\n    }\n}\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n    int t; cin >> t;\n    while (t--) solve();\n    return 0;\n}",
+      "explanation": "Since `map` iterates in ascending key order, when two keys have equal count, the one encountered first (smaller key) becomes `best_val` and is never replaced (strict `>`). This elegantly handles the tie-breaking rule without extra logic."
+    },
+    {
+      "type": "accordion",
+      "variant": "find-error",
+      "title": "Exercise 5: Find the Bug — Erasing During Iteration",
+      "language": "cpp",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    map<int,int> m = {{1,5},{2,3},{3,8},{4,1},{5,6}};\n    // Remove all entries with value < 4\n    for (auto it = m.begin(); it != m.end(); it++) {\n        if (it->second < 4) {\n            m.erase(it);\n        }\n    }\n    for (auto& [k,v] : m) cout << k << \":\" << v << \" \";\n    return 0;\n}",
+      "error": "Undefined behavior: after `m.erase(it)`, the iterator `it` is invalidated. Incrementing an invalidated iterator in the for-loop causes undefined behavior (crash or corruption).",
+      "fix": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    map<int,int> m = {{1,5},{2,3},{3,8},{4,1},{5,6}};\n    // Correct: erase() returns the next valid iterator\n    for (auto it = m.begin(); it != m.end(); ) {\n        if (it->second < 4) {\n            it = m.erase(it);  // erase returns next valid iterator\n        } else {\n            ++it;\n        }\n    }\n    for (auto& [k,v] : m) cout << k << \":\" << v << \" \";\n    // Output: 1:5 3:8 5:6\n    return 0;\n}",
+      "explanation": "The STL `erase()` on associative containers returns an iterator to the element **after** the erased one. Capturing this return value and using it as the new `it` is the canonical safe pattern. Alternatively, use `std::erase_if(m, predicate)` in C++20."
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📊 Complexity Cheat Sheet"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "Container",
+        "Insert",
+        "Lookup / Count",
+        "Erase",
+        "lower_bound",
+        "Ordered?"
+      ],
+      "rows": [
+        [
+          "`map<K,V>`",
+          "O(log n)",
+          "O(log n)",
+          "O(log n)",
+          "O(log n)",
+          "✅ Yes"
+        ],
+        [
+          "`set<T>`",
+          "O(log n)",
+          "O(log n)",
+          "O(log n)",
+          "O(log n)",
+          "✅ Yes"
+        ],
+        [
+          "`multimap`",
+          "O(log n)",
+          "O(log n + k)",
+          "O(log n + k)",
+          "O(log n)",
+          "✅ Yes"
+        ],
+        [
+          "`multiset`",
+          "O(log n)",
+          "O(log n + k)",
+          "O(log n + k)",
+          "O(log n)",
+          "✅ Yes"
+        ],
+        [
+          "`unordered_map`",
+          "O(1) avg",
+          "O(1) avg",
+          "O(1) avg",
+          "❌ N/A",
+          "❌ No"
+        ],
+        [
+          "`unordered_set`",
+          "O(1) avg",
+          "O(1) avg",
+          "O(1) avg",
+          "❌ N/A",
+          "❌ No"
+        ]
+      ]
+    },
+    {
+      "type": "callout",
+      "variant": "tip",
+      "label": "When n ≤ 10^6 matters",
+      "content": "For n = 10^6 with `map`: 10^6 × log(10^6) ≈ 2×10^7 operations — still fast enough. For `unordered_map` without a custom hash at this scale, collision risk increases. Profile if you get unexpected TLE, and consider the custom hash or `__gnu_pbds::gp_hash_table` as a drop-in faster alternative."
+    }
+  ]
+}
