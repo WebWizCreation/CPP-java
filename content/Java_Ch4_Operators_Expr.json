@@ -1,0 +1,142 @@
+{
+  "id": "Java_Ch4_Operators_Expr",
+  "track": "java",
+  "chapter": 4,
+  "title": "Operators & Expressions",
+  "description": "Operators are the verbs of Java — they define what happens to your data. This chapter gives you a complete map of all operator categories, their precedence rules, and the tricky edge cases in arithmetic, relational, logical, bitwise, and ternary operations that appear constantly in CSE110 output-prediction questions.",
+
+  "sections": [
+    { "type": "heading", "level": 2, "content": "🗺️ Operator Categories — The Big Picture" },
+    { "type": "paragraph", "content": "Java has **7 categories** of operators. Understanding which category an operator belongs to tells you its precedence (priority) and behavior. The most common exam traps involve **mixed categories** in a single expression." },
+    { "type": "table",
+      "headers": ["Category", "Operators", "Associativity"],
+      "rows": [
+        ["Unary",             "`++`, `--`, `+`, `-`, `~`, `!`",                    "Right to Left"],
+        ["Arithmetic",        "`*`, `/`, `%`, `+`, `-`",                           "Left to Right"],
+        ["Shift",             "`<<`, `>>`, `>>>`",                                 "Left to Right"],
+        ["Relational",        "`<`, `>`, `<=`, `>=`, `instanceof`",               "Left to Right"],
+        ["Equality",          "`==`, `!=`",                                        "Left to Right"],
+        ["Bitwise / Logical", "`&`, `^`, `|`, `&&`, `||`",                        "Left to Right"],
+        ["Ternary",           "`? :`",                                             "Right to Left"],
+        ["Assignment",        "`=`, `+=`, `-=`, `*=`, `/=`, `%=`, `&=`, `|=`, `^=`", "Right to Left"]
+      ]
+    },
+    { "type": "callout", "variant": "tip", "label": "Precedence Memory Aid", "content": "High to Low: **Unary → Multiplicative (`* / %`) → Additive (`+ -`) → Relational → Equality → Bitwise → Logical AND → Logical OR → Ternary → Assignment**. When in doubt, **use parentheses**." },
+
+    { "type": "heading", "level": 2, "content": "➕ Arithmetic Operators — Tricky Behaviors" },
+    { "type": "paragraph", "content": "The basic arithmetic operators hide several non-obvious behaviors that Java uses to catch students off guard in exams. You already know `+` string concatenation from Chapter 1 — here we focus on the **numeric edge cases**." },
+    { "type": "code", "language": "java", "title": "Arithmetic Edge Cases", "code": "public class ArithmeticEdgeCases {\n    public static void main(String[] args) {\n        // Integer division truncates toward zero\n        System.out.println(7 / 2);     // 3\n        System.out.println(-7 / 2);    // -3  (NOT -4 — truncates TOWARD zero)\n        System.out.println(7 / -2);    // -3\n        System.out.println(-7 / -2);   // 3\n\n        // Modulo: sign follows LEFT operand (dividend)\n        System.out.println(7 % 3);     // 1\n        System.out.println(-7 % 3);    // -1  (sign is negative, from dividend)\n        System.out.println(7 % -3);    // 1   (sign is positive, from dividend)\n        System.out.println(-7 % -3);   // -1\n\n        // Floating-point division by zero — no exception!\n        System.out.println(1.0 / 0.0);  // Infinity\n        System.out.println(-1.0 / 0.0); // -Infinity\n        System.out.println(0.0 / 0.0);  // NaN  (Not a Number)\n\n        // Integer division by zero — throws ArithmeticException!\n        // System.out.println(1 / 0);   // RUNTIME ERROR\n\n        // Floating point precision\n        System.out.println(0.1 + 0.2); // 0.30000000000000004 (not 0.3!)\n    }\n}" },
+    { "type": "callout", "variant": "warning", "label": "Floating-Point Precision", "content": "`0.1 + 0.2` does NOT equal `0.3` in Java (or any language using IEEE 754). The result is `0.30000000000000004`. **Never use `==` to compare doubles**. Use `Math.abs(a - b) < 1e-9` instead." },
+
+    { "type": "heading", "level": 2, "content": "⚖️ Relational & Equality Operators" },
+    { "type": "paragraph", "content": "Relational operators return `boolean`. The trickiest part is `==` — it means **reference equality** for objects but **value equality** for primitives. For Strings and all objects, use `.equals()` for value comparison." },
+    { "type": "code", "language": "java", "title": "== vs .equals() — The Critical Distinction", "code": "public class EqualityDemo {\n    public static void main(String[] args) {\n        // Primitives: == compares VALUES\n        int a = 5, b = 5;\n        System.out.println(a == b);   // true\n\n        // Strings: == compares REFERENCES (memory addresses)\n        String s1 = \"hello\";          // String pool\n        String s2 = \"hello\";          // Same pool object\n        String s3 = new String(\"hello\"); // NEW object on heap\n\n        System.out.println(s1 == s2);      // true  (both from pool)\n        System.out.println(s1 == s3);      // false (different objects)\n        System.out.println(s1.equals(s3)); // true  (same content)\n\n        // null comparison — always use ==\n        String name = null;\n        System.out.println(name == null);  // true  (correct way)\n        // System.out.println(name.equals(null)); // NullPointerException!\n\n        // Comparing with literal on left — null-safe style\n        System.out.println(\"hello\".equals(name)); // false (no NPE)\n    }\n}" },
+
+    { "type": "heading", "level": 2, "content": "🧠 Logical Operators — Short-Circuit Evaluation" },
+    { "type": "paragraph", "content": "Java has **two types** of logical operators: **short-circuit** (`&&`, `||`) and **non-short-circuit** (`&`, `|`). The difference determines whether the second operand is even evaluated — this has major implications for performance and **side effect behavior** in expressions." },
+    { "type": "table",
+      "headers": ["Operator", "Name", "Short-Circuits?", "Behavior"],
+      "rows": [
+        ["`&&`", "Logical AND",           "✅ Yes", "If LEFT is `false`, RIGHT is **never evaluated**"],
+        ["`||`", "Logical OR",            "✅ Yes", "If LEFT is `true`,  RIGHT is **never evaluated**"],
+        ["`&`",  "Bitwise/Eager AND",     "❌ No",  "Both sides **always** evaluated. Also works on integers"],
+        ["`|`",  "Bitwise/Eager OR",      "❌ No",  "Both sides **always** evaluated. Also works on integers"],
+        ["`^`",  "XOR (Exclusive OR)",    "❌ No",  "True if operands are **different**. `true^false=true`, `true^true=false`"],
+        ["`!`",  "Logical NOT (unary)",   "N/A",   "Inverts boolean: `!true=false`, `!false=true`"]
+      ]
+    },
+    { "type": "code", "language": "java", "title": "Short-Circuit — When Side Effects Matter", "code": "public class ShortCircuitDemo {\n    static int counter = 0;\n\n    static boolean check(boolean val) {\n        counter++;   // Side effect: increments counter\n        return val;\n    }\n\n    public static void main(String[] args) {\n        // Short-circuit &&: if left is false, right not evaluated\n        counter = 0;\n        boolean r1 = check(false) && check(true);\n        System.out.println(counter); // 1  (only left side called)\n\n        // Short-circuit ||: if left is true, right not evaluated\n        counter = 0;\n        boolean r2 = check(true) || check(false);\n        System.out.println(counter); // 1  (only left side called)\n\n        // Eager &: both always evaluated\n        counter = 0;\n        boolean r3 = check(false) & check(true);\n        System.out.println(counter); // 2  (both sides called)\n\n        // Null-safety with short-circuit\n        String s = null;\n        // Safe: if s==null, the .length() is never called\n        if (s != null && s.length() > 0) {\n            System.out.println(\"Not empty\");\n        } else {\n            System.out.println(\"Null or empty\"); // This prints\n        }\n    }\n}" },
+    { "type": "callout", "variant": "tip", "label": "Null-Safe Pattern", "content": "`if (obj != null && obj.method())` — the `&&` short-circuit ensures `obj.method()` is only called if `obj != null`. If you used `&` instead, it would always call `obj.method()`, throwing `NullPointerException` when `obj` is null. This pattern is everywhere in production Java." },
+
+    { "type": "heading", "level": 2, "content": "🔢 Bitwise Operators on Integers" },
+    { "type": "paragraph", "content": "Bitwise operators work on **individual bits** of integer values. They are fast, low-level, and appear in CSE110 questions testing your ability to predict output from bit manipulation." },
+    { "type": "code", "language": "java", "title": "Bitwise Operations — With Binary Breakdown", "code": "public class BitwiseDemo {\n    public static void main(String[] args) {\n        int a = 12;  // binary: 0000 1100\n        int b = 10;  // binary: 0000 1010\n\n        System.out.println(a & b);   // AND:  0000 1000 = 8\n        System.out.println(a | b);   // OR:   0000 1110 = 14\n        System.out.println(a ^ b);   // XOR:  0000 0110 = 6\n        System.out.println(~a);      // NOT:  1111 0011 = -13  (two's complement)\n\n        // Shift operators\n        System.out.println(a << 1);  // Left shift 1: 0001 1000 = 24  (multiply by 2)\n        System.out.println(a >> 1);  // Signed right shift: 0000 0110 = 6 (divide by 2)\n        System.out.println(a >>> 1); // Unsigned right shift: 0000 0110 = 6\n\n        // Negative number right shift\n        int neg = -16;  // 1111 0000 (two's complement)\n        System.out.println(neg >> 1);  // -8   (>> preserves sign bit)\n        System.out.println(neg >>> 1); // 2147483640  (>>> fills with 0)\n\n        // Useful bit tricks\n        System.out.println(a & 1);    // 0 = even  (check last bit)\n        System.out.println(b & 1);    // 0 = even\n        System.out.println(7 & 1);    // 1 = odd\n    }\n}" },
+    { "type": "callout", "variant": "note", "label": "~n = -(n+1)", "content": "The bitwise NOT `~n` is equivalent to `-(n+1)` in Java's two's complement representation. So `~12 = -13`, `~0 = -1`, `~(-1) = 0`. This is a useful identity to know for output prediction questions." },
+
+    { "type": "heading", "level": 2, "content": "❓ The Ternary Operator" },
+    { "type": "paragraph", "content": "The ternary operator `condition ? valueIfTrue : valueIfFalse` is a **single expression** that evaluates to one of two values. It is the only **three-operand** operator in Java. Key rule: both branches must be **type-compatible**." },
+    { "type": "code", "language": "java", "title": "Ternary — Common Patterns & Traps", "code": "public class TernaryDemo {\n    public static void main(String[] args) {\n        int x = 7;\n\n        // Basic usage\n        String parity = (x % 2 == 0) ? \"even\" : \"odd\";\n        System.out.println(parity);    // odd\n\n        // Nested ternary (right-associative)\n        int score = 75;\n        String grade = score >= 90 ? \"A\" : score >= 75 ? \"B\" : score >= 60 ? \"C\" : \"F\";\n        System.out.println(grade);     // B\n\n        // Ternary with type promotion — TRICKY!\n        int i = 1;\n        System.out.println(true ? 1 : 2.0);  // 1.0  NOT 1!\n        // Both branches must be compatible. int 1 promotes to double 1.0\n\n        // Ternary in concatenation\n        int age = 20;\n        System.out.println(\"You are \" + (age >= 18 ? \"adult\" : \"minor\"));\n        // \"You are adult\"\n\n        // Without parentheses — precedence trap!\n        System.out.println(\"Value: \" + age >= 18 ? \"adult\" : \"minor\");\n        // NOT \"Value: adult\". Reason:\n        // + has HIGHER precedence than ?:\n        // Evaluates as: (\"Value: \" + age) >= 18 ? \"adult\" : \"minor\"\n        // = \"Value: 20\" >= 18 — comparing String to int — COMPILE ERROR\n    }\n}" },
+    { "type": "callout", "variant": "danger", "label": "Ternary Precedence Trap", "content": "`\"Label: \" + x > 0 ? \"yes\" : \"no\"` is parsed as `(\"Label: \" + x) > 0 ? ...` because `+` has higher precedence than `?:`. This usually causes a compile error (comparing String to 0). Always **wrap ternaries in parentheses** when concatenating: `\"Label: \" + (x > 0 ? \"yes\" : \"no\")`." },
+
+    { "type": "heading", "level": 2, "content": "📝 Assignment & Compound Assignment" },
+    { "type": "paragraph", "content": "Compound assignment operators (`+=`, `-=`, etc.) are shorthand and include an **implicit narrow cast**. This makes them behave differently from their expanded form in some cases." },
+    { "type": "code", "language": "java", "title": "Compound Assignment — The Implicit Cast", "code": "public class CompoundAssign {\n    public static void main(String[] args) {\n        // Compound = operator + implicit cast\n        byte b = 10;\n        b += 5;   // OK: equivalent to b = (byte)(b + 5)  → 15\n        System.out.println(b); // 15\n\n        // Without compound, explicit cast needed:\n        // b = b + 5;  // COMPILE ERROR: int cannot convert to byte\n        b = (byte)(b + 5);  // Manual equivalent\n        System.out.println(b); // 20\n\n        // Multiple assignment (right to left)\n        int x, y, z;\n        x = y = z = 10;   // z=10, then y=10, then x=10\n        System.out.println(x + \" \" + y + \" \" + z); // 10 10 10\n\n        // DANGEROUS: assignment inside condition (legal but tricky)\n        int n = 5;\n        // if (n = 0)  // COMPILE ERROR: int in boolean context\n        // BUT this works if the assigned value is boolean:\n        boolean flag;\n        boolean result;\n        if (result = (n > 3)) {   // assigns AND tests\n            System.out.println(\"n > 3, result = \" + result); // prints\n        }\n    }\n}" },
+
+    { "type": "divider" },
+    { "type": "heading", "level": 2, "content": "🧪 Interactive Exercises" },
+
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 1: Operator Precedence Minefield",
+      "language": "java",
+      "code": "public class Q1 {\n    public static void main(String[] args) {\n        int a = 10, b = 3, c = 2;\n        System.out.println(a + b * c);       // Line A\n        System.out.println((a + b) * c);     // Line B\n        System.out.println(a - b - c);       // Line C  (left to right)\n        System.out.println(a % b + c * b);   // Line D\n        System.out.println(a > b ? a : b);   // Line E\n    }\n}",
+      "answer": "16\n26\n5\n7\n10",
+      "explanation": "A: `*` before `+`: `10 + (3*2)` = 10+6 = **16**. B: Parens first: `(10+3)*2` = 13*2 = **26**. C: Left-to-right: `(10-3)-2` = 7-2 = **5**. D: `*` before `+`: `(10%3) + (2*3)` = `1 + 6` = **7**. E: Ternary: `10 > 3` is true → returns `a` = **10**."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 2: Short-Circuit with Side Effects",
+      "language": "java",
+      "code": "public class Q2 {\n    static int x = 0;\n    static boolean inc() { x++; return true; }\n    static boolean dec() { x--; return false; }\n\n    public static void main(String[] args) {\n        x = 0;\n        boolean r1 = dec() && inc();   // Line A\n        System.out.println(x);         // Line B\n\n        x = 0;\n        boolean r2 = inc() || dec();   // Line C\n        System.out.println(x);         // Line D\n\n        x = 0;\n        boolean r3 = dec() & inc();    // Line E (eager)\n        System.out.println(x);         // Line F\n    }\n}",
+      "answer": "-1\n1\n0",
+      "explanation": "A-B: `dec()` runs (x=-1, returns false). `&&` short-circuits: `inc()` NEVER runs. x stays -1. C-D: `inc()` runs (x=1, returns true). `||` short-circuits: `dec()` NEVER runs. x stays 1. E-F: Eager `&` evaluates BOTH sides always. `dec()` runs (x=-1), then `inc()` runs (x=0). Final x=0."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 3: Bitwise Operations Output",
+      "language": "java",
+      "code": "public class Q3 {\n    public static void main(String[] args) {\n        int a = 15;  // 1111\n        int b = 9;   // 1001\n\n        System.out.println(a & b);   // A\n        System.out.println(a | b);   // B\n        System.out.println(a ^ b);   // C\n        System.out.println(~a);      // D\n        System.out.println(b << 2);  // E\n        System.out.println(b >> 1);  // F\n    }\n}",
+      "answer": "9\n15\n6\n-16\n36\n4",
+      "explanation": "a=15 (1111), b=9 (1001). A: AND 1111 & 1001 = **1001 = 9**. B: OR 1111 | 1001 = **1111 = 15**. C: XOR 1111 ^ 1001 = **0110 = 6**. D: ~15 = -(15+1) = **-16**. E: 9 << 2 = 9 × 4 = **36** (0000 1001 → 0010 0100). F: 9 >> 1 = 9 ÷ 2 = **4** (truncated, floor of 4.5)."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 4: Ternary Nesting & Type Promotion",
+      "language": "java",
+      "code": "public class Q4 {\n    public static void main(String[] args) {\n        int x = 50;\n        String s = x > 90 ? \"A\" : x > 75 ? \"B\" : x > 60 ? \"C\" : x > 40 ? \"D\" : \"F\";\n        System.out.println(s);\n\n        // Type promotion in ternary\n        System.out.println(true  ? 42 : 42.5);  // A\n        System.out.println(false ? 42 : 42.5);  // B\n\n        int a = 5, b = 10;\n        int min = (a < b) ? a : b;\n        System.out.println(min);\n    }\n}",
+      "answer": "D\n42.0\n42.5\n5",
+      "explanation": "x=50: not >90, not >75, not >60, but >40 → **D**. Ternary type promotion: `true ? 42 : 42.5` — both branches must be compatible. `42` (int) promotes to `42.0` (double) to match `42.5`. So even when true branch is taken, result is double **42.0**. `false ? 42 : 42.5` → **42.5** (double). `min` of 5 and 10 is **5**."
+    },
+    {
+      "type": "accordion",
+      "variant": "find-error",
+      "title": "Exercise 5: Three Expression Errors",
+      "language": "java",
+      "code": "public class ExprErrors {\n    public static void main(String[] args) {\n        int a = 5, b = 0;\n\n        // Attempt 1: safe division\n        if (b != 0 & a / b > 2) {          // Line 5\n            System.out.println(\"Big\");\n        }\n\n        // Attempt 2: check if both conditions true\n        boolean x = true, y = false;\n        if (x = true && y = false) {        // Line 11\n            System.out.println(\"Both\");\n        }\n\n        // Attempt 3: compare doubles\n        double d1 = 0.1 + 0.2;\n        if (d1 == 0.3) {                    // Line 17\n            System.out.println(\"Equal\");\n        }\n    }\n}",
+      "error": "Three bugs: Line 5: **Runtime Error** — using eager `&` means `a/b` is evaluated even when `b==0`, causing `ArithmeticException`. Should use `&&` (short-circuit). Line 11: **Compile Error** — `x = true && y = false` is parsed as `x = (true && y) = false` which is invalid. Should be `x == true && y == false` (use `==` for comparison). Line 17: **Logical Error** — `d1 == 0.3` is false due to floating-point imprecision (`0.1+0.2 = 0.30000000000000004`). Should use `Math.abs(d1 - 0.3) < 1e-9`.",
+      "fix": "public class ExprErrors {\n    public static void main(String[] args) {\n        int a = 5, b = 0;\n\n        // Fix 1: use short-circuit &&\n        if (b != 0 && a / b > 2) {          // safe: b/0 never reached\n            System.out.println(\"Big\");\n        }\n\n        // Fix 2: use == for comparison\n        boolean x = true, y = false;\n        if (x == true && y == false) {       // or simply: if (x && !y)\n            System.out.println(\"Both\");       // prints\n        }\n\n        // Fix 3: use epsilon comparison\n        double d1 = 0.1 + 0.2;\n        if (Math.abs(d1 - 0.3) < 1e-9) {    // tolerance-based comparison\n            System.out.println(\"Equal\");      // prints\n        }\n    }\n}",
+      "explanation": "These three bugs represent three different error types: a runtime crash from eager evaluation (Bug 1), a compile error from confusing assignment and comparison operators (Bug 2), and a silent logical error from floating-point imprecision (Bug 3). All three are real-world Java pitfalls."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 6: The Increment Expression Puzzle",
+      "language": "java",
+      "code": "public class Q6 {\n    public static void main(String[] args) {\n        int a = 5;\n        int b = a++ + ++a + a++;\n        System.out.println(a);\n        System.out.println(b);\n\n        int x = 3;\n        System.out.println(x++ == 3);\n        System.out.println(x);\n        System.out.println(++x == 5);\n        System.out.println(x);\n    }\n}",
+      "answer": "8\n18\ntrue\n4\ntrue\n5",
+      "explanation": "Trace `b = a++ + ++a + a++` step by step (left to right): `a++` uses 5, a→6. `++a` increments first to 7, uses 7. `a++` uses 7, a→8. So b = 5+7+7 = **18**, final a = **8**. Then: `x++=3` is `x++ == 3` → postfix uses current value 3, compares == 3 → **true**, x becomes 4. `++x == 5` → prefix increments x to 5 first, 5==5 → **true**, x is **5**."
+    },
+
+    { "type": "divider" },
+    { "type": "heading", "level": 2, "content": "📋 Operator Quick Reference" },
+    { "type": "table",
+      "headers": ["Common Exam Question", "Correct Answer"],
+      "rows": [
+        ["`-7 / 2` in Java",                     "`-3` (truncates toward zero, not floor)"],
+        ["`-7 % 2` in Java",                      "`-1` (sign follows left operand)"],
+        ["`1.0 / 0.0`",                           "`Infinity` (no exception for double)"],
+        ["`1 / 0`",                               "Throws `ArithmeticException` at runtime"],
+        ["`true & false`  vs  `true && false`",   "Same result, but `&` evaluates both sides; `&&` short-circuits"],
+        ["`\"hi\" == \"hi\"`",                    "`true` (both from String pool, same reference)"],
+        ["`new String(\"hi\") == \"hi\"`",        "`false` (different objects in memory)"],
+        ["`~15`",                                  "`-16` (same as `-(15+1)`)"],
+        ["`(true ? 42 : 42.5)` type",             "`double` (42 promoted to 42.0)"],
+        ["`byte b=10; b += 200;`",                "Compiles OK (`+=` has implicit cast). Result: `(byte)210 = -46`"]
+      ]
+    }
+  ]
+}

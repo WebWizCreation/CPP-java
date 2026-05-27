@@ -1,0 +1,134 @@
+{
+  "id": "Java_Ch1_OutputPrediction",
+  "track": "java",
+  "chapter": 1,
+  "title": "Output Prediction",
+  "description": "Master the art of mentally tracing Java code and predicting exact console output — a critical skill for CSE110 exams. This chapter covers print vs println vs printf, expression evaluation order, type promotion, and the tricky edge cases that trip up students every time.",
+
+  "sections": [
+    { "type": "heading", "level": 2, "content": "🎯 Why Output Prediction Matters" },
+    { "type": "paragraph", "content": "In CSE110 exams, a large portion of marks come from two skills: **predicting what a program prints** and **finding errors in code**. These are not guessing games — they follow strict, deterministic rules. Every character Java prints is the result of a rule. This chapter teaches you to **see code the way the JVM sees it**." },
+    { "type": "callout", "variant": "tip", "label": "Exam Strategy", "content": "Always trace code **line by line**, maintaining a small table of variable values in your head (or on paper). Never jump ahead. The answer is always in the details." },
+
+    { "type": "heading", "level": 2, "content": "📺 The Three Print Methods" },
+    { "type": "paragraph", "content": "Java provides three core methods for console output. Understanding their **exact differences** is non-negotiable." },
+    { "type": "table",
+      "headers": ["Method", "Newline at End?", "Supports Format?", "Example"],
+      "rows": [
+        ["`System.out.print(x)`",   "❌ No",  "❌ No",  "`print(\"Hi\")` → `Hi`"],
+        ["`System.out.println(x)`", "✅ Yes", "❌ No",  "`println(\"Hi\")` → `Hi\\n`"],
+        ["`System.out.printf(fmt, args)`", "❌ No", "✅ Yes", "`printf(\"%d\", 5)` → `5`"]
+      ]
+    },
+    { "type": "callout", "variant": "warning", "label": "Critical Distinction", "content": "`System.out.println()` with **no arguments** prints an empty line (just a newline). This is a common exam trick — it doesn't print `null` or an error, just a blank line." },
+
+    { "type": "heading", "level": 2, "content": "⚡ String Concatenation with `+`" },
+    { "type": "paragraph", "content": "The `+` operator is the most **context-sensitive** operator in Java. Its behavior changes completely based on the types of its operands. The golden rule: **evaluation is strictly left-to-right**." },
+    { "type": "code", "language": "java", "title": "The + Operator — Context Demonstration", "code": "public class PlusDemo {\n    public static void main(String[] args) {\n        // Case 1: Both numbers first\n        System.out.println(1 + 2 + \" Hello\");   // \"3 Hello\"  (1+2=3, then 3+\" Hello\")\n\n        // Case 2: String first\n        System.out.println(\"Hello \" + 1 + 2);   // \"Hello 12\" (\"Hello\"+1=\"Hello 1\", then+2)\n\n        // Case 3: Parentheses force arithmetic\n        System.out.println(\"Sum: \" + (1 + 2));   // \"Sum: 3\"\n\n        // Case 4: char + int = int!\n        System.out.println('A' + 1);             // 66  (not \"A1\")\n        System.out.println(\"\" + 'A' + 1);        // \"A1\" (string context)\n    }\n}" },
+    { "type": "callout", "variant": "danger", "label": "The char Trap", "content": "When you write `'A' + 1`, Java treats `'A'` as its ASCII value (65), so the result is **66** (an integer), NOT the string `\"A1\"`. To get `\"A1\"`, you need `\"\" + 'A' + 1` or `Character.toString('A') + 1`." },
+
+    { "type": "heading", "level": 2, "content": "🔢 Integer Division & Type Promotion" },
+    { "type": "paragraph", "content": "Java performs **integer division** when both operands are integers — the result is **truncated** (not rounded) toward zero. The type of the result follows the **type promotion hierarchy**: `byte → short → int → long → float → double`." },
+    { "type": "code", "language": "java", "title": "Division and Promotion Rules", "code": "public class DivisionDemo {\n    public static void main(String[] args) {\n        System.out.println(7 / 2);       // 3    (integer division, truncates)\n        System.out.println(7.0 / 2);     // 3.5  (double promoted)\n        System.out.println(7 / 2.0);     // 3.5  (double promoted)\n        System.out.println((double)7/2); // 3.5  (explicit cast first)\n        System.out.println(7 % 2);       // 1    (remainder/modulus)\n        System.out.println(-7 % 2);      // -1   (sign follows dividend!)\n\n        int a = 5, b = 2;\n        double result = a / b;            // STILL 2.0! Division happens first\n        System.out.println(result);       // 2.0  (not 2.5)\n    }\n}" },
+    { "type": "callout", "variant": "danger", "label": "Silent Truncation Bug", "content": "Writing `double result = a / b;` where `a` and `b` are both `int` does **NOT** give a decimal result. The integer division `a/b` happens first, producing `2`, and then `2` is promoted to `2.0`. To fix it: `double result = (double) a / b;`" },
+
+    { "type": "heading", "level": 2, "content": "🔄 Pre vs Post Increment/Decrement" },
+    { "type": "paragraph", "content": "The `++` and `--` operators have **prefix** (pre) and **postfix** (post) forms. The difference is critical when used inside expressions or print statements." },
+    { "type": "table",
+      "headers": ["Form", "When value changes", "What is used in expression"],
+      "rows": [
+        ["`++x` (prefix)",  "BEFORE expression evaluates", "The **new** (incremented) value"],
+        ["`x++` (postfix)", "AFTER expression evaluates",  "The **original** value"]
+      ]
+    },
+    { "type": "code", "language": "java", "title": "Pre vs Post Increment Deep Dive", "code": "public class IncrementDemo {\n    public static void main(String[] args) {\n        int x = 5;\n        System.out.println(x++);   // prints 5, then x becomes 6\n        System.out.println(x);     // prints 6\n        System.out.println(++x);   // x becomes 7, then prints 7\n        System.out.println(x);     // prints 7\n\n        int a = 3;\n        int b = a++ + ++a;         // a++ uses 3 (a becomes 4), ++a uses 5 (a becomes 5)\n        System.out.println(b);     // 3 + 5 = 8\n        System.out.println(a);     // 5\n    }\n}" },
+
+    { "type": "heading", "level": 2, "content": "🖨️ printf Formatting" },
+    { "type": "paragraph", "content": "The `printf` method uses **format specifiers** to control how values are displayed. These are frequently tested in CSE110." },
+    { "type": "table",
+      "headers": ["Specifier", "Type", "Example", "Output"],
+      "rows": [
+        ["`%d`", "Integer (decimal)", "`printf(\"%d\", 42)`",        "`42`"],
+        ["`%f`", "Float/Double",     "`printf(\"%f\", 3.14)`",      "`3.140000`"],
+        ["`%.2f`","Rounded float",   "`printf(\"%.2f\", 3.14159)`", "`3.14`"],
+        ["`%s`", "String",           "`printf(\"%s\", \"Hi\")`",    "`Hi`"],
+        ["`%c`", "Character",        "`printf(\"%c\", 'A')`",       "`A`"],
+        ["`%n`", "Newline",          "`printf(\"a%nb\")`",          "`a\\nb`"],
+        ["`%5d`","Width-padded int", "`printf(\"%5d\", 7)`",        "`    7`"],
+        ["`%-5d`","Left-aligned",    "`printf(\"%-5d|\", 7)`",      "`7    |`"]
+      ]
+    },
+    { "type": "code", "language": "java", "title": "printf in Action", "code": "public class PrintfDemo {\n    public static void main(String[] args) {\n        printf(\"Name: %s, Age: %d%n\", \"Ashik\", 20);  // Name: Ashik, Age: 20\n        printf(\"Pi = %.4f%n\", Math.PI);              // Pi = 3.1416\n        printf(\"|%10s|%n\", \"hi\");                    // |        hi|\n        printf(\"%-10s|%n\", \"hi\");                    // |hi        |\n        printf(\"%05d%n\", 42);                        // 00042\n    }\n    // shorthand — in a real program: System.out.printf()\n    static java.io.PrintStream printf = System.out;\n}" },
+
+    { "type": "divider" },
+    { "type": "heading", "level": 2, "content": "🧪 Interactive Exercises — Predict the Output" },
+    { "type": "paragraph", "content": "Try each exercise yourself before clicking **Reveal**. These are designed at CSE110 exam difficulty. Cover the answer and genuinely try first — that's how the skill is built." },
+
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 1: The Classic + Operator Trap",
+      "language": "java",
+      "code": "public class Q1 {\n    public static void main(String[] args) {\n        System.out.println(\"Result: \" + 3 + 4);\n        System.out.println(3 + 4 + \" Result\");\n        System.out.println(\"A\" + 'B' + 2);\n        System.out.println('A' + 'B' + \"2\");\n    }\n}",
+      "answer": "Result: 34\n7 Result\nAB2\n1312",
+      "explanation": "Line 1: String context from start, so `\"Result: \" + 3` = `\"Result: 3\"`, then `+ 4` = `\"Result: 34\"`. Line 2: `3 + 4 = 7` first (both ints), then `7 + \" Result\"` = `\"7 Result\"`. Line 3: `\"A\" + 'B'` = `\"AB\"` (string context), then `+ 2` = `\"AB2\"`. Line 4: `'A' + 'B'` = `65 + 66 = 131` (both chars add as ints!), then `131 + \"2\"` = `\"1312\"`."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 2: Pre/Post Increment in print",
+      "language": "java",
+      "code": "public class Q2 {\n    public static void main(String[] args) {\n        int x = 10;\n        System.out.println(x++);\n        System.out.println(++x);\n        System.out.println(x--);\n        System.out.println(--x);\n        System.out.println(x);\n    }\n}",
+      "answer": "10\n12\n12\n10\n10",
+      "explanation": "Start: x=10. `x++` prints 10, x becomes 11. `++x` increments to 12 first, prints 12. `x--` prints 12, x becomes 11. `--x` decrements to 10 first, prints 10. Final print: x=10."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 3: Integer Division Chain",
+      "language": "java",
+      "code": "public class Q3 {\n    public static void main(String[] args) {\n        int a = 10, b = 3;\n        System.out.println(a / b);\n        System.out.println(a % b);\n        System.out.println((double) a / b);\n        System.out.println(a / (double) b);\n        double result = a / b;\n        System.out.println(result);\n    }\n}",
+      "answer": "3\n1\n3.3333333333333335\n3.3333333333333335\n3.0",
+      "explanation": "Line 1: Integer division 10/3 = 3. Line 2: 10 % 3 = 1. Lines 3 & 4: One operand is double so result is double. Note the repeated 3 and trailing 5 — that's floating-point representation. Line 5: `a/b` is integer division (3) FIRST, then promoted to `3.0` when stored."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 4: println() vs print() spacing",
+      "language": "java",
+      "code": "public class Q4 {\n    public static void main(String[] args) {\n        System.out.print(\"A\");\n        System.out.print(\"B\");\n        System.out.println();\n        System.out.println(\"C\");\n        System.out.print(\"D\");\n        System.out.println(\"E\");\n        System.out.print(\"F\");\n    }\n}",
+      "answer": "AB\nC\nDE\nF",
+      "explanation": "`print` does NOT add a newline. `println()` alone adds just a newline (blank line effect here closes the AB line). `println(\"C\")` prints C then newline. `print(\"D\")` + `println(\"E\")` = DE then newline. Final `print(\"F\")` has no newline — cursor stays on same line after F."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 5: printf with format specifiers",
+      "language": "java",
+      "code": "public class Q5 {\n    public static void main(String[] args) {\n        System.out.printf(\"%d + %d = %d%n\", 4, 5, 4+5);\n        System.out.printf(\"%.2f%n\", 3.14159);\n        System.out.printf(\"%10d%n\", 42);\n        System.out.printf(\"%-10d|%n\", 42);\n        System.out.printf(\"%05d%n\", 7);\n    }\n}",
+      "answer": "4 + 5 = 9\n3.14\n        42\n42        |\n00007",
+      "explanation": "Line 1: straightforward substitution. Line 2: `%.2f` rounds to 2 decimal places. Line 3: `%10d` = right-aligned in width 10 (8 spaces + 42). Line 4: `%-10d` = left-aligned in width 10, then `|`. Line 5: `%05d` = zero-padded to width 5."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 6: Type casting chain (Tricky!)",
+      "language": "java",
+      "code": "public class Q6 {\n    public static void main(String[] args) {\n        double d = 9.99;\n        int i = (int) d;\n        System.out.println(i);                  // Line A\n        System.out.println((int)(3.9 + 4.9));   // Line B\n        System.out.println((int) 3.9 + (int) 4.9); // Line C\n        byte b = (byte) 200;\n        System.out.println(b);                  // Line D\n    }\n}",
+      "answer": "9\n8\n7\n-56",
+      "explanation": "A: `(int)9.99` truncates to `9`. B: `3.9+4.9=8.8`, then `(int)8.8=8`. C: `(int)3.9=3` and `(int)4.9=4`, so `3+4=7`. D: Tricky! `byte` range is -128 to 127. 200 in binary overflows: `200 - 256 = -56` (two's complement wrap-around)."
+    },
+
+    { "type": "divider" },
+    { "type": "heading", "level": 2, "content": "📋 Quick Reference Summary" },
+    { "type": "list", "ordered": false, "items": [
+      "**`print`** — no newline. **`println`** — adds `\\n`. **`printf`** — formatted, no auto newline.",
+      "**`+` operator**: left-to-right. If either side is a `String`, it's **concatenation**. Otherwise, arithmetic.",
+      "**`char` arithmetic**: `'A' + 1 = 66` (int). Use `\"\" + 'A'` to force string context.",
+      "**Integer division**: `7/2 = 3` (truncated). Cast at least one operand to `double` for decimal result.",
+      "**`x++`** — use value, THEN increment. **`++x`** — increment FIRST, then use value.",
+      "**`%f`** gives 6 decimal places by default. Use `%.2f` for 2 decimal places.",
+      "**`(byte)200 = -56`** — narrow casting can overflow and produce negative numbers."
+    ]}
+  ]
+}

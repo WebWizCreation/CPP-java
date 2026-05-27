@@ -1,0 +1,140 @@
+{
+  "id": "Java_Ch3_DataTypes_TypeCast",
+  "track": "java",
+  "chapter": 3,
+  "title": "Data Types & Type Casting",
+  "description": "A complete tour of Java's type system — from the 8 primitive types and their exact memory sizes, to wrapper classes, autoboxing, and the rules of implicit widening vs explicit narrowing casts. This chapter destroys the type-confusion bugs that cost marks on every CSE110 exam.",
+
+  "sections": [
+    { "type": "heading", "level": 2, "content": "🧱 Java's 8 Primitive Types" },
+    { "type": "paragraph", "content": "Java is a **strongly-typed** language. Every variable must have a declared type, and the compiler enforces type rules at compile time. There are exactly **8 primitive types** — memorize their sizes and ranges. These are stored directly on the **stack** as raw values, not as objects." },
+    { "type": "table",
+      "headers": ["Type", "Size", "Default", "Min Value", "Max Value", "Use Case"],
+      "rows": [
+        ["`byte`",    "1 byte (8 bits)",   "0",     "-128",                      "127",                       "Small integers, raw binary data"],
+        ["`short`",   "2 bytes (16 bits)",  "0",     "-32,768",                   "32,767",                    "Rarely used; legacy code"],
+        ["`int`",     "4 bytes (32 bits)",  "0",     "-2,147,483,648 (~-2.1B)",   "2,147,483,647 (~2.1B)",     "Default integer type"],
+        ["`long`",    "8 bytes (64 bits)",  "0L",    "-9.2 × 10¹⁸",              "9.2 × 10¹⁸",               "Large integers"],
+        ["`float`",   "4 bytes (32 bits)",  "0.0f",  "~1.4e-45",                 "~3.4e38",                   "Single-precision decimal"],
+        ["`double`",  "8 bytes (64 bits)",  "0.0",   "~4.9e-324",                "~1.8e308",                  "Default decimal type"],
+        ["`char`",    "2 bytes (16 bits)",  "'\\u0000'", "0 (\\u0000)",          "65,535 (\\uFFFF)",          "Single Unicode character"],
+        ["`boolean`", "JVM-dependent",      "false", "false",                     "true",                      "True/false flags"]
+      ]
+    },
+    { "type": "callout", "variant": "warning", "label": "char is Unsigned!", "content": "Unlike C/C++, Java's `char` is a **2-byte unsigned integer** representing a Unicode code point (0–65535). It is NOT the same as `byte`. `char c = -1;` is a **compile error** in Java. This distinction is frequently tested." },
+    { "type": "code", "language": "java", "title": "Declaring and Using Primitives", "code": "public class PrimitiveDemo {\n    public static void main(String[] args) {\n        byte   b  = 100;\n        short  s  = 30000;\n        int    i  = 2_000_000;    // Underscore separators (Java 7+) for readability\n        long   l  = 9_000_000_000L;  // 'L' suffix is REQUIRED for long literals > int range\n        float  f  = 3.14f;        // 'f' suffix is REQUIRED for float literals\n        double d  = 3.141592653589793;\n        char   c  = 'A';          // Single quotes\n        boolean flag = true;\n\n        // Print sizes using wrapper class constants\n        System.out.println(Integer.MAX_VALUE);   // 2147483647\n        System.out.println(Integer.MIN_VALUE);   // -2147483648\n        System.out.println(Long.MAX_VALUE);      // 9223372036854775807\n        System.out.println(Double.MAX_VALUE);    // 1.7976931348623157E308\n\n        // char behaves as a number\n        char x = 'A';\n        System.out.println(x);       // A\n        System.out.println(x + 0);   // 65  (int arithmetic)\n        System.out.println((char)(x + 1)); // B\n    }\n}" },
+
+    { "type": "heading", "level": 2, "content": "📈 Widening Conversion (Implicit / Automatic)" },
+    { "type": "paragraph", "content": "Java **automatically** converts a smaller type to a larger type when no data can be lost. This is called **widening** (or implicit promotion). The widening hierarchy is the sequence: `byte → short → int → long → float → double`. Additionally, `char` widens to `int`, `long`, `float`, or `double`." },
+    { "type": "code", "language": "java", "title": "Widening in Action", "code": "public class WideningDemo {\n    public static void main(String[] args) {\n        byte   b = 42;\n        short  s = b;     // byte → short  (automatic)\n        int    i = s;     // short → int   (automatic)\n        long   l = i;     // int → long    (automatic)\n        float  f = l;     // long → float  (automatic) — may lose precision!\n        double d = f;     // float → double (automatic)\n\n        System.out.println(b); // 42\n        System.out.println(d); // 42.0  (went through the whole chain)\n\n        // char widens to int\n        char c = 'Z';          // Unicode value 90\n        int code = c;          // char → int (automatic)\n        System.out.println(code); // 90\n\n        // Widening in expressions: smaller types promote to int\n        byte x = 10, y = 20;\n        // byte result = x + y; // COMPILE ERROR! x+y promotes to int\n        int result = x + y;    // OK\n        System.out.println(result); // 30\n    }\n}" },
+    { "type": "callout", "variant": "danger", "label": "The byte + byte = int Trap!", "content": "Adding two `byte` values does NOT give a `byte`. Java **promotes** `byte`, `short`, and `char` to `int` before performing ANY arithmetic. So `byte x=10; byte y=20; byte z = x+y;` is a **compile error** — `x+y` is an `int`. You must cast: `byte z = (byte)(x + y);`." },
+
+    { "type": "heading", "level": 2, "content": "📉 Narrowing Conversion (Explicit Cast)" },
+    { "type": "paragraph", "content": "Converting from a **larger type to a smaller** type risks data loss and is therefore **never automatic** — you must write an explicit cast using the `(type)` syntax. The compiler trusts your judgment, but if the value doesn't fit, it truncates or wraps around silently (no exception)." },
+    { "type": "code", "language": "java", "title": "Narrowing Cast Mechanics", "code": "public class NarrowingDemo {\n    public static void main(String[] args) {\n        // double → int: truncates (removes decimal part)\n        double d = 9.99;\n        int i = (int) d;\n        System.out.println(i);   // 9  (NOT rounded, just truncated)\n\n        // large int → byte: wraps around (overflow)\n        int big = 200;\n        byte b = (byte) big;\n        System.out.println(b);   // -56  (200 - 256 = -56, two's complement)\n\n        // large int → byte: another example\n        int val = 130;\n        byte b2 = (byte) val;\n        System.out.println(b2);  // -126  (130 - 256 = -126)\n\n        // double → long: truncates then stores\n        double pi = 3.99999;\n        long l = (long) pi;\n        System.out.println(l);   // 3  (decimal part gone)\n\n        // int → char\n        int ascii = 65;\n        char c = (char) ascii;\n        System.out.println(c);   // A\n\n        // Narrowing formula for byte overflow:\n        // if value > 127: result = value - 256\n        // if value < -128: result = value + 256\n        System.out.println((byte) 128);  // -128\n        System.out.println((byte) 256);  // 0    (256 - 256 = 0)\n        System.out.println((byte) 257);  // 1    (257 - 256 = 1)\n    }\n}" },
+    { "type": "callout", "variant": "tip", "label": "Narrowing Overflow Formula", "content": "For `byte` overflow: if the value is in range [128, 255], result = value - 256. For `(byte) 200`: 200 - 256 = **-56**. For `(byte) 256` = 256 - 256 = **0**. This formula covers the most common exam questions." },
+
+    { "type": "heading", "level": 2, "content": "📦 Wrapper Classes & Autoboxing" },
+    { "type": "paragraph", "content": "Every primitive type has a corresponding **Wrapper Class** in `java.lang`. Wrappers are objects — they live on the **heap**, can hold `null`, and have utility methods. They are required when working with Java Collections (which only store objects)." },
+    { "type": "table",
+      "headers": ["Primitive", "Wrapper Class", "Key Methods"],
+      "rows": [
+        ["`byte`",    "`Byte`",      "`Byte.parseByte(str)`, `Byte.MAX_VALUE`"],
+        ["`short`",   "`Short`",     "`Short.parseShort(str)`"],
+        ["`int`",     "`Integer`",   "`Integer.parseInt(str)`, `Integer.MAX_VALUE`, `Integer.toBinaryString(n)`"],
+        ["`long`",    "`Long`",      "`Long.parseLong(str)`, `Long.MAX_VALUE`"],
+        ["`float`",   "`Float`",     "`Float.parseFloat(str)`"],
+        ["`double`",  "`Double`",    "`Double.parseDouble(str)`, `Double.isNaN(d)`"],
+        ["`char`",    "`Character`", "`Character.isDigit(c)`, `Character.isLetter(c)`, `Character.toUpperCase(c)`"],
+        ["`boolean`", "`Boolean`",   "`Boolean.parseBoolean(str)`"]
+      ]
+    },
+    { "type": "code", "language": "java", "title": "Autoboxing and Unboxing", "code": "import java.util.ArrayList;\npublic class AutoboxingDemo {\n    public static void main(String[] args) {\n        // AUTOBOXING: primitive → wrapper (automatic)\n        int primitive = 42;\n        Integer wrapper = primitive;      // int auto-boxed to Integer\n        Integer explicit = Integer.valueOf(42); // same thing, explicit\n\n        // UNBOXING: wrapper → primitive (automatic)\n        int backToPrimitive = wrapper;    // Integer unboxed to int\n\n        // Collections REQUIRE wrappers\n        ArrayList<Integer> list = new ArrayList<>();\n        list.add(10);   // autoboxing: 10 → Integer(10)\n        list.add(20);\n        int first = list.get(0);  // unboxing: Integer(10) → 10\n        System.out.println(first); // 10\n\n        // DANGER: == vs .equals() with wrappers\n        Integer a = 100;  // cached  (-128 to 127 are cached by JVM)\n        Integer b = 100;\n        System.out.println(a == b);       // true  (same cached object)\n\n        Integer c = 200;  // NOT cached — new objects\n        Integer d = 200;\n        System.out.println(c == d);       // false! (different objects)\n        System.out.println(c.equals(d));  // true  (always use .equals())\n\n        // Null unboxing causes NullPointerException!\n        Integer n = null;\n        // int x = n;  // RUNTIME ERROR: NullPointerException\n    }\n}" },
+    { "type": "callout", "variant": "danger", "label": "Integer Cache Trap (== vs .equals())", "content": "Java caches `Integer` objects for values **-128 to 127**. For these values, `Integer a = 100; Integer b = 100; a == b` is `true` because they point to the **same cached object**. For values outside this range (e.g., 200), `a == b` is `false` even with equal values. **Always use `.equals()` to compare wrapper objects.**" },
+
+    { "type": "heading", "level": 2, "content": "🔄 Type Promotion in Expressions" },
+    { "type": "paragraph", "content": "Java applies **automatic type promotion rules** in expressions, even before any explicit cast. Understanding these rules is essential for predicting output of mixed-type expressions." },
+    { "type": "list", "ordered": true, "items": [
+      "If either operand is `double`, the other is promoted to `double`.",
+      "Otherwise, if either operand is `float`, the other is promoted to `float`.",
+      "Otherwise, if either operand is `long`, the other is promoted to `long`.",
+      "Otherwise, **both operands are promoted to `int`** (even if they are `byte`, `short`, or `char`)."
+    ]},
+    { "type": "code", "language": "java", "title": "Type Promotion in Mixed Expressions", "code": "public class PromotionDemo {\n    public static void main(String[] args) {\n        int    i = 10;\n        long   l = 20L;\n        float  f = 3.0f;\n        double d = 4.0;\n\n        // int + long → long\n        long r1 = i + l;\n        System.out.println(r1);   // 30\n\n        // long + float → float\n        float r2 = l + f;\n        System.out.println(r2);   // 23.0\n\n        // float + double → double\n        double r3 = f + d;\n        System.out.println(r3);   // 7.0\n\n        // int / int → int (even stored in double!)\n        double avg = 7 / 2;\n        System.out.println(avg);  // 3.0  (integer 3, then widened)\n\n        // Fix: make one operand double\n        double avg2 = 7.0 / 2;\n        System.out.println(avg2); // 3.5\n\n        // char + int → int\n        char c = 'A';   // value 65\n        System.out.println(c + 1);   // 66 (int)\n        System.out.println((char)(c + 1)); // B\n    }\n}" },
+
+    { "type": "divider" },
+    { "type": "heading", "level": 2, "content": "🧪 Interactive Exercises" },
+    { "type": "paragraph", "content": "These exercises target the exact type-system questions that appear in CSE110 exams. Work through each before revealing the answer." },
+
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 1: Narrowing Overflow Chain",
+      "language": "java",
+      "code": "public class Q1 {\n    public static void main(String[] args) {\n        int a = 257;\n        byte b = (byte) a;\n        System.out.println(b);\n\n        double d = 3.9999;\n        int i = (int) d;\n        System.out.println(i);\n\n        int x = 300;\n        byte y = (byte) x;\n        System.out.println(y);\n\n        System.out.println((byte) -130);\n    }\n}",
+      "answer": "1\n3\n44\n126",
+      "explanation": "Line 1: 257 % 256 = 1 (byte wraps every 256). Line 2: `(int) 3.9999` truncates to 3 (never rounds). Line 3: 300 - 256 = 44. Line 4: -130 + 256 = 126 (negative overflow adds 256)."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 2: byte Arithmetic Promotion Trap",
+      "language": "java",
+      "code": "public class Q2 {\n    public static void main(String[] args) {\n        byte a = 100;\n        byte b = 100;\n        // byte c = a + b;  // This would be compile error\n        int  c = a + b;\n        System.out.println(c);\n\n        byte d = (byte)(a + b);\n        System.out.println(d);\n\n        byte e = 50;\n        e += 100;   // compound assignment has implicit cast!\n        System.out.println(e);\n    }\n}",
+      "answer": "200\n-56\n-106",
+      "explanation": "`a + b` promotes both to `int` → 200. Storing in `int c` is fine. `(byte) 200` = 200-256 = -56. For `e += 100`: compound operators like `+=` include an implicit narrow cast, so `e = (byte)(e + 100)` = `(byte)(50 + 100)` = `(byte) 150` = 150 - 256 = **-106**. This compound-assignment implicit cast is a very common exam trick."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 3: Autoboxing == Reference Trap",
+      "language": "java",
+      "code": "public class Q3 {\n    public static void main(String[] args) {\n        Integer x = 127;\n        Integer y = 127;\n        System.out.println(x == y);\n        System.out.println(x.equals(y));\n\n        Integer p = 128;\n        Integer q = 128;\n        System.out.println(p == q);\n        System.out.println(p.equals(q));\n    }\n}",
+      "answer": "true\ntrue\nfalse\ntrue",
+      "explanation": "JVM caches Integer objects for values -128 to 127. So `127` boxes to the SAME cached object — `x == y` compares references and finds them equal (true). But `128` is outside the cache range, so `p` and `q` are two DIFFERENT Integer objects on the heap — `p == q` is false (different references). `.equals()` always compares by VALUE, so both `.equals()` calls are true."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 4: Mixed Arithmetic Promotion",
+      "language": "java",
+      "code": "public class Q4 {\n    public static void main(String[] args) {\n        int   i = 5;\n        long  l = 10L;\n        float f = 2.5f;\n\n        System.out.println(i + l);    // A\n        System.out.println(l + f);    // B\n        System.out.println(i / 2);    // C\n        System.out.println(i / 2.0);  // D\n\n        long result = i * 1000000000;  // E — careful!\n        System.out.println(result);\n    }\n}",
+      "answer": "15\n12.5\n2\n2.5\n-1294967296",
+      "explanation": "A: int+long → long = 15. B: long+float → float = 12.5. C: int/int → int = 2 (truncated). D: int/double → double = 2.5. E: TRICKY! `i * 1000000000` computes `5 * 1000000000` as **int*int first** (= 5,000,000,000 which overflows int → -1294967296), THEN stores the overflowed value into `long`. Fix: `(long) i * 1000000000` or `i * 1000000000L`."
+    },
+    {
+      "type": "accordion",
+      "variant": "find-error",
+      "title": "Exercise 5: Three Type Errors in One Class",
+      "language": "java",
+      "code": "public class TypeErrors {\n    public static void main(String[] args) {\n        long bigNum = 10000000000;       // Line 3\n        float precise = 3.14159265358;   // Line 4\n        byte small = 200;                // Line 5\n        char letter = -1;                // Line 6\n        int count = 0;\n        count = count + 1.0;             // Line 9\n        System.out.println(count);\n    }\n}",
+      "error": "Four compile-time errors: Line 3: `10000000000` exceeds `int` literal range — needs `L` suffix: `10000000000L`. Line 4: `3.14159265358` is a `double` literal — needs `f` suffix: `3.14159265358f`. Line 5: `200` is out of `byte` range (-128 to 127) — needs cast: `(byte) 200`. Line 6: `char` cannot be negative — needs cast: `(char) -1` or use `'\\uFFFF'`. Line 9: `count + 1.0` is `double`, cannot assign to `int` — needs cast or use `1` instead of `1.0`.",
+      "fix": "public class TypeErrors {\n    public static void main(String[] args) {\n        long bigNum = 10000000000L;       // L suffix\n        float precise = 3.14159265358f;   // f suffix\n        byte small = (byte) 200;          // explicit narrow cast\n        char letter = (char) -1;          // explicit cast ('\\uFFFF')\n        int count = 0;\n        count = count + 1;                // use int literal, not 1.0\n        System.out.println(count);\n    }\n}",
+      "explanation": "These are the classic 'wrong literal type' and 'narrowing without cast' compile errors that Java beginners encounter constantly. The rules: long literals need `L`, float literals need `f`, narrowing always needs explicit `(type)` cast. Java's type strictness prevents these bugs from becoming runtime surprises."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 6: char Casting & Arithmetic (Tricky!)",
+      "language": "java",
+      "code": "public class Q6 {\n    public static void main(String[] args) {\n        char c = 'a';\n        System.out.println(c);\n        System.out.println(c + 0);\n        System.out.println((char)(c - 32));\n        System.out.println((int) c);\n\n        for (char ch = 'A'; ch <= 'E'; ch++) {\n            System.out.print(ch + \" \");\n        }\n        System.out.println();\n    }\n}",
+      "answer": "a\n97\nA\n97\nA B C D E ",
+      "explanation": "`'a'` prints as character `a`. `'a' + 0` → char+int → int → prints 97 (ASCII). `(char)('a' - 32)` → `(char)(97-32)` = `(char)65` = `'A'`. `(int) c` explicitly widens char to int → 97. The for loop iterates char from 'A'(65) to 'E'(69), incrementing each time — prints A B C D E with trailing space."
+    },
+
+    { "type": "divider" },
+    { "type": "heading", "level": 2, "content": "📋 Type System Quick Reference" },
+    { "type": "list", "ordered": false, "items": [
+      "**Widening** (automatic): `byte→short→int→long→float→double` and `char→int`.",
+      "**Narrowing** (explicit cast required): going against the widening chain — can lose data.",
+      "**`byte`/`short`/`char` arithmetic** always promotes to `int` first — result is never `byte`/`short`/`char`.",
+      "**Long literal**: always use `L` suffix for values outside int range: `10_000_000_000L`.",
+      "**Float literal**: always use `f` suffix: `3.14f`. Without it, `3.14` is a `double`.",
+      "**Truncation vs rounding**: `(int) 9.9 = 9`, not 10. Java always **truncates** toward zero.",
+      "**byte overflow formula**: value > 127 → result = value - 256. e.g. `(byte) 200 = -56`.",
+      "**Wrapper `==`**: only reliable for cached range (-128 to 127). Always use `.equals()` for value comparison.",
+      "**Null unboxing**: `Integer n = null; int x = n;` throws `NullPointerException` at runtime.",
+      "**Compound operators** (`+=`, `-=`, `*=`) include an **implicit narrow cast** — can silently overflow."
+    ]}
+  ]
+}

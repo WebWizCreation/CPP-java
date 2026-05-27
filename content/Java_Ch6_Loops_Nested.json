@@ -1,0 +1,121 @@
+{
+  "id": "Java_Ch6_Loops_Nested",
+  "track": "java",
+  "chapter": 6,
+  "title": "Loops & Nested Loops",
+  "description": "Deep-dive into loop tracing, nested loop patterns, and the art of pattern printing — classic CSE110 exam territory. You will learn a systematic tracing technique for any loop, dissect how the inner and outer loop variables interact, and practice predicting the exact output of multi-level loop structures. Pattern printing is the ultimate test of whether you truly understand nested loops.",
+
+  "sections": [
+    { "type": "heading", "level": 2, "content": "🔬 The Loop Tracing Technique" },
+    { "type": "paragraph", "content": "Tracing a loop means **simulating the CPU**: evaluating every condition, executing every statement, and tracking every variable value. Do not try to 'shortcut' by guessing — follow each step mechanically. This technique works for any loop structure." },
+    { "type": "callout", "variant": "tip", "label": "The 3-Column Trace Table", "content": "For any loop, draw a table with columns: **[iteration #]**, **[variable values before body]**, **[output/effect]**. Fill it row by row. This structured approach prevents the #1 mistake: losing track of variable state between iterations." },
+    { "type": "code", "language": "java", "title": "Tracing a for Loop Step by Step", "code": "// Program to trace:\npublic class Trace {\n    public static void main(String[] args) {\n        int sum = 0;\n        for (int i = 1; i <= 4; i++) {\n            sum += i * i;\n        }\n        System.out.println(sum);\n    }\n}\n\n/* ─── Trace Table ───────────────────────────────────────\n  Step │ i  │ i<=4? │ Action             │ sum (after)\n  ─────┼────┼───────┼────────────────────┼────────────\n  Init │ 1  │       │ (set i=1, sum=0)   │ 0\n   1   │ 1  │ true  │ sum += 1*1 = 1     │ 1    → i++→2\n   2   │ 2  │ true  │ sum += 2*2 = 4     │ 5    → i++→3\n   3   │ 3  │ true  │ sum += 3*3 = 9     │ 14   → i++→4\n   4   │ 4  │ true  │ sum += 4*4 = 16    │ 30   → i++→5\n   5   │ 5  │ false │ EXIT loop          │ 30\n  ────────────────────────────────────────────────────\n  Output: 30\n*/" },
+
+    { "type": "heading", "level": 2, "content": "🔲 Nested Loop Mechanics" },
+    { "type": "paragraph", "content": "In nested loops, the **inner loop completes entirely** before the outer loop advances by one step. Think of it like a clock: the inner loop is the seconds hand, the outer loop is the minutes hand." },
+    { "type": "code", "language": "java", "title": "Nested Loop — Total Iteration Count", "code": "public class NestedCount {\n    public static void main(String[] args) {\n        int count = 0;\n        for (int i = 1; i <= 3; i++) {        // outer: 3 iterations\n            for (int j = 1; j <= 4; j++) {    // inner: 4 iterations EACH time\n                count++;\n                System.out.print(\"(\" + i + \",\" + j + \") \");\n            }\n            System.out.println();  // newline after each outer iteration\n        }\n        System.out.println(\"Total: \" + count);  // 3 × 4 = 12\n    }\n}\n\n/* Output:\n(1,1) (1,2) (1,3) (1,4)\n(2,1) (2,2) (2,3) (2,4)\n(3,1) (3,2) (3,3) (3,4)\nTotal: 12\n*/" },
+    { "type": "callout", "variant": "note", "label": "Total Iterations Rule", "content": "For a nested loop with outer range `m` and inner range `n`, the total iterations = `m × n`. For a **triangular** nested loop (`j <= i`), the total = `1 + 2 + ... + n = n(n+1)/2`. These formulas let you estimate complexity at a glance." },
+
+    { "type": "heading", "level": 2, "content": "🔺 Pattern Printing — The Ultimate Nested Loop Test" },
+    { "type": "paragraph", "content": "Pattern printing is a CSE110 staple because it forces you to think about the **relationship between `i` and `j`** and translate a visual shape into mathematical conditions. The key insight: the outer loop controls rows, the inner loop controls columns, and the **print condition** controls what goes in each cell." },
+    { "type": "code", "language": "java", "title": "Pattern 1 — Right Triangle (Stars)", "code": "// For n=5:\n// *\n// * *\n// * * *\n// * * * *\n// * * * * *\npublic class Triangle {\n    public static void main(String[] args) {\n        int n = 5;\n        for (int i = 1; i <= n; i++) {       // row number\n            for (int j = 1; j <= i; j++) {   // j goes from 1 to row number\n                System.out.print(\"* \");\n            }\n            System.out.println();            // move to next row\n        }\n    }\n}" },
+    { "type": "code", "language": "java", "title": "Pattern 2 — Inverted Triangle", "code": "// For n=5:\n// * * * * *\n// * * * *\n// * * *\n// * *\n// *\npublic class InvertedTriangle {\n    public static void main(String[] args) {\n        int n = 5;\n        for (int i = n; i >= 1; i--) {       // i starts at n, goes down to 1\n            for (int j = 1; j <= i; j++) {   // print i stars on row with i stars\n                System.out.print(\"* \");\n            }\n            System.out.println();\n        }\n    }\n}" },
+    { "type": "code", "language": "java", "title": "Pattern 3 — Number Triangle", "code": "// For n=4:\n// 1\n// 1 2\n// 1 2 3\n// 1 2 3 4\npublic class NumberTriangle {\n    public static void main(String[] args) {\n        int n = 4;\n        for (int i = 1; i <= n; i++) {\n            for (int j = 1; j <= i; j++) {\n                System.out.print(j + \" \");  // print j (column number)\n            }\n            System.out.println();\n        }\n    }\n}" },
+    { "type": "code", "language": "java", "title": "Pattern 4 — Square with Hollow Centre", "code": "// For n=5:\n// * * * * *\n// *       *\n// *       *\n// *       *\n// * * * * *\npublic class HollowSquare {\n    public static void main(String[] args) {\n        int n = 5;\n        for (int i = 1; i <= n; i++) {\n            for (int j = 1; j <= n; j++) {\n                // Print star on border, space in interior\n                if (i == 1 || i == n || j == 1 || j == n) {\n                    System.out.print(\"* \");\n                } else {\n                    System.out.print(\"  \");  // two spaces to match \"* \"\n                }\n            }\n            System.out.println();\n        }\n    }\n}" },
+    { "type": "callout", "variant": "tip", "label": "Pattern Printing Strategy", "content": "Before coding any pattern: (1) Look at the pattern and identify what changes row by row. (2) Express the number of characters on row `i` as a formula in `i`. (3) If you print different characters, find the condition that distinguishes them (border? diagonal? even/odd column?). (4) Code outer loop for rows, inner loop for columns per row." },
+
+    { "type": "heading", "level": 2, "content": "🔢 Advanced Nested Loop Patterns" },
+    { "type": "code", "language": "java", "title": "Pattern 5 — Multiplication Table", "code": "// Classic CSE110 trace: predict the output for n=4\npublic class MultiTable {\n    public static void main(String[] args) {\n        int n = 4;\n        for (int i = 1; i <= n; i++) {\n            for (int j = 1; j <= n; j++) {\n                System.out.printf(\"%4d\", i * j);  // 4-char wide column\n            }\n            System.out.println();\n        }\n    }\n}\n/* Output:\n   1   2   3   4\n   2   4   6   8\n   3   6   9  12\n   4   8  12  16\n*/" },
+    { "type": "code", "language": "java", "title": "Pattern 6 — Pyramid (Centered Triangle)", "code": "// For n=5:\n//     *\n//    * *\n//   * * *\n//  * * * *\n// * * * * *\npublic class Pyramid {\n    public static void main(String[] args) {\n        int n = 5;\n        for (int i = 1; i <= n; i++) {\n            // Spaces: (n - i) spaces before the stars\n            for (int s = 1; s <= n - i; s++) System.out.print(\" \");\n            // Stars: i stars\n            for (int j = 1; j <= i; j++) System.out.print(\"* \");\n            System.out.println();\n        }\n    }\n}" },
+
+    { "type": "heading", "level": 2, "content": "⚠️ Common Loop Pitfalls in CSE110" },
+    { "type": "paragraph", "content": "These are the bugs that cause students to lose marks. Know each one by name and by its symptom." },
+    { "type": "table",
+      "headers": ["Pitfall", "Symptom", "Fix"],
+      "rows": [
+        ["Off-by-one (`<` vs `<=`)", "Loop runs N-1 or N+1 times", "Carefully check: should the last value be included?"],
+        ["Infinite loop (condition never false)", "Program hangs forever", "Ensure loop variable is modified toward termination"],
+        ["Variable not reset between outer iterations", "Wrong accumulated result", "Declare/reset inner variables inside the outer loop body"],
+        ["Wrong variable printed (i vs j)", "Rows and columns swapped", "Trace one full iteration; check which variable controls which axis"],
+        ["Extra newline at end", "Output has trailing blank line", "Check if `println()` is inside or outside the outer loop"],
+        ["Modifying loop variable inside body", "Unpredictable iteration count", "Never modify `i` inside the loop body unless intentional"]
+      ]
+    },
+    { "type": "code", "language": "java", "title": "The 'Variable Not Reset' Bug — Classic Exam Trap", "code": "// BUGGY: sum accumulates across outer iterations\npublic class BuggyAccumulate {\n    public static void main(String[] args) {\n        int n = 3;\n        int sum = 0;                     // OUTSIDE outer loop\n        for (int i = 1; i <= n; i++) {\n            for (int j = 1; j <= n; j++) {\n                sum += j;                // sum keeps growing!\n            }\n            System.out.println(\"Row \" + i + \" sum: \" + sum);\n        }\n        // Output: Row 1: 6, Row 2: 12, Row 3: 18  ← WRONG!\n    }\n}\n\n// FIXED: sum resets each outer iteration\npublic class FixedAccumulate {\n    public static void main(String[] args) {\n        int n = 3;\n        for (int i = 1; i <= n; i++) {\n            int sum = 0;                 // INSIDE outer loop: resets each time\n            for (int j = 1; j <= n; j++) {\n                sum += j;\n            }\n            System.out.println(\"Row \" + i + \" sum: \" + sum);\n        }\n        // Output: Row 1: 6, Row 2: 6, Row 3: 6  ← CORRECT\n    }\n}" },
+
+    { "type": "divider" },
+    { "type": "heading", "level": 2, "content": "🧪 Interactive Exercises — Predict the Output" },
+
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 1: Trace the Nested Loop Variables",
+      "language": "java",
+      "code": "public class Ex1 {\n    public static void main(String[] args) {\n        for (int i = 1; i <= 3; i++) {\n            for (int j = i; j <= 3; j++) {\n                System.out.print(i + \"\" + j + \" \");\n            }\n            System.out.println();\n        }\n    }\n}",
+      "answer": "11 12 13 \n22 23 \n33 ",
+      "explanation": "Key: inner loop starts at `j = i`, not `j = 1`. Row i=1: j goes 1,2,3 → print 11,12,13. Row i=2: j goes 2,3 → print 22,23. Row i=3: j goes 3 → print 33. This is an upper-triangular pattern. The inner loop shrinks each outer iteration because the start point advances."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 2: Accumulator Inside Nested Loops",
+      "language": "java",
+      "code": "public class Ex2 {\n    public static void main(String[] args) {\n        int total = 0;\n        for (int i = 1; i <= 4; i++) {\n            int rowSum = 0;\n            for (int j = 1; j <= i; j++) {\n                rowSum += j;\n            }\n            total += rowSum;\n            System.out.println(\"i=\" + i + \" rowSum=\" + rowSum);\n        }\n        System.out.println(\"total=\" + total);\n    }\n}",
+      "answer": "i=1 rowSum=1\ni=2 rowSum=3\ni=3 rowSum=6\ni=4 rowSum=10\ntotal=20",
+      "explanation": "`rowSum` is reset to 0 each outer iteration. i=1: j=1, rowSum=1. i=2: j=1+2=3. i=3: j=1+2+3=6. i=4: j=1+2+3+4=10. These are triangular numbers: 1, 3, 6, 10. Total = 1+3+6+10 = 20."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 3: Predict the Pattern Output",
+      "language": "java",
+      "code": "public class Ex3 {\n    public static void main(String[] args) {\n        int n = 4;\n        for (int i = 1; i <= n; i++) {\n            for (int j = 1; j <= n; j++) {\n                if (j <= i) System.out.print(i + \" \");\n                else        System.out.print(\". \");\n            }\n            System.out.println();\n        }\n    }\n}",
+      "answer": "1 . . . \n2 2 . . \n3 3 3 . \n4 4 4 4 ",
+      "explanation": "Row i=1: j=1 (j<=1, print 1), j=2,3,4 (j>1, print '.') → '1 . . .'. Row i=2: j=1,2 print 2; j=3,4 print '.' → '2 2 . .'. Row i=3: j=1,2,3 print 3; j=4 '.' → '3 3 3 .'. Row i=4: all j<=4, print 4 four times → '4 4 4 4'. Lower-left triangle filled with the row number."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 4: while Loop Tracing (Tricky Update)",
+      "language": "java",
+      "code": "public class Ex4 {\n    public static void main(String[] args) {\n        int i = 1;\n        while (i <= 32) {\n            System.out.print(i + \" \");\n            i *= 2;\n        }\n        System.out.println();\n        System.out.println(i);\n    }\n}",
+      "answer": "1 2 4 8 16 32 \n64",
+      "explanation": "i starts at 1. Each iteration: print i, then i = i*2. Sequence: 1→2→4→8→16→32→64. Condition `i<=32`: 1✓ 2✓ 4✓ 8✓ 16✓ 32✓ 64✗(exit). So 1,2,4,8,16,32 are printed. After the loop, i=64 (the value that failed the condition). Final `println(i)` prints 64."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 5: Print Diamond Pattern",
+      "language": "java",
+      "code": "// Print a diamond for n=5 (n must be odd):\n//   *\n//  * *\n// * * *\n//  * *\n//   *\n// Constraint: 1 ≤ n ≤ 21, n is odd",
+      "approach": "Split into upper half (pyramid) and lower half (inverted pyramid). For n=5, upper has 3 rows (1 star, 3 stars... wait — n=5 means 3 rows of increasing stars: 1,3,5 if width = 2k-1; or if we count star groups: 1,2,3 stars for n=5). Let mid=(n+1)/2. Upper: i=1 to mid, spaces=(mid-i), stars=i. Lower: i=mid-1 down to 1, spaces=(mid-i), stars=i.",
+      "solution": "public class Diamond {\n    public static void main(String[] args) {\n        int n = 5;\n        int mid = (n + 1) / 2;  // = 3 for n=5\n        \n        // Upper half (includes middle row)\n        for (int i = 1; i <= mid; i++) {\n            // Leading spaces\n            for (int s = 0; s < mid - i; s++) System.out.print(\" \");\n            // Stars\n            for (int j = 0; j < i; j++) System.out.print(\"* \");\n            System.out.println();\n        }\n        \n        // Lower half (mirror of upper, minus middle)\n        for (int i = mid - 1; i >= 1; i--) {\n            for (int s = 0; s < mid - i; s++) System.out.print(\" \");\n            for (int j = 0; j < i; j++) System.out.print(\"* \");\n            System.out.println();\n        }\n    }\n}",
+      "explanation": "For n=5, mid=3. Upper half (i=1 to 3): i=1 → 2 spaces + 1 star; i=2 → 1 space + 2 stars; i=3 → 0 spaces + 3 stars. Lower half (i=2 down to 1): i=2 → 1 space + 2 stars; i=1 → 2 spaces + 1 star. The diamond shape comes from the fact that the number of leading spaces = (mid - i) and it increases again in the lower half as i decreases."
+    },
+    {
+      "type": "accordion",
+      "variant": "find-error",
+      "title": "Exercise 6: Find the Off-by-One Error",
+      "language": "java",
+      "code": "// Goal: print the sum of all numbers from 1 to n (inclusive)\n// For n=5, expected output: 15\npublic class SumBug {\n    public static void main(String[] args) {\n        int n = 5;\n        int sum = 0;\n        for (int i = 1; i < n; i++) {  // Bug here?\n            sum += i;\n        }\n        System.out.println(\"Sum 1 to \" + n + \": \" + sum);\n    }\n}",
+      "error": "Logical Error (off-by-one): The condition `i < n` stops the loop at `i = n-1 = 4`. The number `n` itself (5) is never added. Output is `Sum 1 to 5: 10` (which is 1+2+3+4=10), not 15. The correct sum of 1..5 is 15.",
+      "fix": "public class SumBug {\n    public static void main(String[] args) {\n        int n = 5;\n        int sum = 0;\n        for (int i = 1; i <= n; i++) {  // Changed < to <=\n            sum += i;\n        }\n        System.out.println(\"Sum 1 to \" + n + \": \" + sum);  // Sum 1 to 5: 15\n    }\n}",
+      "explanation": "The loop `for (int i = 1; i < n; i++)` iterates with i = 1, 2, 3, 4 (stops when i=5 because 5 < 5 is false). To include n itself, use `i <= n`. This off-by-one (`<` vs `<=`) is the single most common loop bug in programming. **Rule of thumb**: If you want to include the last value, use `<=`. If the last value is a boundary to stop before, use `<`."
+    },
+
+    { "type": "divider" },
+    { "type": "heading", "level": 2, "content": "📊 Pattern Printing Formula Guide" },
+    { "type": "table",
+      "headers": ["Pattern", "Stars on row i", "Leading spaces on row i (n=size)"],
+      "rows": [
+        ["Right triangle (left-aligned)",     "`i` stars",       "0 spaces"],
+        ["Right triangle (right-aligned)",    "`i` stars",       "`n-i` spaces"],
+        ["Inverted triangle (left-aligned)",  "`n-i+1` stars",   "0 spaces"],
+        ["Pyramid (centered)",                "`i` stars",       "`n-i` spaces"],
+        ["Diamond upper",                     "`i` stars",       "`mid-i` spaces"],
+        ["Diamond lower",                     "`i` stars",       "`mid-i` spaces (i counts down)"]
+      ]
+    },
+    { "type": "callout", "variant": "note", "label": "Exam Pattern Approach", "content": "In CSE110 exams, you may be asked to write OR trace pattern-printing code. For tracing: manually execute every iteration and write the output character by character. For writing: identify (1) number of rows, (2) characters per row as a function of row number, (3) spacing formula. Spending 2 minutes planning pays off in 5 minutes of correct code." }
+  ]
+}

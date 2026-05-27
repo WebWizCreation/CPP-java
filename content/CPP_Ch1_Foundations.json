@@ -1,0 +1,126 @@
+{
+  "id": "CPP_Ch1_Foundations",
+  "track": "cpp",
+  "chapter": 1,
+  "title": "Foundations & I/O",
+  "description": "Build an unshakeable C++ foundation: variables, data types, cin/cout, operators, and the mental model for thinking in C++. These concepts are the scaffold upon which every competitive programming solution is built — master them until they are completely automatic.",
+
+  "sections": [
+    { "type": "heading", "level": 2, "content": "⚡ The Competitive Programmer's Template" },
+    { "type": "paragraph", "content": "Every competitive programmer starts from a template. This is not laziness — it is efficiency. Your goal in a contest is to **think about algorithms, not boilerplate**. Memorize this template until you can type it from muscle memory in under 10 seconds." },
+    { "type": "code", "language": "cpp", "title": "The Standard Competitive Programming Template", "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n\n    // Your solution here\n\n    return 0;\n}" },
+    { "type": "table",
+      "headers": ["Line", "What It Does", "Why It Matters"],
+      "rows": [
+        ["`#include <bits/stdc++.h>`", "Includes the ENTIRE C++ standard library in one line", "No need to remember individual headers like `<vector>`, `<algorithm>`, etc."],
+        ["`using namespace std;`",     "Allows using `cout` instead of `std::cout`",          "Saves keystrokes in every line of output/input"],
+        ["`ios_base::sync_with_stdio(false);`", "Unsyncs C and C++ I/O streams", "Makes `cin`/`cout` dramatically faster — essential for large input"],
+        ["`cin.tie(NULL);`",           "Unties `cin` from `cout`",                            "Prevents flushing `cout` before every `cin` — another speed boost"]
+      ]
+    },
+    { "type": "callout", "variant": "danger", "label": "Critical Warning", "content": "After adding `ios_base::sync_with_stdio(false)`, **do NOT mix `scanf`/`printf` with `cin`/`cout`** in the same program. The desync will cause undefined output order. Pick one and stick with it." },
+
+    { "type": "heading", "level": 2, "content": "📦 Data Types & Size" },
+    { "type": "paragraph", "content": "Choosing the **right data type** is a competitive programming skill. Using `int` when you need `long long` causes silent overflow — one of the most common bug sources in contests. Know your type sizes." },
+    { "type": "table",
+      "headers": ["Type", "Bytes", "Range", "Use Case"],
+      "rows": [
+        ["`bool`",              "1",  "`true` / `false`",                               "Flags, visited arrays"],
+        ["`int`",               "4",  "±2.1 × 10⁹  (~2 billion)",                       "Default for most problems"],
+        ["`long long`",         "8",  "±9.2 × 10¹⁸  (~9.2 quintillion)",               "When values exceed ~2×10⁹"],
+        ["`unsigned long long`","8",  "0 to ~1.8 × 10¹⁹",                              "When you need positive-only huge numbers"],
+        ["`double`",            "8",  "~15–16 sig. digits",                              "Geometry, floating-point math"],
+        ["`long double`",       "16", "~18–19 sig. digits",                              "High-precision geometry"],
+        ["`char`",              "1",  "-128 to 127 (or 0–255 unsigned)",                "Single characters, small bitmasks"],
+        ["`string`",            "dynamic", "Any length",                                "Text processing problems"]
+      ]
+    },
+    { "type": "callout", "variant": "tip", "label": "Golden Rule for Overflow", "content": "If a problem says n ≤ 10⁵ and you're computing n² somewhere, that's up to 10¹⁰ — which overflows `int` (max ~2×10⁹). **Always use `long long`** when intermediate computations can exceed 10⁸. The cost is negligible; the bug-savings are enormous." },
+    { "type": "code", "language": "cpp", "title": "Overflow Demonstration", "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    int a = 1000000000;  // 1 billion (fits in int)\n    int b = 3;\n    \n    // WRONG: int * int overflows!\n    cout << a * b << \"\\n\";           // Prints: -294967296  (overflow!)\n    \n    // CORRECT: cast to long long first\n    cout << (long long)a * b << \"\\n\"; // Prints: 3000000000\n    \n    // ALSO CORRECT: use long long variables\n    long long x = 1000000000LL;\n    cout << x * b << \"\\n\";            // Prints: 3000000000\n    return 0;\n}" },
+
+    { "type": "heading", "level": 2, "content": "🔠 Variable Declaration & Initialization" },
+    { "type": "paragraph", "content": "C++ is **fast but unforgiving** — uninitialized local variables contain **garbage values** (random memory content). This causes mysterious bugs that are very hard to track down. Always initialize." },
+    { "type": "code", "language": "cpp", "title": "Declaration Best Practices", "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    // Basic declarations\n    int x = 0;\n    long long big = 0LL;\n    double pi = 3.14159;\n    char grade = 'A';\n    bool found = false;\n    string name = \"Ashik\";\n\n    // Multiple declarations\n    int a = 0, b = 0, c = 0;\n\n    // Uninitialized — DANGEROUS in C++!\n    int garbage;                // Contains random value\n    // cout << garbage;         // Undefined behavior!\n\n    // Constants\n    const int MOD = 1e9 + 7;   // Standard modulus for CP\n    const int INF = 1e9;       // Infinity sentinel value\n    const long long LINF = 2e18; // Long long infinity\n\n    // auto keyword (deduces type)\n    auto y = 42;       // y is int\n    auto z = 42LL;     // z is long long\n    auto s = \"hello\"s; // s is string (C++14)\n    return 0;\n}" },
+
+    { "type": "heading", "level": 2, "content": "📥📤 Input & Output Mastery" },
+    { "type": "paragraph", "content": "Efficient I/O is **not optional** in competitive programming. A slow I/O routine with the correct algorithm can still TLE (Time Limit Exceeded). Master `cin`, `cout`, and their formatting." },
+    { "type": "code", "language": "cpp", "title": "I/O Patterns You Must Know", "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n\n    // ── Reading a single value ──\n    int n;\n    cin >> n;\n\n    // ── Reading multiple values ──\n    int a, b;\n    cin >> a >> b;  // whitespace-separated on one or many lines\n\n    // ── Reading n values into an array ──\n    int arr[100005];\n    for (int i = 0; i < n; i++) cin >> arr[i];\n\n    // ── Reading a full line ──\n    string line;\n    cin.ignore();          // Clear leftover newline from previous cin\n    getline(cin, line);    // Reads until newline\n\n    // ── Output ──\n    cout << \"Hello, \" << name << \"!\\n\";\n    cout << a + b << \"\\n\";        // '\\n' is faster than endl!\n    cout << fixed << setprecision(2) << 3.14159 << \"\\n\"; // 3.14\n\n    return 0;\n}" },
+    { "type": "callout", "variant": "warning", "label": "\\n vs endl Performance", "content": "`endl` flushes the output buffer every time it's called — this is **significantly slower** than `'\\n'`. In a loop printing 10⁵ lines, `endl` can cause TLE. Always use `'\\n'` or `\"\\n\"` in competitive programming." },
+
+    { "type": "heading", "level": 2, "content": "🔧 Operators & Precedence" },
+    { "type": "paragraph", "content": "Operator mistakes cause silent wrong answers. The most dangerous ones are **integer division**, **operator precedence surprises**, and **bitwise vs logical operators**." },
+    { "type": "code", "language": "cpp", "title": "Critical Operator Behaviors", "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    // Integer division (truncates toward zero)\n    cout << 7 / 2 << \"\\n\";      // 3\n    cout << -7 / 2 << \"\\n\";     // -3 (not -4!  truncates TOWARD ZERO)\n    cout << 7 % 2 << \"\\n\";      // 1\n    cout << -7 % 2 << \"\\n\";     // -1 (sign follows dividend in C++)\n\n    // Bitwise operators (crucial for CP)\n    int x = 12;   // binary: 1100\n    int y = 10;   // binary: 1010\n    cout << (x & y) << \"\\n\";   // AND:  1000 = 8\n    cout << (x | y) << \"\\n\";   // OR:   1110 = 14\n    cout << (x ^ y) << \"\\n\";   // XOR:  0110 = 6\n    cout << (~x) << \"\\n\";      // NOT: -13 (two's complement)\n    cout << (x << 1) << \"\\n\";  // Left shift = multiply by 2: 24\n    cout << (x >> 1) << \"\\n\";  // Right shift = divide by 2: 6\n\n    // Ternary operator\n    int a = 5, b = 3;\n    int mx = (a > b) ? a : b;   // max(a,b) = 5\n    cout << mx << \"\\n\";\n    return 0;\n}" },
+    { "type": "table",
+      "headers": ["Bit Operation", "Effect", "CP Use Case"],
+      "rows": [
+        ["`n & 1`",      "Check if `n` is odd (result = 0 or 1)", "Parity checks, bitmask iteration"],
+        ["`n | (1<<k)`", "Set the k-th bit",                      "Bitmask DP state manipulation"],
+        ["`n & ~(1<<k)`","Clear the k-th bit",                    "Toggle states in bitmask"],
+        ["`n << 1`",     "Multiply by 2",                         "Fast powers of 2"],
+        ["`n >> 1`",     "Divide by 2 (floor)",                   "Binary search midpoint: `(l+r)>>1`"],
+        ["`n ^ n`",      "Always 0",                              "XOR self-cancellation"],
+        ["`n ^ 0`",      "Always `n`",                            "XOR identity"]
+      ]
+    },
+
+    { "type": "heading", "level": 2, "content": "📊 Reading Multiple Test Cases" },
+    { "type": "paragraph", "content": "Codeforces problems almost always involve **T test cases**. Know this pattern by heart — it appears in virtually every contest problem." },
+    { "type": "code", "language": "cpp", "title": "Standard Multi-Test Case Template", "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nvoid solve() {\n    // ── Read input for THIS test case ──\n    int n;\n    cin >> n;\n    \n    // ── Process ──\n    // ...\n    \n    // ── Output result ──\n    cout << n * 2 << \"\\n\";\n}\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n    \n    int t;\n    cin >> t;        // Number of test cases\n    \n    while (t--) {   // t-- evaluates to t, then decrements\n        solve();\n    }\n    \n    return 0;\n}" },
+    { "type": "callout", "variant": "tip", "label": "The solve() Pattern", "content": "Always put your logic in a separate `solve()` function. This ensures clean variable scope — variables from one test case cannot accidentally interfere with the next. It's the standard professional CP pattern." },
+
+    { "type": "divider" },
+    { "type": "heading", "level": 2, "content": "🧪 Interactive Exercises" },
+
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 1: Integer Overflow & Long Long",
+      "language": "cpp",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    int a = 100000;\n    int b = 100000;\n    cout << a * b << \"\\n\";\n    cout << (long long)a * b << \"\\n\";\n    long long c = 100000LL * 100000LL;\n    cout << c << \"\\n\";\n    return 0;\n}",
+      "answer": "1410065408\n10000000000\n10000000000",
+      "explanation": "Line 1: `int * int` = 10,000,000,000 which overflows `int` (max ~2.1 billion), producing garbage value `1410065408`. Line 2: casting `a` to `long long` forces long long multiplication — correct result. Line 3: using `100000LL` suffix forces long long arithmetic — also correct. Always use `LL` suffix or cast when multiplying large numbers."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 2: Operator Precedence Trap",
+      "language": "cpp",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    int x = 5;\n    cout << x++ << \"\\n\";\n    cout << ++x << \"\\n\";\n    \n    int a = 10, b = 3;\n    cout << a / b << \"\\n\";\n    cout << a % b << \"\\n\";\n    cout << -a % b << \"\\n\";\n    return 0;\n}",
+      "answer": "5\n7\n3\n1\n-1",
+      "explanation": "`x++` prints 5 (post-increment: use then increment, x=6). `++x` increments first to 7, then prints 7. `10/3=3` (integer division). `10%3=1`. `-10%3=-1` (C++ modulo: sign follows dividend, NOT divisor)."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 3: Read N Numbers and Print Their Sum",
+      "language": "cpp",
+      "code": "// Problem: Read an integer N, then N space-separated integers.\n// Print their sum. Use long long for the sum.\n// Example: N=4, values: 100000 200000 300000 400000\n// Output: 1000000",
+      "approach": "Use the standard template. Read `n`, then loop `n` times reading each value with `cin >> val`. Accumulate into a `long long sum`. Print sum. Use `\\n` not `endl`.",
+      "solution": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n    \n    int n;\n    cin >> n;\n    \n    long long sum = 0;   // Use long long to avoid overflow\n    for (int i = 0; i < n; i++) {\n        long long val;\n        cin >> val;\n        sum += val;\n    }\n    \n    cout << sum << \"\\n\";\n    return 0;\n}",
+      "explanation": "Note the use of `long long sum` — even if each value fits in `int`, their sum might not. This is a common competitive programming pattern. The `ios_base::sync_with_stdio(false)` + `cin.tie(NULL)` is crucial when N is large (e.g., 10⁵ values)."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 4: T Test Cases — Min and Max",
+      "language": "cpp",
+      "code": "// Problem: T test cases. Each has N and then N integers.\n// For each test case, print the minimum and maximum values.\n// Constraints: T ≤ 100, N ≤ 1000, values: 1 ≤ v ≤ 10⁹",
+      "approach": "Use the multi-test-case `solve()` pattern. Read N, then the N values. Track min/max using `INT_MAX`/`INT_MIN` sentinels, or use `min()`/`max()` from `<algorithm>` (included via `bits/stdc++.h`).",
+      "solution": "#include <bits/stdc++.h>\nusing namespace std;\n\nvoid solve() {\n    int n;\n    cin >> n;\n    \n    int mn = INT_MAX, mx = INT_MIN;\n    for (int i = 0; i < n; i++) {\n        int v;\n        cin >> v;\n        mn = min(mn, v);\n        mx = max(mx, v);\n    }\n    \n    cout << mn << \" \" << mx << \"\\n\";\n}\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n    int t;\n    cin >> t;\n    while (t--) solve();\n    return 0;\n}",
+      "explanation": "`INT_MAX` is ~2.1 billion — guaranteed larger than any value, so the first comparison always updates `mn`. Similarly `INT_MIN` is ~-2.1 billion. Using the `solve()` function guarantees clean variable scope per test case. `min()` and `max()` are from `<algorithm>`, automatically included via `bits/stdc++.h`."
+    },
+
+    { "type": "divider" },
+    { "type": "heading", "level": 2, "content": "📋 Chapter Summary" },
+    { "type": "list", "ordered": false, "items": [
+      "**Template**: `#include <bits/stdc++.h>` + `ios_base::sync_with_stdio(false)` + `cin.tie(NULL)` — memorize this.",
+      "**Types**: Use `long long` whenever values can exceed ~2×10⁸ in intermediate computation.",
+      "**Overflow**: `int * int` can overflow silently. Cast to `(long long)` or use `LL` suffix.",
+      "**Division**: `-7 / 2 = -3` in C++ (truncates toward zero, NOT floor). `-7 % 2 = -1`.",
+      "**I/O Speed**: Always use `'\\n'` instead of `endl`. `endl` flushes and is 10–100x slower.",
+      "**Uninitialized**: Always initialize local variables. Uninitialized C++ variables contain garbage.",
+      "**Multi-test**: Use `void solve()` pattern with `while(t--)` loop for T test cases.",
+      "**Bitwise**: `n & 1` checks odd/even. `n << 1` doubles. `n >> 1` halves. `(l+r)>>1` is a safe midpoint."
+    ]}
+  ]
+}

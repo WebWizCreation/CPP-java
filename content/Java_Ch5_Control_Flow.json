@@ -1,0 +1,129 @@
+{
+  "id": "Java_Ch5_Control_Flow",
+  "track": "java",
+  "chapter": 5,
+  "title": "Control Flow",
+  "description": "Master Java's decision-making and loop structures — the conditional and iterative constructs that determine how your program flows. CSE110 exams test control flow through tracing exercises, error spotting, and predicting exact output. This chapter covers every form: if/else chains, switch (classic and expression), ternary, for, while, and do-while — with special focus on the subtle behaviors that distinguish correct code from buggy code.",
+
+  "sections": [
+    { "type": "heading", "level": 2, "content": "🔀 if / else if / else" },
+    { "type": "paragraph", "content": "The `if` statement is the backbone of decision-making. Java evaluates conditions strictly as `boolean` expressions — unlike C/C++, **you cannot use an integer as a condition**. Every `if` condition must produce `true` or `false`." },
+    { "type": "code", "language": "java", "title": "if/else Forms — Complete Reference", "code": "public class IfForms {\n    public static void main(String[] args) {\n        int x = 42;\n\n        // ── Simple if ──\n        if (x > 0) System.out.println(\"Positive\");  // braces optional for single stmt\n\n        // ── if-else ──\n        if (x % 2 == 0) {\n            System.out.println(\"Even\");\n        } else {\n            System.out.println(\"Odd\");\n        }\n\n        // ── if-else if-else chain ──\n        int score = 78;\n        if (score >= 90)      System.out.println(\"A\");\n        else if (score >= 80) System.out.println(\"B\");\n        else if (score >= 70) System.out.println(\"C\");\n        else if (score >= 60) System.out.println(\"D\");\n        else                  System.out.println(\"F\");\n        // Output: C\n\n        // ── Nested if ──\n        int a = 5, b = 10;\n        if (a > 0) {\n            if (b > 0) {\n                System.out.println(\"Both positive\");\n            }\n        }\n\n        // ── Compound conditions ──\n        int age = 25;\n        if (age >= 18 && age <= 65) System.out.println(\"Working age\");\n        if (age < 18 || age > 65)   System.out.println(\"Outside working age\");\n    }\n}" },
+    { "type": "callout", "variant": "danger", "label": "= vs == in Conditions", "content": "Unlike C/C++, `if (x = 5)` is a **compile-time error** in Java — you cannot use assignment as a condition since `int` is not `boolean`. However, `if (b = true)` compiles and runs (it assigns `true` to `b`), which is a logical trap. Always use `==` for comparison." },
+
+    { "type": "heading", "level": 2, "content": "🔢 Ternary Operator" },
+    { "type": "paragraph", "content": "The ternary operator `condition ? valueIfTrue : valueIfFalse` is a **single expression** that evaluates to one of two values. It is commonly tested in CSE110 output prediction questions because its evaluation order surprises students." },
+    { "type": "code", "language": "java", "title": "Ternary Operator — All Cases", "code": "public class TernaryDemo {\n    public static void main(String[] args) {\n        int x = 7;\n\n        // ── Basic form ──\n        String result = (x > 5) ? \"big\" : \"small\";\n        System.out.println(result);                   // big\n\n        // ── Directly in print ──\n        System.out.println(x % 2 == 0 ? \"Even\" : \"Odd\");  // Odd\n\n        // ── Nested ternary (use cautiously) ──\n        int n = 0;\n        String sign = (n > 0) ? \"positive\" : (n < 0) ? \"negative\" : \"zero\";\n        System.out.println(sign);  // zero\n\n        // ── With arithmetic ──\n        int abs = (x >= 0) ? x : -x;  // absolute value\n        System.out.println(abs);       // 7\n\n        // ── Ternary result must match type ──\n        // int val = (x > 5) ? \"big\" : 0;  // COMPILE ERROR: String vs int\n        int val = (x > 5) ? 100 : 0;\n        System.out.println(val);  // 100\n    }\n}" },
+    { "type": "callout", "variant": "warning", "label": "Ternary is an Expression, not a Statement", "content": "A ternary produces a **value**. Both branches must be **type-compatible** — you can't mix `String` and `int` as the two options. A ternary can be used wherever a value is expected: in assignments, as arguments to methods, or in print statements." },
+
+    { "type": "heading", "level": 2, "content": "🔄 switch Statement" },
+    { "type": "paragraph", "content": "The `switch` statement tests one expression against multiple constant values. The most important behavior to understand for CSE110 is **fall-through**: without `break`, execution continues into the next case." },
+    { "type": "code", "language": "java", "title": "switch — Classic Form with Fall-Through Analysis", "code": "public class SwitchDemo {\n    public static void main(String[] args) {\n        int day = 3;\n\n        // ── Clean switch (each case has break) ──\n        switch (day) {\n            case 1: System.out.println(\"Monday\");    break;\n            case 2: System.out.println(\"Tuesday\");   break;\n            case 3: System.out.println(\"Wednesday\"); break;\n            case 4: System.out.println(\"Thursday\");  break;\n            case 5: System.out.println(\"Friday\");    break;\n            default: System.out.println(\"Weekend\");\n        }\n        // Output: Wednesday\n\n        // ── Intentional fall-through ──\n        switch (day) {\n            case 1:\n            case 2:\n            case 3:\n            case 4:\n            case 5:\n                System.out.println(\"Weekday\");  // all 1-5 reach here\n                break;\n            default:\n                System.out.println(\"Weekend\");\n        }\n        // Output: Weekday\n\n        // ── switch on String (Java 7+) ──\n        String color = \"red\";\n        switch (color) {\n            case \"red\":   System.out.println(\"Stop\");     break;\n            case \"green\": System.out.println(\"Go\");       break;\n            case \"yellow\":System.out.println(\"Caution\");  break;\n            default:      System.out.println(\"Invalid\");\n        }\n        // Output: Stop\n    }\n}" },
+    { "type": "callout", "variant": "tip", "label": "What switch Can Accept", "content": "In Java, `switch` works with: `byte`, `short`, `int`, `char`, `String` (Java 7+), and `enum`. It does **NOT** work with `long`, `float`, `double`, or `boolean`. Each `case` value must be a **compile-time constant** — you cannot use a variable as a case value." },
+    { "type": "code", "language": "java", "title": "switch Expression (Java 14+ — modern form)", "code": "public class SwitchExpression {\n    public static void main(String[] args) {\n        int day = 3;\n\n        // ── Arrow case: no fall-through, no break needed ──\n        String name = switch (day) {\n            case 1 -> \"Monday\";\n            case 2 -> \"Tuesday\";\n            case 3 -> \"Wednesday\";\n            case 4 -> \"Thursday\";\n            case 5 -> \"Friday\";\n            default -> \"Weekend\";\n        };\n        System.out.println(name);  // Wednesday\n\n        // ── Multiple values per case ──\n        String type = switch (day) {\n            case 1, 2, 3, 4, 5 -> \"Weekday\";\n            case 6, 7           -> \"Weekend\";\n            default             -> \"Invalid\";\n        };\n        System.out.println(type);  // Weekday\n    }\n}" },
+
+    { "type": "heading", "level": 2, "content": "🔁 The for Loop" },
+    { "type": "paragraph", "content": "The `for` loop is Java's most structured iteration construct. Its three-part header — `initialization; condition; update` — all execute in a well-defined order. **Tracing this order** is the key to predicting `for` loop output." },
+    { "type": "table",
+      "headers": ["Step", "What executes", "When?"],
+      "rows": [
+        ["1. Init",      "`int i = 0`",  "Once, before loop starts"],
+        ["2. Condition", "`i < 5`",      "Before EVERY iteration (including first)"],
+        ["3. Body",      "{ ... }",      "If condition is true"],
+        ["4. Update",    "`i++`",        "After EVERY iteration body executes"],
+        ["5. → Back to 2", "Repeat",     "Until condition is false"]
+      ]
+    },
+    { "type": "code", "language": "java", "title": "for Loop — All Forms", "code": "public class ForLoops {\n    public static void main(String[] args) {\n        // ── Standard forward ──\n        for (int i = 0; i < 5; i++) System.out.print(i + \" \");\n        System.out.println();  // 0 1 2 3 4\n\n        // ── 1-indexed ──\n        for (int i = 1; i <= 5; i++) System.out.print(i + \" \");\n        System.out.println();  // 1 2 3 4 5\n\n        // ── Reverse ──\n        for (int i = 5; i >= 1; i--) System.out.print(i + \" \");\n        System.out.println();  // 5 4 3 2 1\n\n        // ── Step by 2 ──\n        for (int i = 0; i <= 10; i += 2) System.out.print(i + \" \");\n        System.out.println();  // 0 2 4 6 8 10\n\n        // ── Enhanced for-each (arrays and collections) ──\n        int[] arr = {10, 20, 30, 40};\n        for (int x : arr) System.out.print(x + \" \");\n        System.out.println();  // 10 20 30 40\n\n        // ── Multiple variables in header ──\n        for (int i = 0, j = 10; i < j; i++, j--)\n            System.out.print(\"(\" + i + \",\" + j + \") \");\n        System.out.println();  // (0,10) (1,9) (2,8) (3,7) (4,6)\n    }\n}" },
+
+    { "type": "heading", "level": 2, "content": "⏳ while and do-while" },
+    { "type": "paragraph", "content": "Use `while` when you don't know in advance how many iterations are needed — the condition is checked **before** each iteration. Use `do-while` when the body must run **at least once** regardless of the condition." },
+    { "type": "code", "language": "java", "title": "while and do-while — Side-by-Side", "code": "public class WhileDemo {\n    public static void main(String[] args) {\n        // ── while: may not execute at all ──\n        int n = 0;\n        while (n > 0) {         // 0 > 0 is false immediately\n            System.out.println(\"while body\");  // NEVER printed\n            n--;\n        }\n        System.out.println(\"After while: \" + n);  // After while: 0\n\n        // ── do-while: always executes at least once ──\n        int m = 0;\n        do {\n            System.out.println(\"do body\");  // Printed ONCE\n            m--;\n        } while (m > 0);          // 0 > 0 is false: stops after 1 run\n        System.out.println(\"After do-while: \" + m);  // After do-while: -1\n\n        // ── do-while: digit extraction (classic use case) ──\n        int num = 1234;\n        System.out.print(\"Digits reversed: \");\n        do {\n            System.out.print(num % 10 + \" \");  // last digit\n            num /= 10;\n        } while (num > 0);\n        System.out.println();  // 4 3 2 1\n        // Works correctly even for num=0 (prints 0, then stops)\n    }\n}" },
+    { "type": "callout", "variant": "note", "label": "Key Difference: while vs do-while", "content": "The difference matters when the condition might be **false from the very start**. `while(false)` — body never runs. `do{...}while(false)` — body runs exactly once. In CSE110 exams, questions often hinge on this distinction with tricky initial values." },
+
+    { "type": "heading", "level": 2, "content": "🚦 break, continue & Labeled Statements" },
+    { "type": "paragraph", "content": "`break` exits the **innermost** loop or switch. `continue` skips to the **next iteration** of the innermost loop. Java's **labeled break/continue** targets an outer loop — this is the Java answer to goto for nested loop exits." },
+    { "type": "code", "language": "java", "title": "break, continue, and Labeled break", "code": "public class BreakContinue {\n    public static void main(String[] args) {\n        // ── break: exit on first match ──\n        for (int i = 0; i < 10; i++) {\n            if (i == 5) break;\n            System.out.print(i + \" \");  // 0 1 2 3 4\n        }\n        System.out.println();\n\n        // ── continue: skip multiples of 3 ──\n        for (int i = 1; i <= 10; i++) {\n            if (i % 3 == 0) continue;\n            System.out.print(i + \" \");  // 1 2 4 5 7 8 10\n        }\n        System.out.println();\n\n        // ── Labeled break: exit BOTH loops ──\n        outer:\n        for (int i = 0; i < 3; i++) {\n            for (int j = 0; j < 3; j++) {\n                if (i == 1 && j == 1) break outer;  // exits both loops\n                System.out.print(\"(\" + i + \",\" + j + \") \");\n            }\n        }\n        System.out.println();  // (0,0) (0,1) (0,2) (1,0)\n\n        // ── Labeled continue ──\n        outer2:\n        for (int i = 0; i < 3; i++) {\n            for (int j = 0; j < 3; j++) {\n                if (j == 1) continue outer2;  // skip to next i\n                System.out.print(\"(\" + i + \",\" + j + \") \");\n            }\n        }\n        System.out.println();  // (0,0) (1,0) (2,0)\n    }\n}" },
+
+    { "type": "divider" },
+    { "type": "heading", "level": 2, "content": "🧪 Interactive Exercises" },
+
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 1: if-else Chain Tracing",
+      "language": "java",
+      "code": "public class Q1 {\n    public static void main(String[] args) {\n        int x = 15;\n        if (x > 20)        System.out.println(\"A\");\n        else if (x > 10)   System.out.println(\"B\");\n        else if (x > 5)    System.out.println(\"C\");\n        else               System.out.println(\"D\");\n\n        if (x > 10)        System.out.println(\"E\");\n        if (x > 5)         System.out.println(\"F\");\n        if (x > 20)        System.out.println(\"G\");\n    }\n}",
+      "answer": "B\nE\nF",
+      "explanation": "First block: `x=15`. `15>20` false, `15>10` **true** → prints B. The chain stops (only one branch executes). Second block: `15>10` true → E. Third: `15>5` true → F. Fourth: `15>20` false → nothing. Note: the second/third/fourth are separate `if` statements (not `else if`), so ALL are evaluated independently."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 2: switch Fall-Through Trap",
+      "language": "java",
+      "code": "public class Q2 {\n    public static void main(String[] args) {\n        int n = 2;\n        switch (n) {\n            case 1:\n                System.out.println(\"One\");\n            case 2:\n                System.out.println(\"Two\");\n            case 3:\n                System.out.println(\"Three\");\n                break;\n            case 4:\n                System.out.println(\"Four\");\n            default:\n                System.out.println(\"Default\");\n        }\n    }\n}",
+      "answer": "Two\nThree",
+      "explanation": "`n=2` matches case 2. Prints 'Two'. No `break` → falls through to case 3, prints 'Three'. The `break` after case 3 exits the switch. Cases 4 and default are not reached. Key: fall-through starts from the **matching** case and continues until a `break` or end of switch."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 3: for Loop with break and continue",
+      "language": "java",
+      "code": "public class Q3 {\n    public static void main(String[] args) {\n        int sum = 0;\n        for (int i = 1; i <= 10; i++) {\n            if (i % 2 == 0) continue;\n            if (i > 7) break;\n            sum += i;\n        }\n        System.out.println(sum);\n    }\n}",
+      "answer": "16",
+      "explanation": "Loop: i=1 (odd, not >7) sum+=1→1. i=2 (even) continue. i=3 (odd) sum+=3→4. i=4 continue. i=5 (odd) sum+=5→9. i=6 continue. i=7 (odd) sum+=7→16. i=8 (8>7) break. Final sum=16."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 4: while vs do-while with Same Condition",
+      "language": "java",
+      "code": "public class Q4 {\n    public static void main(String[] args) {\n        int a = 5;\n        while (a < 5) {\n            System.out.print(\"W\" + a + \" \");\n            a++;\n        }\n        System.out.println(\"after-while\");\n\n        int b = 5;\n        do {\n            System.out.print(\"D\" + b + \" \");\n            b++;\n        } while (b < 5);\n        System.out.println(\"after-do\");\n    }\n}",
+      "answer": "after-while\nD5 after-do",
+      "explanation": "`while(5<5)` is false immediately → body never runs. Prints `after-while`. `do...while`: body runs FIRST (prints D5, b becomes 6), then checks `6<5` which is false → exits. Prints `after-do`. This is the fundamental difference: while checks condition first, do-while checks it last."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 5: Labeled break in Nested Loops (Tricky!)",
+      "language": "java",
+      "code": "public class Q5 {\n    public static void main(String[] args) {\n        int count = 0;\n        outer:\n        for (int i = 1; i <= 4; i++) {\n            for (int j = 1; j <= 4; j++) {\n                if (i * j > 6) break outer;\n                count++;\n            }\n        }\n        System.out.println(count);\n    }\n}",
+      "answer": "7",
+      "explanation": "Trace step by step. i=1: j=1(1*1=1, not >6, count=1), j=2(1*2=2, count=2), j=3(1*3=3, count=3), j=4(1*4=4, count=4) — inner loop completes fully. i=2: j=1(2*1=2, count=5), j=2(2*2=4, count=6), j=3(2*3=6, 6>6? NO, count=7), j=4(2*4=8, 8>6? YES → `break outer` exits BOTH loops). Final count = 7. The labeled break stops immediately without incrementing count again."
+    },
+    {
+      "type": "accordion",
+      "variant": "find-error",
+      "title": "Exercise 6: The Dangling else Trap",
+      "language": "java",
+      "code": "public class Q6 {\n    public static void main(String[] args) {\n        int x = 15;\n        if (x > 10)\n            if (x > 20)\n                System.out.println(\"Greater than 20\");\n        else\n            System.out.println(\"10 or less\");  // When does this print?\n    }\n}",
+      "error": "Logical Error (misunderstood indentation). The `else` pairs with the **nearest unmatched if** — which is `if (x > 20)`, NOT `if (x > 10)`. So when x=15: outer if is true, inner if (15>20) is false → the else prints 'Greater than 20'? No: the else runs when inner if fails. Output is actually `10 or less`. But the programmer's intent was probably `10 or less` to print when x≤10.",
+      "fix": "public class Q6 {\n    public static void main(String[] args) {\n        int x = 15;\n        // Fix 1: Use braces to make pairing explicit\n        if (x > 10) {\n            if (x > 20) {\n                System.out.println(\"Greater than 20\");\n            }\n        } else {\n            System.out.println(\"10 or less\");  // Now correctly pairs with outer if\n        }\n        // With x=15: outer true, inner false → nothing. Correct.\n\n        // Fix 2 (if the original intent was different):\n        if (x > 10) {\n            if (x > 20) {\n                System.out.println(\"Greater than 20\");\n            } else {\n                System.out.println(\"Between 11 and 20\");\n            }\n        }\n    }\n}",
+      "explanation": "This is the classic **dangling else** problem. Java (like most languages) resolves it with the rule: an `else` always pairs with the **nearest preceding unmatched if**. Without braces, the indentation is misleading. The else pairs with `if(x>20)`, not `if(x>10)`. For x=15: outer if (true) → inner if (false) → else runs → prints '10 or less'. **The golden rule: always use braces.** Ambiguous else is a real exam trap."
+    },
+
+    { "type": "divider" },
+    { "type": "heading", "level": 2, "content": "📋 Control Flow Quick Reference" },
+    { "type": "table",
+      "headers": ["Construct", "Condition checked", "At least 1 execution?", "Best for"],
+      "rows": [
+        ["`if/else`",   "At start",    "No (may skip entirely)",  "Branching decisions"],
+        ["`switch`",    "At start",    "No",                      "Multiple constant values"],
+        ["`for`",       "At start",    "No",                      "Known iteration count"],
+        ["`while`",     "At start",    "No",                      "Unknown count, pre-check"],
+        ["`do-while`",  "At end",      "**Yes — always**",        "Must run at least once"],
+        ["ternary `?:`","At evaluation","N/A (it's an expression)","Inline conditional value"]
+      ]
+    },
+    { "type": "list", "ordered": false, "items": [
+      "**Dangling else**: `else` always pairs with the nearest preceding unmatched `if`. Use braces to clarify.",
+      "**switch fall-through**: without `break`, execution falls into the next case. Usually a bug, sometimes intentional.",
+      "**switch types**: accepts `byte`, `short`, `int`, `char`, `String`, `enum` — NOT `long`, `float`, `double`.",
+      "**`break`** exits innermost loop/switch. **Labeled `break`** exits the named outer loop.",
+      "**`continue`** skips current iteration. **Labeled `continue`** skips to the next iteration of the named outer loop.",
+      "**do-while semicolon**: `} while (condition);` — the semicolon at the end is **required** and easy to forget."
+    ]}
+  ]
+}

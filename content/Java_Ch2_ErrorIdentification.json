@@ -1,0 +1,145 @@
+{
+  "id": "Java_Ch2_ErrorIdentification",
+  "track": "java",
+  "chapter": 2,
+  "title": "Error Identification",
+  "description": "Learn to classify, locate, and fix Java errors like a compiler. CSE110 exams heavily test your ability to identify compile-time errors (syntax/type issues the compiler catches), runtime errors (crashes during execution), and logical errors (wrong output but no crash). This chapter gives you the complete framework.",
+
+  "sections": [
+    { "type": "heading", "level": 2, "content": "🗂️ The Three Error Categories" },
+    { "type": "paragraph", "content": "Every error in a Java program belongs to one of three categories. Your first job when analyzing buggy code is to **classify** the error — because the approach to fixing it differs completely." },
+    { "type": "table",
+      "headers": ["Type", "Detected By", "When?", "Causes Crash?", "Example"],
+      "rows": [
+        ["**Compile-Time**", "Java Compiler (`javac`)", "Before running", "Program won't even start", "Missing semicolon, wrong type, undeclared variable"],
+        ["**Runtime**",      "JVM",                     "While running",  "Yes — `Exception` thrown",  "Divide by zero, `NullPointerException`, array out of bounds"],
+        ["**Logical**",      "You (the programmer)",    "After running",  "No crash, wrong output",    "Using `>` instead of `>=`, off-by-one in loops"]
+      ]
+    },
+    { "type": "callout", "variant": "tip", "label": "Pro Tip", "content": "In exams, you are usually asked to identify **which line** the error is on, **what type** of error it is, and **how to fix it**. Practice all three steps for every exercise." },
+
+    { "type": "heading", "level": 2, "content": "🔴 Compile-Time Errors (Syntax & Type)" },
+    { "type": "paragraph", "content": "The Java compiler is **strict and unforgiving**. It enforces the language grammar and type system before your program ever runs. These errors prevent compilation entirely." },
+    { "type": "heading", "level": 3, "content": "Common Compile-Time Error Patterns" },
+    { "type": "list", "ordered": false, "items": [
+      "**Missing semicolon**: `int x = 5` → should be `int x = 5;`",
+      "**Type mismatch**: `int x = 3.14;` → cannot assign `double` to `int` without cast",
+      "**Undeclared variable**: Using `y` before declaring it with a type",
+      "**Wrong method return type**: A `void` method having `return 5;`",
+      "**Access to non-static member**: Calling `this.field` in a `static` method",
+      "**Missing return statement**: A non-void method that doesn't always return a value",
+      "**Incompatible types in condition**: `if (x = 5)` — assignment in condition is not `boolean`"
+    ]},
+    { "type": "code", "language": "java", "title": "Compile-Time Error Showcase", "code": "public class CompileErrors {\n    // ERROR 1: Type mismatch\n    int x = 3.7;          // ERROR: cannot convert double to int\n\n    // ERROR 2: Missing return\n    int add(int a, int b) {\n        int sum = a + b;  // ERROR: missing return statement\n    }\n\n    // ERROR 3: Using undeclared variable\n    void printIt() {\n        System.out.println(y);  // ERROR: cannot find symbol 'y'\n    }\n\n    // ERROR 4: Assignment in condition\n    void check(int n) {\n        if (n = 0) {           // ERROR: int cannot be converted to boolean\n            System.out.println(\"zero\");\n        }\n    }\n}" },
+
+    { "type": "heading", "level": 2, "content": "🟠 Runtime Errors (Exceptions)" },
+    { "type": "paragraph", "content": "Runtime errors occur when code is **syntactically correct** but encounters an impossible situation during execution. Java throws an **Exception** object and terminates the program (unless caught with try-catch)." },
+    { "type": "table",
+      "headers": ["Exception", "Trigger", "Example Code"],
+      "rows": [
+        ["`ArithmeticException`",         "Division by zero (integers)",   "`int x = 5 / 0;`"],
+        ["`NullPointerException`",         "Using null reference",          "`String s = null; s.length();`"],
+        ["`ArrayIndexOutOfBoundsException`","Invalid array index",           "`int[] a = {1,2}; a[5];`"],
+        ["`StringIndexOutOfBoundsException`","Invalid string index",         "`\"hi\".charAt(10);`"],
+        ["`ClassCastException`",           "Illegal downcast",              "`Object o = \"hi\"; (Integer)o;`"],
+        ["`StackOverflowError`",           "Infinite recursion",            "Method calling itself endlessly"],
+        ["`NumberFormatException`",        "Parsing invalid string as number","`Integer.parseInt(\"abc\");`"]
+      ]
+    },
+    { "type": "callout", "variant": "warning", "label": "Note: Error vs Exception", "content": "`StackOverflowError` is technically an `Error` (not an `Exception`), but you won't be tested on this distinction in CSE110. Both are types of `Throwable`. Just know it's caused by infinite recursion." },
+    { "type": "code", "language": "java", "title": "Runtime Errors in Action", "code": "public class RuntimeErrors {\n    public static void main(String[] args) {\n\n        // Runtime Error 1: ArithmeticException\n        int a = 10, b = 0;\n        System.out.println(a / b);   // Throws: ArithmeticException: / by zero\n        // Note: a / 0.0 = Infinity (double division — no exception!)\n\n        // Runtime Error 2: NullPointerException\n        String s = null;\n        System.out.println(s.length()); // Throws: NullPointerException\n\n        // Runtime Error 3: ArrayIndexOutOfBounds\n        int[] arr = new int[3];        // valid indices: 0, 1, 2\n        System.out.println(arr[3]);    // Throws: ArrayIndexOutOfBoundsException: 3\n\n        // Runtime Error 4: ClassCastException\n        Object obj = Integer.valueOf(5);\n        String str = (String) obj;     // Throws: ClassCastException\n    }\n}" },
+
+    { "type": "heading", "level": 2, "content": "🟡 Logical Errors (The Sneaky Ones)" },
+    { "type": "paragraph", "content": "Logical errors are the **hardest to find** because the program compiles and runs without crashing — it just produces the **wrong answer**. There is no error message. You must reason about what the code does vs. what it should do." },
+    { "type": "heading", "level": 3, "content": "Classic Logical Error Patterns" },
+    { "type": "list", "ordered": false, "items": [
+      "**Off-by-one**: Loop runs one too many or too few times (`< n` vs `<= n`)",
+      "**Wrong operator**: Using `=` (assignment) instead of `==` (comparison) — valid in Java assignment expressions but logically wrong",
+      "**Integer division**: `double avg = sum / count;` truncates when `sum` and `count` are ints",
+      "**Wrong variable updated**: Incrementing `i` when you meant `j` in nested loops",
+      "**Condition inverted**: `if (x != 0)` instead of `if (x == 0)`",
+      "**Missing `break` in switch**: Fall-through causes unintended execution",
+      "**Shadowing a variable**: Declaring a local variable with same name as a field, hiding the field"
+    ]},
+    { "type": "code", "language": "java", "title": "Logical Error — Off-by-One", "code": "// GOAL: Print 1 through 5\npublic class OffByOne {\n    public static void main(String[] args) {\n        // BUGGY version:\n        for (int i = 1; i < 5; i++) {         // Bug: stops at 4!\n            System.out.println(i);\n        }\n        // Output: 1 2 3 4  (missing 5)\n\n        // FIXED version:\n        for (int i = 1; i <= 5; i++) {        // Correct: includes 5\n            System.out.println(i);\n        }\n        // Output: 1 2 3 4 5\n    }\n}" },
+
+    { "type": "divider" },
+    { "type": "heading", "level": 2, "content": "🧪 Interactive Exercises — Find the Error" },
+    { "type": "paragraph", "content": "For each exercise below, identify: **(1)** which line has the error, **(2)** what type of error it is, and **(3)** how to fix it. Click **Reveal** to check your answer." },
+
+    {
+      "type": "accordion",
+      "variant": "find-error",
+      "title": "Exercise 1: The Semicolon Ambush",
+      "language": "java",
+      "code": "public class E1 {\n    public static void main(String[] args) {\n        int x = 5;\n        if (x > 3);\n        {\n            System.out.println(\"x is greater than 3\");\n        }\n    }\n}",
+      "error": "Logical Error on Line 4: `if (x > 3);` — the semicolon after the condition creates an empty `if` body. The block `{ ... }` on line 5 is just a standalone block, always executed.",
+      "fix": "public class E1 {\n    public static void main(String[] args) {\n        int x = 5;\n        if (x > 3)  // Remove the semicolon\n        {\n            System.out.println(\"x is greater than 3\");\n        }\n    }\n}",
+      "explanation": "This is a **logical error**, not a compile-time error. The program compiles and runs. But `if (x > 3);` means 'if x > 3, do nothing', and the block below always runs regardless of the condition. This is one of the most common Java exam tricks."
+    },
+    {
+      "type": "accordion",
+      "variant": "find-error",
+      "title": "Exercise 2: Wrong Return Type",
+      "language": "java",
+      "code": "public class E2 {\n    public static void main(String[] args) {\n        System.out.println(multiply(3, 4));\n    }\n\n    static void multiply(int a, int b) {\n        return a * b;\n    }\n}",
+      "error": "Compile-Time Error on Line 6–8: The method `multiply` is declared as `void` but has a `return a * b;` statement. A `void` method cannot return a value.",
+      "fix": "public class E2 {\n    public static void main(String[] args) {\n        System.out.println(multiply(3, 4));\n    }\n\n    static int multiply(int a, int b) {  // Changed void to int\n        return a * b;\n    }\n}",
+      "explanation": "The return type `void` means 'returns nothing'. Since the method computes `a * b` and tries to return it, the return type must be `int`. Additionally, `println(multiply(3, 4))` would fail if `multiply` were truly void — you can't print the result of a void method."
+    },
+    {
+      "type": "accordion",
+      "variant": "find-error",
+      "title": "Exercise 3: Null Pointer Trap",
+      "language": "java",
+      "code": "public class E3 {\n    public static void main(String[] args) {\n        String name;\n        if (true) {\n            name = \"Ashik\";\n        }\n        System.out.println(name.toUpperCase());\n        System.out.println(name.length());\n    }\n}",
+      "error": "This code actually has NO error and works fine. `name` is assigned inside `if(true)` which always executes. However, if the condition were not always true (e.g., `if (x > 0)`), line 7 would be a **Compile-Time Error**: 'variable name might not have been initialized'.",
+      "fix": "// The code as written IS fine because if(true) always executes.\n// The lesson: always initialize variables at declaration:\npublic class E3 {\n    public static void main(String[] args) {\n        String name = null; // or String name = \"\";\n        if (true) {\n            name = \"Ashik\";\n        }\n        System.out.println(name.toUpperCase()); // ASHIK\n        System.out.println(name.length());       // 5\n    }\n}",
+      "explanation": "Java requires **definite assignment** — a local variable must be definitely assigned before use. Since `if(true)` is always true, the compiler knows `name` gets assigned. But `if(x > 0)` is uncertain, so the compiler would refuse. Best practice: always initialize variables when declaring them."
+    },
+    {
+      "type": "accordion",
+      "variant": "find-error",
+      "title": "Exercise 4: Array Bounds Crash",
+      "language": "java",
+      "code": "public class E4 {\n    public static void main(String[] args) {\n        int[] numbers = {10, 20, 30, 40, 50};\n        for (int i = 0; i <= numbers.length; i++) {\n            System.out.println(numbers[i]);\n        }\n    }\n}",
+      "error": "Runtime Error: `ArrayIndexOutOfBoundsException` on the last iteration. The array has indices 0–4 (`length` = 5), but `i <= numbers.length` allows `i` to reach **5**, which is out of bounds.",
+      "fix": "public class E4 {\n    public static void main(String[] args) {\n        int[] numbers = {10, 20, 30, 40, 50};\n        for (int i = 0; i < numbers.length; i++) {  // < not <=\n            System.out.println(numbers[i]);\n        }\n    }\n}",
+      "explanation": "Arrays in Java are **zero-indexed**. An array of size `n` has valid indices `0` through `n-1`. Using `i <= numbers.length` means the last value of `i` is `numbers.length` (which is 5), but `numbers[5]` doesn't exist — the valid max is `numbers[4]`. Always use `i < array.length` (strict less-than)."
+    },
+    {
+      "type": "accordion",
+      "variant": "find-error",
+      "title": "Exercise 5: The Silent Average Bug",
+      "language": "java",
+      "code": "public class E5 {\n    public static void main(String[] args) {\n        int total = 95 + 87 + 73 + 88 + 92;\n        int count = 5;\n        double average = total / count;\n        System.out.println(\"Average: \" + average);\n        // Expected: 87.0, Actual output: ???\n    }\n}",
+      "error": "Logical Error on Line 5: `total / count` is **integer division** because both are `int`. The result is `87` (truncated from `87.0`), stored as `87.0`. But if the average were `87.3`, it would silently become `87.0`.",
+      "fix": "public class E5 {\n    public static void main(String[] args) {\n        int total = 95 + 87 + 73 + 88 + 92;  // = 435\n        int count = 5;\n        double average = (double) total / count;  // Cast before division\n        System.out.println(\"Average: \" + average); // Average: 87.0\n    }\n}",
+      "explanation": "Even though `average` is declared as `double`, the **division happens first** using integer arithmetic, then the integer result is promoted to double. So `435 / 5 = 87` (int), then `87` becomes `87.0` (double). The fix is `(double) total / count` which forces double division producing `87.0` directly. Try it with `433 / 5` to see the bug clearly: integer gives `86`, double gives `86.6`."
+    },
+    {
+      "type": "accordion",
+      "variant": "find-error",
+      "title": "Exercise 6: Switch Fall-Through",
+      "language": "java",
+      "code": "public class E6 {\n    public static void main(String[] args) {\n        int day = 2;\n        switch (day) {\n            case 1:\n                System.out.println(\"Monday\");\n            case 2:\n                System.out.println(\"Tuesday\");\n            case 3:\n                System.out.println(\"Wednesday\");\n                break;\n            default:\n                System.out.println(\"Other\");\n        }\n    }\n}",
+      "error": "Logical Error: Missing `break` after `case 2`. When `day = 2`, it matches case 2 and prints `Tuesday`, but then **falls through** to case 3 and prints `Wednesday` as well.",
+      "fix": "public class E6 {\n    public static void main(String[] args) {\n        int day = 2;\n        switch (day) {\n            case 1:\n                System.out.println(\"Monday\");\n                break;\n            case 2:\n                System.out.println(\"Tuesday\");   // Now properly isolated\n                break;  // <-- Added\n            case 3:\n                System.out.println(\"Wednesday\");\n                break;\n            default:\n                System.out.println(\"Other\");\n        }\n    }\n}",
+      "explanation": "Java's `switch` statement has **fall-through behavior** by default — once a matching case is found, execution continues into all subsequent cases until a `break` or end of switch is reached. Without `break` after case 2, the output is `Tuesday\\nWednesday`. Always add `break` after each case unless you intentionally want fall-through."
+    },
+
+    { "type": "divider" },
+    { "type": "heading", "level": 2, "content": "📋 Error Classification Cheat Sheet" },
+    { "type": "table",
+      "headers": ["Symptom", "Error Type", "First Thing to Check"],
+      "rows": [
+        ["Program won't compile", "Compile-Time", "Semicolons, brackets, types, undeclared variables"],
+        ["Program crashes with Exception", "Runtime", "Null refs, array bounds, division by zero, bad casts"],
+        ["Program runs but wrong output", "Logical", "Conditions (`<` vs `<=`), operators (`=` vs `==`), off-by-one"],
+        ["Program runs forever (hang)", "Logical / Runtime", "Infinite loop condition, missing update, infinite recursion"],
+        ["Compiler says 'might not be initialized'", "Compile-Time", "Local variable used without guaranteed assignment"]
+      ]
+    },
+    { "type": "callout", "variant": "note", "label": "Exam Reminder", "content": "When asked 'what is the error?', give: **(1)** the **line number**, **(2)** the **type** (compile/runtime/logical), **(3)** a **clear description** of what went wrong, and **(4)** the **fix**. Partial marks are awarded for each correct element." }
+  ]
+}

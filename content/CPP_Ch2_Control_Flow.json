@@ -1,0 +1,96 @@
+{
+  "id": "CPP_Ch2_Control_Flow",
+  "track": "cpp",
+  "chapter": 2,
+  "title": "Control Flow",
+  "description": "Master if/else, switch, for, while, and do-while constructs with a competitive programmer's eye — focusing on loop patterns, iteration techniques, and the exact behaviors that separate a 1400-rated coder from a beginner. Includes loop optimization patterns directly used in contest solutions.",
+
+  "sections": [
+    { "type": "heading", "level": 2, "content": "🔀 Conditional Statements" },
+    { "type": "paragraph", "content": "In competitive programming, conditionals are often written as **single-line expressions** to save time. But understanding the full forms first prevents subtle bugs. Know when to use `if/else if/else`, when a ternary is cleaner, and when a lookup table replaces a chain entirely." },
+    { "type": "code", "language": "cpp", "title": "if/else Forms in CP Context", "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    int x;\n    cin >> x;\n    \n    // Standard form\n    if (x > 0) {\n        cout << \"Positive\\n\";\n    } else if (x < 0) {\n        cout << \"Negative\\n\";\n    } else {\n        cout << \"Zero\\n\";\n    }\n    \n    // Ternary (one-liners are common in CP)\n    cout << (x % 2 == 0 ? \"Even\" : \"Odd\") << \"\\n\";\n    \n    // Nested ternary (use sparingly — readability suffers)\n    string sign = (x > 0) ? \"pos\" : (x < 0) ? \"neg\" : \"zero\";\n    cout << sign << \"\\n\";\n    \n    // Using min/max instead of if/else for bounds\n    int bounded = min(max(x, 0), 100);  // Clamp x to [0, 100]\n    cout << bounded << \"\\n\";\n    return 0;\n}" },
+    { "type": "callout", "variant": "tip", "label": "CP Trick: min/max instead of if", "content": "For clamping or taking the better of two values, `min()` and `max()` are cleaner than `if/else`: `ans = max(ans, candidate)` is the idiom for 'update answer if better'. This appears in hundreds of problems." },
+
+    { "type": "heading", "level": 2, "content": "🔁 The for Loop — Every Form" },
+    { "type": "paragraph", "content": "The `for` loop is the **most used construct in competitive programming**. You must know all its forms — standard, range-based, reverse, step-based — and recognize the patterns instantly." },
+    { "type": "code", "language": "cpp", "title": "All for Loop Patterns", "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    // ── Standard 0-indexed (most common) ──\n    for (int i = 0; i < n; i++) { /* ... */ }\n\n    // ── 1-indexed ──\n    for (int i = 1; i <= n; i++) { /* ... */ }\n\n    // ── Reverse iteration ──\n    for (int i = n - 1; i >= 0; i--) { /* ... */ }\n\n    // ── Step by k ──\n    for (int i = 0; i < n; i += 2) { /* every 2nd */ }\n\n    // ── Range-based (C++11, over containers) ──\n    vector<int> v = {1, 2, 3, 4, 5};\n    for (int x : v) cout << x << \" \";        // copy of element\n    for (int& x : v) x *= 2;                 // reference: modifies v\n    for (auto& x : v) cout << x << \" \";     // auto type deduction\n\n    // ── Infinite loop (break when needed) ──\n    for (;;) {\n        // process...\n        if (done) break;\n    }\n\n    // ── Nested loops (O(n²) — be cautious) ──\n    for (int i = 0; i < n; i++)\n        for (int j = i + 1; j < n; j++)\n            // process pair (i, j)\n            ;\n    return 0;\n}" },
+
+    { "type": "heading", "level": 2, "content": "⏳ while and do-while" },
+    { "type": "paragraph", "content": "Use `while` when the number of iterations is **unknown in advance** — processing input until EOF, binary search loops, or simulation. Use `do-while` when you need to execute the body **at least once** (rare in CP, but appears in digit processing)." },
+    { "type": "code", "language": "cpp", "title": "while Loop Patterns in CP", "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    // ── Read until EOF ──\n    int x;\n    while (cin >> x) {\n        // Process x\n    }\n\n    // ── Binary search while loop ──\n    int lo = 0, hi = n - 1, ans = -1;\n    while (lo <= hi) {\n        int mid = lo + (hi - lo) / 2;    // safe midpoint (no overflow)\n        if (check(mid)) {\n            ans = mid;\n            lo = mid + 1;\n        } else {\n            hi = mid - 1;\n        }\n    }\n\n    // ── do-while: digit extraction ──\n    int num = 12345;\n    do {\n        cout << num % 10 << \" \";    // extract last digit\n        num /= 10;\n    } while (num > 0);              // runs at least once (handles num=0)\n    // Output: 5 4 3 2 1\n\n    // ── Simulation loop ──\n    int steps = 0;\n    while (!goalReached()) {\n        simulateStep();\n        steps++;\n        if (steps > 1e6) { cout << \"IMPOSSIBLE\\n\"; break; }\n    }\n    return 0;\n}" },
+    { "type": "callout", "variant": "danger", "label": "Infinite Loop Guard", "content": "In simulation problems, always add a **maximum iteration count** guard (`if (steps > 1e6) break`). Without it, a bug in your logic causes TLE (Time Limit Exceeded) instead of WA (Wrong Answer), making debugging much harder." },
+
+    { "type": "heading", "level": 2, "content": "🚦 break, continue, goto" },
+    { "type": "paragraph", "content": "`break` and `continue` are **essential tools** for clean loop logic in contests. `goto` has a specific, accepted CP use case: breaking out of **nested loops**." },
+    { "type": "code", "language": "cpp", "title": "break, continue, and goto Patterns", "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    // ── break: exit loop early ──\n    for (int i = 0; i < n; i++) {\n        if (arr[i] == target) {\n            cout << \"Found at index \" << i << \"\\n\";\n            break;  // Stop searching\n        }\n    }\n\n    // ── continue: skip to next iteration ──\n    for (int i = 1; i <= 20; i++) {\n        if (i % 3 == 0) continue;  // Skip multiples of 3\n        cout << i << \" \";\n    }\n    // Output: 1 2 4 5 7 8 10 11 13 14 16 17 19 20\n\n    // ── goto: the only accepted use in CP ──\n    // Break out of nested loops:\n    for (int i = 0; i < n; i++) {\n        for (int j = 0; j < m; j++) {\n            if (grid[i][j] == -1) {\n                goto done;  // Exits BOTH loops\n            }\n        }\n    }\n    done:\n    cout << \"Escaped nested loops\\n\";\n    \n    // Alternatively, use a flag:\n    bool found = false;\n    for (int i = 0; i < n && !found; i++)\n        for (int j = 0; j < m && !found; j++)\n            if (grid[i][j] == -1) found = true;\n    return 0;\n}" },
+
+    { "type": "heading", "level": 2, "content": "🔢 switch Statement" },
+    { "type": "paragraph", "content": "In competitive programming, `switch` is used less than in other domains. But it appears in problems involving **state machines**, **command parsing**, and **direction handling** (UP/DOWN/LEFT/RIGHT). Know the fall-through behavior." },
+    { "type": "code", "language": "cpp", "title": "switch in CP — Direction Problem", "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    int x = 0, y = 0;\n    int n;\n    cin >> n;\n    while (n--) {\n        char dir;\n        cin >> dir;\n        switch (dir) {\n            case 'U': y++; break;\n            case 'D': y--; break;\n            case 'L': x--; break;\n            case 'R': x++; break;\n            default:  cout << \"Invalid direction\\n\";\n        }\n    }\n    cout << x << \" \" << y << \"\\n\";\n    return 0;\n}" },
+
+    { "type": "heading", "level": 2, "content": "🔄 Critical Loop Patterns for CP" },
+    { "type": "paragraph", "content": "These are the **fundamental loop patterns** that appear repeatedly in Codeforces problems. Recognizing them instantly saves valuable contest time." },
+    { "type": "code", "language": "cpp", "title": "Pattern 1 — Prefix Sums", "code": "// Build a prefix sum array to answer range sum queries in O(1)\nvector<long long> prefix(n + 1, 0);\nfor (int i = 0; i < n; i++) {\n    prefix[i + 1] = prefix[i] + arr[i];\n}\n// Sum from index l to r (inclusive, 0-indexed):\n// = prefix[r + 1] - prefix[l]" },
+    { "type": "code", "language": "cpp", "title": "Pattern 2 — Find Maximum Subarray (Kadane's)", "code": "// Kadane's Algorithm: O(n) maximum subarray sum\nlong long maxSum = arr[0], curSum = arr[0];\nfor (int i = 1; i < n; i++) {\n    curSum = max((long long)arr[i], curSum + arr[i]);\n    maxSum = max(maxSum, curSum);\n}\ncout << maxSum << \"\\n\";" },
+    { "type": "code", "language": "cpp", "title": "Pattern 3 — Count Pairs with Condition", "code": "// Count pairs (i, j) where i < j and arr[i] + arr[j] == target\n// Brute O(n²): acceptable for n ≤ 5000\nint count = 0;\nfor (int i = 0; i < n; i++)\n    for (int j = i + 1; j < n; j++)\n        if (arr[i] + arr[j] == target)\n            count++;\ncout << count << \"\\n\";" },
+    { "type": "callout", "variant": "note", "label": "Complexity Check Habit", "content": "Before submitting, always estimate your solution's complexity. A loop with `n ≤ 10⁵` and an O(n²) inner loop = 10¹⁰ operations — guaranteed TLE. Codeforces typically allows ~10⁸ operations per second." },
+
+    { "type": "divider" },
+    { "type": "heading", "level": 2, "content": "🧪 Interactive Exercises" },
+
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 1: Loop Tracing with break/continue",
+      "language": "cpp",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    for (int i = 0; i < 10; i++) {\n        if (i == 3) continue;\n        if (i == 7) break;\n        cout << i << \" \";\n    }\n    cout << \"\\n\";\n    return 0;\n}",
+      "answer": "0 1 2 4 5 6 ",
+      "explanation": "The loop runs from 0 to 9. When `i=3`: `continue` skips printing 3, goes to next iteration. When `i=7`: `break` exits the loop entirely. So we print 0, 1, 2, skip 3, print 4, 5, 6, then stop at 7 (not printed). The trailing space after 6 is printed because `cout << i << \" \"` runs before the check at i=7."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 2: Nested Loop Pattern — Triangle",
+      "language": "cpp",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    int n = 4;\n    for (int i = 1; i <= n; i++) {\n        for (int j = 1; j <= i; j++) {\n            cout << \"* \";\n        }\n        cout << \"\\n\";\n    }\n    return 0;\n}",
+      "answer": "* \n* * \n* * * \n* * * * ",
+      "explanation": "Outer loop: i goes from 1 to 4. Inner loop: j goes from 1 to i. So on row i, we print i stars. Row 1: 1 star. Row 2: 2 stars. Row 3: 3 stars. Row 4: 4 stars. Each row ends with `\\n`. Each star is followed by a space."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 3: FizzBuzz (Classic Interview + CP Warmup)",
+      "language": "cpp",
+      "code": "// Print numbers 1 to N.\n// If divisible by 3: print \"Fizz\" instead.\n// If divisible by 5: print \"Buzz\" instead.\n// If divisible by both 3 and 5: print \"FizzBuzz\".\n// Otherwise: print the number.\n// Constraint: N ≤ 10⁵",
+      "approach": "Use a `for` loop from 1 to N. Check divisibility by 15 FIRST (both 3 and 5), then by 3, then by 5. Otherwise print the number. The order of checks matters — checking 3 first and 5 first would give wrong output for multiples of 15.",
+      "solution": "#include <bits/stdc++.h>\nusing namespace std;\n\nvoid solve() {\n    int n;\n    cin >> n;\n    for (int i = 1; i <= n; i++) {\n        if (i % 15 == 0)     cout << \"FizzBuzz\\n\";\n        else if (i % 3 == 0) cout << \"Fizz\\n\";\n        else if (i % 5 == 0) cout << \"Buzz\\n\";\n        else                 cout << i << \"\\n\";\n    }\n}\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n    int t; cin >> t;\n    while (t--) solve();\n    return 0;\n}",
+      "explanation": "Checking `i % 15 == 0` first is critical — it catches the FizzBuzz case before the `% 3` or `% 5` checks would incorrectly match. Alternatively: `if (i%3==0) cout<<\"Fizz\"; if (i%5==0) cout<<\"Buzz\"; if (i%3!=0 && i%5!=0) cout<<i; cout<<\"\\n\";` — this avoids the order problem but checks twice."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 4: Count Digits (do-while application)",
+      "language": "cpp",
+      "code": "// Given N, count how many digits it has.\n// N can be 0. Constraint: 0 ≤ N ≤ 10¹⁸ (use long long)\n// Example: N=12345 → 5 digits. N=0 → 1 digit.",
+      "approach": "Use `do-while` since N=0 should give 1 (the loop must run at least once). Repeatedly divide by 10 and count iterations. Alternatively, use `to_string(n).length()` — elegant but slower for huge N.",
+      "solution": "#include <bits/stdc++.h>\nusing namespace std;\n\nvoid solve() {\n    long long n;\n    cin >> n;\n    \n    int count = 0;\n    do {\n        count++;\n        n /= 10;\n    } while (n > 0);\n    \n    cout << count << \"\\n\";\n}\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n    int t; cin >> t;\n    while (t--) solve();\n    return 0;\n}",
+      "explanation": "The `do-while` guarantees at least one iteration, correctly handling `N=0` (count=1). A regular `while (n > 0)` would never enter the loop for N=0 and give count=0 (wrong). The loop extracts and discards digits one by one: for 12345, iterations give n=1234, 123, 12, 1, 0 — that's 5 iterations."
+    },
+
+    { "type": "divider" },
+    { "type": "heading", "level": 2, "content": "⚡ Complexity Quick Reference" },
+    { "type": "table",
+      "headers": ["N (constraint)", "Max OK Complexity", "Example Algorithms"],
+      "rows": [
+        ["N ≤ 10",       "O(N!) or O(2ᴺ)",  "Brute force permutations, full bitmask"],
+        ["N ≤ 20",       "O(2ᴺ · N)",        "Bitmask DP, meet in the middle"],
+        ["N ≤ 500",      "O(N³)",             "Floyd-Warshall, matrix operations"],
+        ["N ≤ 5,000",    "O(N²)",             "Brute force pairs, O(N²) DP"],
+        ["N ≤ 100,000",  "O(N log N)",        "Sorting, binary search, segment trees"],
+        ["N ≤ 1,000,000","O(N) or O(N log N)","Two pointers, prefix sums, linear DP"],
+        ["N ≤ 10¹⁸",    "O(log N) or O(√N)", "Fast exponentiation, primality test"]
+      ]
+    },
+    { "type": "callout", "variant": "tip", "label": "The 10⁸ Rule", "content": "Codeforces judges run ~10⁸–10⁹ simple operations per second. As a safe estimate, use **10⁸ operations per second**. If your estimated operation count exceeds this × time limit (usually 1–2 seconds), you need a better algorithm." }
+  ]
+}
