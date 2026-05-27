@@ -1,0 +1,115 @@
+{
+  "id": "CPP_Ch4_Arrays_Strings",
+  "track": "cpp",
+  "chapter": 4,
+  "title": "Arrays & Strings",
+  "description": "Master 1D and 2D arrays, C-strings, and the std::string class from a competitive programmer's lens. Learn the array patterns that appear in 60% of Codeforces Div.2 A/B problems — frequency arrays, prefix sums, and the two-pointer technique — plus string manipulation tricks that save minutes in contests.",
+
+  "sections": [
+    { "type": "heading", "level": 2, "content": "📦 1D Arrays — The Workhorse of CP" },
+    { "type": "paragraph", "content": "In competitive programming, **arrays are the first tool you reach for**. They offer O(1) indexed access and predictable cache behavior, making them faster than most alternatives for dense data. The key is knowing all the declaration and initialization forms — wrong initialization is one of the most common sources of bugs in contests." },
+    { "type": "code", "language": "cpp", "title": "Array Declaration, Init & Access", "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    int n = 5;\n\n    // ── Stack-allocated (fixed size, max ~10^6 elements) ──\n    int arr[5] = {10, 20, 30, 40, 50};   // fully initialized\n    int zeros[5] = {};                    // ALL zeros (value-initialize)\n    int partial[5] = {1, 2};             // {1, 2, 0, 0, 0} — rest zero-filled\n\n    // ── Reading into array ──\n    int a[100005];\n    for (int i = 0; i < n; i++) cin >> a[i];\n\n    // ── Common access patterns ──\n    cout << arr[0]        << \"\\n\";  // first element\n    cout << arr[n - 1]    << \"\\n\";  // last element\n    cout << arr[n / 2]    << \"\\n\";  // middle element\n\n    // ── Fill with a specific value (memset trick) ──\n    int dp[100005];\n    memset(dp, 0, sizeof(dp));       // fill with 0 (fastest)\n    memset(dp, -1, sizeof(dp));      // fill with -1 (useful for memoization)\n    // WARNING: memset(dp, 1, ...) does NOT set all to 1!\n    // Use fill() instead:\n    fill(dp, dp + n, 7);             // sets dp[0..n-1] = 7\n\n    // ── Global arrays: auto-zero, up to ~10^8 bytes ──\n    // Declare outside main for large arrays\n    return 0;\n}" },
+    { "type": "callout", "variant": "warning", "label": "Stack vs Global Arrays", "content": "Stack memory is limited (~1–8 MB depending on OS/judge). For arrays of size > 10⁶, **always declare globally**. Global arrays are stored in the BSS/data segment and automatically zero-initialized, which eliminates a common source of bugs." },
+
+    { "type": "heading", "level": 2, "content": "🔢 Frequency Arrays — Pattern You'll Use Daily" },
+    { "type": "paragraph", "content": "A frequency (count) array maps values to their occurrences. This O(n) technique replaces sorting in many problems and is the foundation of counting sort. It's the first optimization you should consider when the value range is small (≤ 10⁶)." },
+    { "type": "code", "language": "cpp", "title": "Frequency Array — Counting & Querying", "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nconst int MAXV = 100005;   // max possible value\nint freq[MAXV];            // global, auto-zero\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n\n    int n;\n    cin >> n;\n    for (int i = 0; i < n; i++) {\n        int x; cin >> x;\n        freq[x]++;           // count occurrences\n    }\n\n    // Query: how many times does value 5 appear?\n    cout << freq[5] << \"\\n\";\n\n    // Find most frequent value\n    int mode = max_element(freq, freq + MAXV) - freq;\n    cout << \"Mode: \" << mode << \" (\" << freq[mode] << \" times)\\n\";\n\n    // Print all unique values\n    for (int v = 0; v < MAXV; v++)\n        if (freq[v] > 0)\n            cout << v << \" appears \" << freq[v] << \" times\\n\";\n\n    return 0;\n}" },
+
+    { "type": "heading", "level": 2, "content": "🗂️ 2D Arrays — Grid Problems" },
+    { "type": "paragraph", "content": "Two-dimensional arrays represent **grids, matrices, and adjacency matrices**. A huge class of CP problems — pathfinding, flood fill, matrix operations — live here. The critical habit: always index consistently and never go out of bounds." },
+    { "type": "code", "language": "cpp", "title": "2D Array — Declaration, Input, Traversal", "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nconst int MAXN = 1005;\nint grid[MAXN][MAXN];     // global 2D array — 1005×1005 ints ≈ 4 MB\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n\n    int n, m;  // rows, columns\n    cin >> n >> m;\n    for (int i = 0; i < n; i++)\n        for (int j = 0; j < m; j++)\n            cin >> grid[i][j];\n\n    // ── Row-wise sum ──\n    for (int i = 0; i < n; i++) {\n        long long rowSum = 0;\n        for (int j = 0; j < m; j++) rowSum += grid[i][j];\n        cout << \"Row \" << i << \" sum: \" << rowSum << \"\\n\";\n    }\n\n    // ── 4-directional neighbors (BFS/DFS pattern) ──\n    int dx[] = {0, 0, 1, -1};  // right, left, down, up\n    int dy[] = {1, -1, 0, 0};\n    int r = 2, c = 3;           // example cell\n    for (int d = 0; d < 4; d++) {\n        int nr = r + dx[d], nc = c + dy[d];\n        if (nr >= 0 && nr < n && nc >= 0 && nc < m) {\n            cout << \"Neighbor: (\" << nr << \",\" << nc << \") = \" << grid[nr][nc] << \"\\n\";\n        }\n    }\n\n    // ── 2D Prefix Sum (range queries in O(1)) ──\n    long long psum[MAXN][MAXN] = {};\n    for (int i = 1; i <= n; i++)\n        for (int j = 1; j <= m; j++)\n            psum[i][j] = grid[i-1][j-1] + psum[i-1][j] + psum[i][j-1] - psum[i-1][j-1];\n    // Sum of subgrid (r1,c1)–(r2,c2) [1-indexed]:\n    // = psum[r2][c2] - psum[r1-1][c2] - psum[r2][c1-1] + psum[r1-1][c1-1]\n\n    return 0;\n}" },
+    { "type": "callout", "variant": "tip", "label": "Direction Array Trick", "content": "The `dx[]`/`dy[]` direction array is the standard CP idiom for grid traversal. For 8-directional (including diagonals), just extend both arrays to 8 entries. This pattern appears in virtually every grid-based problem." },
+
+    { "type": "heading", "level": 2, "content": "🔤 C-Strings vs std::string" },
+    { "type": "paragraph", "content": "C++ gives you two string types. **C-strings** (`char[]`) are raw character arrays terminated by `\\0`. **`std::string`** is a class wrapping dynamic character storage. In competitive programming, `std::string` is almost always preferred — it's safer, more flexible, and barely slower for most problem constraints." },
+    { "type": "table",
+      "headers": ["Feature", "C-string `char[]`", "std::string"],
+      "rows": [
+        ["Declaration",    "`char s[105];`",                  "`string s;`"],
+        ["Input",          "`scanf(\"%s\", s);` / `cin >> s`","`cin >> s`"],
+        ["Length",         "`strlen(s)` — O(n)!",             "`.size()` or `.length()` — O(1)"],
+        ["Concatenation",  "Manual loop or `strcat`",         "`s1 + s2` or `s1 += s2`"],
+        ["Comparison",     "`strcmp(a, b)` (returns 0 if equal)", "`a == b` (natural)"],
+        ["Substring",      "Manual or `strncpy`",             "`.substr(pos, len)`"],
+        ["Search",         "`strstr(s, pattern)`",            "`.find(pattern)` → returns index or `npos`"],
+        ["Modifiable",     "Direct char access",              "`s[i]` or `.at(i)` with bounds check"]
+      ]
+    },
+    { "type": "code", "language": "cpp", "title": "std::string — Essential Operations", "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    string s;\n    cin >> s;                  // reads one word (stops at whitespace)\n    getline(cin, s);           // reads entire line including spaces\n\n    // ── Basic properties ──\n    int n = s.size();          // length — O(1)\n    cout << s[0];              // first character\n    cout << s.back();          // last character (C++11)\n    cout << s.front();         // first character\n\n    // ── Searching ──\n    int pos = s.find(\"abc\");         // first occurrence, or string::npos\n    if (pos != string::npos)\n        cout << \"Found at \" << pos << \"\\n\";\n    int last = s.rfind('a');         // last occurrence of 'a'\n\n    // ── Modification ──\n    s += \"suffix\";                   // append\n    s.push_back('!');                // append single char\n    s.insert(2, \"XY\");              // insert \"XY\" at index 2\n    s.erase(1, 3);                  // erase 3 chars starting at index 1\n    s.replace(0, 2, \"ZZ\");          // replace 2 chars at index 0 with \"ZZ\"\n\n    // ── Substring ──\n    string sub = s.substr(2, 4);     // 4 chars starting at index 2\n\n    // ── Conversion ──\n    int num = stoi(\"42\");            // string → int\n    long long big = stoll(\"1234567890123\");\n    string str = to_string(42);      // int → string\n\n    // ── Character classification ──\n    for (char c : s) {\n        if (islower(c)) cout << (char)toupper(c);  // to uppercase\n        else if (isupper(c)) cout << (char)tolower(c);\n        else if (isdigit(c)) cout << c;\n    }\n\n    // ── Sort a string ──\n    sort(s.begin(), s.end());        // lexicographic sort of chars\n    sort(s.begin(), s.end(), greater<char>());  // reverse sort\n\n    // ── Reverse ──\n    reverse(s.begin(), s.end());\n\n    // ── Count occurrences of a character ──\n    int cnt = count(s.begin(), s.end(), 'a');\n\n    return 0;\n}" },
+    { "type": "callout", "variant": "danger", "label": "strlen() is O(n) — A Hidden TLE Source", "content": "If you use a C-string, calling `strlen(s)` inside a loop is O(n) per call, making your loop O(n²). Always store the length: `int n = strlen(s);` once before the loop. `std::string::size()` has no this problem — it returns a cached value in O(1)." },
+
+    { "type": "heading", "level": 2, "content": "🧵 String Algorithms Used in CP" },
+    { "type": "code", "language": "cpp", "title": "Palindrome Check & Anagram Detection", "code": "#include <bits/stdc++.h>\nusing namespace std;\n\n// O(n) palindrome check using two pointers\nbool isPalindrome(const string& s) {\n    int l = 0, r = s.size() - 1;\n    while (l < r) {\n        if (s[l] != s[r]) return false;\n        l++; r--;\n    }\n    return true;\n}\n\n// O(n) anagram check (same chars, different order)\nbool isAnagram(const string& a, const string& b) {\n    if (a.size() != b.size()) return false;\n    int freq[26] = {};\n    for (char c : a) freq[c - 'a']++;\n    for (char c : b) freq[c - 'a']--;\n    for (int f : freq) if (f != 0) return false;\n    return true;\n}\n\nint main() {\n    // Tokenize string by delimiter\n    string line = \"apple,banana,cherry\";\n    stringstream ss(line);\n    string token;\n    while (getline(ss, token, ','))\n        cout << token << \"\\n\";\n\n    // Rotate a string\n    string s = \"abcde\";\n    int k = 2;                              // rotate left by 2\n    string rotated = s.substr(k) + s.substr(0, k);  // \"cdeab\"\n    // Or: rotate(s.begin(), s.begin() + k, s.end());\n\n    return 0;\n}" },
+
+    { "type": "heading", "level": 2, "content": "🔑 Key CP Array Patterns Summary" },
+    { "type": "code", "language": "cpp", "title": "Pattern: Sliding Window Maximum", "code": "// Find the maximum in every window of size k — O(n) using deque\nvector<int> slidingWindowMax(vector<int>& a, int k) {\n    deque<int> dq;         // stores indices, front = max of current window\n    vector<int> result;\n    int n = a.size();\n    for (int i = 0; i < n; i++) {\n        // Remove elements outside the window\n        while (!dq.empty() && dq.front() <= i - k) dq.pop_front();\n        // Remove smaller elements from back (they'll never be max)\n        while (!dq.empty() && a[dq.back()] <= a[i]) dq.pop_back();\n        dq.push_back(i);\n        if (i >= k - 1) result.push_back(a[dq.front()]);\n    }\n    return result;\n}" },
+    { "type": "code", "language": "cpp", "title": "Pattern: Difference Array (Range Update in O(1))", "code": "// Add val to all elements in [l, r] — O(1) per update, O(n) to reconstruct\nvector<int> diff(n + 1, 0);  // difference array\n\n// Update: add val to arr[l..r]\nauto update = [&](int l, int r, int val) {\n    diff[l]   += val;\n    diff[r+1] -= val;\n};\n\n// Reconstruct the actual array\nvector<int> arr(n, 0);\nfor (int i = 0; i < n; i++) {\n    arr[i] = (i > 0 ? arr[i-1] : 0) + diff[i];\n}\n// Use case: m range-add queries on n elements → O(n + m) total" },
+
+    { "type": "divider" },
+    { "type": "heading", "level": 2, "content": "🧪 Interactive Exercises" },
+
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 1: Array Initialization Trap",
+      "language": "cpp",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    int a[5] = {1, 2};\n    int b[5] = {};\n    cout << a[0] << \" \" << a[2] << \" \" << a[4] << \"\\n\";\n    cout << b[0] << \" \" << b[3] << \"\\n\";\n    fill(a, a + 5, 9);\n    cout << a[0] << \" \" << a[4] << \"\\n\";\n    return 0;\n}",
+      "answer": "1 0 0\n0 0\n9 9",
+      "explanation": "`int a[5] = {1, 2}` sets a[0]=1, a[1]=2, and zero-fills the rest: a[2]=0, a[4]=0. `int b[5] = {}` zero-initializes all elements. After `fill(a, a+5, 9)`, every element of a becomes 9."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 2: String Operations Chain",
+      "language": "cpp",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    string s = \"hello\";\n    cout << s.size() << \"\\n\";\n    s += \" world\";\n    cout << s.size() << \"\\n\";\n    cout << s.substr(6, 5) << \"\\n\";\n    reverse(s.begin(), s.end());\n    cout << s << \"\\n\";\n    sort(s.begin(), s.end());\n    cout << s[0] << s.back() << \"\\n\";\n    return 0;\n}",
+      "answer": "5\n11\nworld\ndlrow olleh\n w",
+      "explanation": "`\"hello\"` has 5 chars. After `+= \" world\"`, it's 11 chars. `substr(6,5)` = `\"world\"` (starting at index 6, 5 chars). Reversed: `\"dlrow olleh\"`. After sort, space (' ') comes first (ASCII 32) and 'w' last (ASCII 119), so `s[0]=' '` and `s.back()='w'`."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 3: 2D Array Traversal Output",
+      "language": "cpp",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    int a[3][3] = {\n        {1, 2, 3},\n        {4, 5, 6},\n        {7, 8, 9}\n    };\n    // Print main diagonal\n    for (int i = 0; i < 3; i++) cout << a[i][i] << \" \";\n    cout << \"\\n\";\n    // Print anti-diagonal\n    for (int i = 0; i < 3; i++) cout << a[i][2-i] << \" \";\n    cout << \"\\n\";\n    // Column sum of column 1\n    int sum = 0;\n    for (int i = 0; i < 3; i++) sum += a[i][1];\n    cout << sum << \"\\n\";\n    return 0;\n}",
+      "answer": "1 5 9 \n3 5 7 \n15",
+      "explanation": "Main diagonal: a[0][0]=1, a[1][1]=5, a[2][2]=9. Anti-diagonal: a[0][2]=3, a[1][1]=5, a[2][0]=7. Column 1 sum: a[0][1]+a[1][1]+a[2][1] = 2+5+8 = 15."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 4: Reverse Words in a String",
+      "language": "cpp",
+      "code": "// Given a string of space-separated words,\n// print the words in reverse order.\n// Example: \"hello world foo\" → \"foo world hello\"\n// Constraint: length ≤ 10^5",
+      "approach": "Split by spaces into a vector of strings, then print the vector in reverse. Use `stringstream` to tokenize, then iterate from `size()-1` to 0. This is O(n) time and space.",
+      "solution": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n    string line;\n    getline(cin, line);\n    stringstream ss(line);\n    vector<string> words;\n    string word;\n    while (ss >> word) words.push_back(word);\n    for (int i = words.size() - 1; i >= 0; i--) {\n        cout << words[i];\n        if (i > 0) cout << \" \";\n    }\n    cout << \"\\n\";\n    return 0;\n}",
+      "explanation": "`getline` reads the full line. `stringstream` tokenizes by whitespace. Storing words in a vector allows reverse traversal. We print a space between words (not after the last) to avoid trailing spaces, which can cause Wrong Answer on strict judges."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 5: Frequency Count — Find Missing Number",
+      "language": "cpp",
+      "code": "// Given n-1 distinct integers from the range [1, n],\n// find the missing number.\n// Example: n=5, arr=[4,1,3,5] → missing is 2\n// Constraint: n ≤ 10^6, values ≤ 10^6",
+      "approach": "Two clean O(n) approaches: (1) Math: expected sum = n*(n+1)/2, subtract actual sum. (2) XOR: XOR all indices and values — missing number is the result. Both avoid frequency arrays entirely.",
+      "solution": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n    int n;\n    cin >> n;\n    long long expected = (long long)n * (n + 1) / 2;\n    long long actual = 0;\n    for (int i = 0; i < n - 1; i++) {\n        int x; cin >> x;\n        actual += x;\n    }\n    cout << expected - actual << \"\\n\";\n    return 0;\n}",
+      "explanation": "Sum of 1..n = n*(n+1)/2. The array has n-1 elements with one missing. The missing number = expected sum − actual sum. Use `long long` because n*(n+1)/2 can overflow `int` for n=10^6 (result ≈ 5×10^11)."
+    },
+
+    { "type": "divider" },
+    { "type": "heading", "level": 2, "content": "📋 Quick Reference" },
+    { "type": "table",
+      "headers": ["Task", "Array/String Tool", "Complexity"],
+      "rows": [
+        ["Count value occurrences",   "Frequency array `freq[v]++`",          "O(n) build, O(1) query"],
+        ["Range sum query",           "Prefix sum array",                      "O(n) build, O(1) query"],
+        ["Range update + query",      "Difference array",                      "O(n+m)"],
+        ["Sort characters",           "`sort(s.begin(), s.end())`",           "O(n log n)"],
+        ["Find in string",            "`s.find(sub)`",                        "O(n·m) naive"],
+        ["Reverse string/array",      "`reverse(begin, end)`",                "O(n)"],
+        ["Convert int↔string",        "`to_string(n)` / `stoi(s)`",          "O(digits)"],
+        ["Palindrome check",          "Two pointers l/r",                     "O(n)"]
+      ]
+    }
+  ]
+}

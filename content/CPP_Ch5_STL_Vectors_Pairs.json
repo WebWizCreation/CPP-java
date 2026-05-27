@@ -1,0 +1,107 @@
+{
+  "id": "CPP_Ch5_STL_Vectors_Pairs",
+  "track": "cpp",
+  "chapter": 5,
+  "title": "STL: Vectors & Pairs",
+  "description": "The C++ Standard Template Library is a competitive programmer's superpower. This chapter covers the two most-used STL components: `vector` (the dynamic array you'll use in 90% of solutions) and `pair`/`tuple` (for grouping data without writing structs). Master these and your code becomes shorter, faster to write, and harder to break.",
+
+  "sections": [
+    { "type": "heading", "level": 2, "content": "🚀 Why STL?" },
+    { "type": "paragraph", "content": "Raw arrays are fast, but `std::vector` is nearly as fast (the overhead is negligible for CP constraints) while adding **dynamic resizing, built-in size tracking, and iterator support**. The STL isn't just a convenience — it's a set of heavily optimized, battle-tested implementations that let you focus on the algorithm instead of the data structure plumbing." },
+    { "type": "callout", "variant": "tip", "label": "Memory Model", "content": "`vector` stores elements in a **contiguous block** of heap memory, just like an array. This gives the same cache performance as arrays. When it runs out of capacity, it doubles its internal buffer — amortized O(1) per push_back." },
+
+    { "type": "heading", "level": 2, "content": "📐 vector — Every Operation You Need" },
+    { "type": "code", "language": "cpp", "title": "vector Construction & Initialization", "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    // ── Constructors ──\n    vector<int> a;                    // empty vector\n    vector<int> b(5);                 // 5 elements, all 0\n    vector<int> c(5, -1);            // 5 elements, all -1\n    vector<int> d = {3, 1, 4, 1, 5}; // initializer list\n    vector<int> e(d);                 // copy of d\n    vector<int> f(d.begin() + 1, d.end() - 1); // slice: {1, 4, 1}\n\n    // ── Size & Capacity ──\n    cout << d.size()     << \"\\n\";  // number of elements: 5\n    cout << d.empty()    << \"\\n\";  // 0 (not empty)\n    cout << d.capacity() << \"\\n\";  // internal buffer size (≥ size)\n\n    // ── Reading into vector ──\n    int n = 5;\n    vector<int> v(n);\n    for (int i = 0; i < n; i++) cin >> v[i];\n    // Or:\n    vector<int> v2;\n    v2.reserve(n);                   // pre-allocate, avoid reallocations\n    for (int i = 0; i < n; i++) {\n        int x; cin >> x;\n        v2.push_back(x);\n    }\n\n    return 0;\n}" },
+    { "type": "code", "language": "cpp", "title": "vector — Add, Remove, Access", "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    vector<int> v = {10, 20, 30};\n\n    // ── Adding elements ──\n    v.push_back(40);          // append: O(1) amortized  → {10,20,30,40}\n    v.emplace_back(50);       // construct-in-place (faster for objects) → {10,20,30,40,50}\n    v.insert(v.begin(), 0);   // insert at front: O(n)  → {0,10,20,30,40,50}\n    v.insert(v.begin() + 2, 99); // insert at index 2: O(n)\n\n    // ── Removing elements ──\n    v.pop_back();              // remove last: O(1)      → no 50\n    v.erase(v.begin());        // remove first: O(n)\n    v.erase(v.begin()+1, v.begin()+3); // remove range [1, 3): O(n)\n    v.clear();                 // remove all: O(n)\n\n    // ── Access ──\n    vector<int> w = {5, 6, 7, 8, 9};\n    cout << w[2]       << \"\\n\";   // 7 — no bounds check\n    cout << w.at(2)    << \"\\n\";   // 7 — throws if out of range\n    cout << w.front()  << \"\\n\";   // 5 — first element\n    cout << w.back()   << \"\\n\";   // 9 — last element\n\n    // ── Swap (O(1) — just swaps internal pointers) ──\n    vector<int> x = {1,2}, y = {3,4,5};\n    swap(x, y);  // x is now {3,4,5}, y is {1,2}\n\n    // ── Resize ──\n    w.resize(8);     // extends to 8 elements, new ones are 0\n    w.resize(3);     // truncates to first 3 elements\n    w.assign(5, 7);  // replace all contents with five 7s\n\n    return 0;\n}" },
+    { "type": "callout", "variant": "danger", "label": "erase() Invalidates Iterators", "content": "After calling `v.erase(it)`, the iterator `it` (and all iterators after it) are **invalidated**. If you're erasing inside a loop, use the return value: `it = v.erase(it);` instead of `it++`. Otherwise you get undefined behavior — one of the nastiest bugs in C++." },
+
+    { "type": "heading", "level": 2, "content": "🔄 Iteration Patterns" },
+    { "type": "code", "language": "cpp", "title": "All Ways to Iterate a vector", "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    vector<int> v = {10, 20, 30, 40, 50};\n\n    // ── Index-based (most common in CP) ──\n    for (int i = 0; i < (int)v.size(); i++)\n        cout << v[i] << \" \";\n    cout << \"\\n\";\n\n    // ── Range-based (clean, read-only) ──\n    for (int x : v) cout << x << \" \";\n    cout << \"\\n\";\n\n    // ── Range-based with reference (modify elements) ──\n    for (int& x : v) x *= 2;\n    // v is now {20,40,60,80,100}\n\n    // ── Reverse iteration ──\n    for (int i = (int)v.size() - 1; i >= 0; i--)\n        cout << v[i] << \" \";\n    cout << \"\\n\";\n    // Or using reverse iterators:\n    for (auto it = v.rbegin(); it != v.rend(); ++it)\n        cout << *it << \" \";\n    cout << \"\\n\";\n\n    // ── DANGER: compare size() with int ──\n    // for (int i = 0; i < v.size() - 1; i++) // BUG if v is empty!\n    // v.size() returns size_t (unsigned). If v is empty, v.size()-1 wraps\n    // to a huge positive number → infinite loop or crash.\n    // Fix: cast to int: (int)v.size() - 1\n    return 0;\n}" },
+    { "type": "callout", "variant": "warning", "label": "The size()-1 Signed/Unsigned Bug", "content": "`v.size()` returns `size_t`, an **unsigned** type. `v.size() - 1` when `v` is empty gives `18446744073709551615` (the max unsigned 64-bit value), not `-1`. Always cast: `(int)v.size()` before arithmetic. This is one of the most common beginner bugs in CP." },
+
+    { "type": "heading", "level": 2, "content": "📦 2D Vectors" },
+    { "type": "code", "language": "cpp", "title": "Vector of Vectors — Adjacency List & Grids", "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    int n = 3, m = 4;\n\n    // ── 2D grid: n rows, m columns, all zeros ──\n    vector<vector<int>> grid(n, vector<int>(m, 0));\n    grid[1][2] = 42;\n\n    // ── Adjacency list for graph (most important use case) ──\n    int nodes = 5;\n    vector<vector<int>> adj(nodes + 1);  // 1-indexed\n    // Add edge u → v:\n    int u, v;\n    // adj[u].push_back(v);  // directed\n    // adj[u].push_back(v); adj[v].push_back(u);  // undirected\n\n    // ── Weighted adjacency list ──\n    vector<vector<pair<int,int>>> wadj(nodes + 1);  // {neighbor, weight}\n    // wadj[u].emplace_back(v, w);\n\n    // ── Jagged 2D vector (rows of different sizes) ──\n    vector<vector<int>> jagged = {{1}, {2,3}, {4,5,6}};\n    for (auto& row : jagged) {\n        for (int x : row) cout << x << \" \";\n        cout << \"\\n\";\n    }\n\n    return 0;\n}" },
+
+    { "type": "heading", "level": 2, "content": "🔗 pair — The Most Used STL Utility" },
+    { "type": "paragraph", "content": "`std::pair<T1, T2>` groups two values of potentially different types. It supports **comparison operators out of the box** — pairs are compared lexicographically (first by `.first`, then by `.second`). This makes sorting pairs trivially correct without writing a comparator." },
+    { "type": "code", "language": "cpp", "title": "pair — All Usage Patterns", "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    // ── Declaration ──\n    pair<int, int> p1 = {3, 7};\n    pair<int, string> p2 = make_pair(1, \"hello\");  // older style\n    auto p3 = make_pair(3.14, 'A');                 // type deduction\n\n    // ── Access ──\n    cout << p1.first << \" \" << p1.second << \"\\n\";   // 3 7\n\n    // ── Comparison (lexicographic!) ──\n    pair<int,int> a = {1, 5}, b = {1, 3}, c = {2, 0};\n    cout << (a > b) << \"\\n\";   // 1 (true: same first, 5 > 3)\n    cout << (a < c) << \"\\n\";   // 1 (true: 1 < 2 in first field)\n\n    // ── Sort vector of pairs: by first, then second ──\n    vector<pair<int,int>> v = {{3,1},{1,4},{1,2},{2,7}};\n    sort(v.begin(), v.end());\n    // Result: {{1,2},{1,4},{2,7},{3,1}}\n\n    // ── Sort by second value ──\n    sort(v.begin(), v.end(), [](auto& a, auto& b){\n        return a.second < b.second;\n    });\n\n    // ── Sort by first descending, second ascending ──\n    sort(v.begin(), v.end(), [](auto& a, auto& b){\n        if (a.first != b.first) return a.first > b.first;  // desc first\n        return a.second < b.second;                         // asc second\n    });\n\n    // ── Structured bindings (C++17) — cleaner access ──\n    for (auto& [x, y] : v)\n        cout << x << \",\" << y << \" \";\n    cout << \"\\n\";\n\n    return 0;\n}" },
+
+    { "type": "heading", "level": 2, "content": "🗃️ tuple — Three or More Values" },
+    { "type": "paragraph", "content": "`std::tuple` extends `pair` to any number of values. In CP, tuples most commonly store three related values — like `(weight, from, to)` for edges in Kruskal's algorithm or `(distance, x, y)` in BFS over a grid." },
+    { "type": "code", "language": "cpp", "title": "tuple — Construction & Access", "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    // ── Construction ──\n    tuple<int, int, int> t1 = {1, 2, 3};\n    auto t2 = make_tuple(\"edge\", 5, 3.14);\n\n    // ── Access via get<index> ──\n    cout << get<0>(t1) << \" \" << get<1>(t1) << \" \" << get<2>(t1) << \"\\n\";\n\n    // ── Structured bindings (C++17) — by far the cleanest ──\n    auto [w, u, v] = t1;\n    cout << w << \" \" << u << \" \" << v << \"\\n\";\n\n    // ── Sorting tuples (lexicographic by default) ──\n    // Classic use: Kruskal's MST — sort edges by weight\n    vector<tuple<int,int,int>> edges;  // {weight, from, to}\n    edges.emplace_back(4, 1, 2);\n    edges.emplace_back(1, 2, 3);\n    edges.emplace_back(3, 1, 3);\n    sort(edges.begin(), edges.end());  // sorts by weight (first element)\n    // After sort: {1,2,3}, {3,1,3}, {4,1,2}\n\n    // ── tie — unpack into existing variables ──\n    int x, y, z;\n    tie(x, y, z) = t1;  // x=1, y=2, z=3\n\n    return 0;\n}" },
+    { "type": "callout", "variant": "tip", "label": "pair vs tuple vs struct", "content": "For 2 values: use `pair`. For 3+ values that appear often: define a `struct` for readability. For 3 values in a one-off context (like sorting edges): `tuple` is fine. Avoid deeply nested pairs like `pair<pair<int,int>,int>` — they're hard to read and error-prone." },
+
+    { "type": "heading", "level": 2, "content": "⚡ CP Patterns Using vector + pair" },
+    { "type": "code", "language": "cpp", "title": "Pattern: Coordinate Compression", "code": "// Map arbitrary large values to small indices [0, k-1]\n// Use case: values up to 10^9 but only n ≤ 10^5 distinct values\nvector<int> arr = {1000000000, 42, 7, 42, 1000000000};\nvector<int> comp = arr;                     // copy\nsort(comp.begin(), comp.end());             // sort\ncomp.erase(unique(comp.begin(), comp.end()), comp.end()); // deduplicate\n// Now comp = {7, 42, 1000000000} — sorted unique values\n\n// Convert original values to compressed indices:\nfor (int& x : arr) {\n    x = lower_bound(comp.begin(), comp.end(), x) - comp.begin();\n}\n// arr is now: {2, 1, 0, 1, 2}" },
+    { "type": "code", "language": "cpp", "title": "Pattern: Sort with Custom Key (pair trick)", "code": "// Sort n items by some computed key without a comparator:\n// Instead of a lambda, store (key, original_index) as pairs\nvector<int> a = {5, 2, 8, 1, 9};\nvector<pair<int,int>> keyed;\nfor (int i = 0; i < (int)a.size(); i++)\n    keyed.emplace_back(a[i], i);            // {value, original_index}\nsort(keyed.begin(), keyed.end());           // sorts by value, ties by index\n\nfor (auto& [val, idx] : keyed)\n    cout << \"a[\" << idx << \"] = \" << val << \"\\n\";\n// Output: a[3]=1, a[1]=2, a[0]=5, a[2]=8, a[4]=9" },
+
+    { "type": "divider" },
+    { "type": "heading", "level": 2, "content": "🧪 Interactive Exercises" },
+
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 1: vector Operations Trace",
+      "language": "cpp",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    vector<int> v = {1, 2, 3, 4, 5};\n    v.push_back(6);\n    v.pop_back();\n    v.pop_back();\n    cout << v.size() << \"\\n\";\n    cout << v.back() << \"\\n\";\n    v.insert(v.begin() + 1, 10);\n    for (int x : v) cout << x << \" \";\n    cout << \"\\n\";\n    return 0;\n}",
+      "answer": "4\n4\n1 10 2 3 4 ",
+      "explanation": "Start: {1,2,3,4,5}. push_back(6): {1,2,3,4,5,6}. pop_back(): {1,2,3,4,5}. pop_back(): {1,2,3,4}. size()=4. back()=4. insert at index 1: {1,10,2,3,4}. Print: 1 10 2 3 4."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 2: pair Sorting & Comparison",
+      "language": "cpp",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    vector<pair<int,int>> v = {{3,1},{1,4},{1,2},{2,7},{2,3}};\n    sort(v.begin(), v.end());\n    for (auto [a, b] : v)\n        cout << a << \":\" << b << \" \";\n    cout << \"\\n\";\n    cout << (make_pair(1,4) < make_pair(1,5)) << \"\\n\";\n    cout << (make_pair(2,0) < make_pair(1,9)) << \"\\n\";\n    return 0;\n}",
+      "answer": "1:2 1:4 2:3 2:7 3:1 \n1\n0",
+      "explanation": "Pair sorting is lexicographic: compare first elements first. Groups: {1:2, 1:4} (second asc), then {2:3, 2:7}, then {3:1}. `{1,4} < {1,5}`: same first, 4 < 5 → true (1). `{2,0} < {1,9}`: 2 > 1 → false (0)."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 3: The size()-1 Trap",
+      "language": "cpp",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    vector<int> v = {10, 20, 30};\n    cout << (int)v.size() - 1 << \"\\n\";\n    vector<int> empty;\n    cout << (int)empty.size() - 1 << \"\\n\";\n    // What would happen WITHOUT the cast:\n    // cout << empty.size() - 1;   ← DON'T run this!\n    return 0;\n}",
+      "answer": "2\n-1",
+      "explanation": "`(int)v.size() - 1` = 3 - 1 = 2. `(int)empty.size() - 1` = 0 - 1 = -1 (correct, because we cast to signed int first). Without the cast, `empty.size() - 1` = 0u - 1u = 18446744073709551615 (unsigned wrap-around — a serious bug)."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 4: Group and Sort — Leaderboard",
+      "language": "cpp",
+      "code": "// Given n players with (score, name) pairs,\n// print them sorted: highest score first.\n// Ties broken alphabetically by name (ascending).\n// n ≤ 10^5\n// Example input:\n// 4\n// 95 Alice\n// 87 Bob\n// 95 Charlie\n// 87 Alice",
+      "approach": "Store each player as `pair<int, string>` = `{score, name}`. Sort with a custom comparator: descending score, then ascending name. Or store `{-score, name}` and sort ascending — the negation trick avoids writing a comparator.",
+      "solution": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n    int n; cin >> n;\n    vector<pair<int,string>> players(n);\n    for (auto& [score, name] : players)\n        cin >> score >> name;\n    // Negation trick: sort by -score asc, then name asc\n    sort(players.begin(), players.end(), [](auto& a, auto& b){\n        if (a.first != b.first) return a.first > b.first;\n        return a.second < b.second;\n    });\n    for (auto& [score, name] : players)\n        cout << score << \" \" << name << \"\\n\";\n    return 0;\n}",
+      "explanation": "The custom comparator sorts descending by score (higher first) and breaks ties alphabetically. The structured binding `auto& [score, name]` (C++17) reads directly into the pair fields, making the input loop clean. Output for the example: Alice 95, Charlie 95, Alice 87, Bob 87."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 5: Remove Duplicates Preserving Order",
+      "language": "cpp",
+      "code": "// Given a vector of integers, remove duplicates\n// while preserving the original order of first appearances.\n// Example: {4, 3, 1, 3, 4, 5} → {4, 3, 1, 5}\n// n ≤ 10^6",
+      "approach": "Use an `unordered_set` as a 'seen' tracker. Iterate the original vector; if an element hasn't been seen, add it to the result and mark it seen. O(n) average time.",
+      "solution": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n    int n; cin >> n;\n    vector<int> a(n);\n    for (int& x : a) cin >> x;\n    unordered_set<int> seen;\n    vector<int> result;\n    result.reserve(n);\n    for (int x : a) {\n        if (seen.insert(x).second)  // .second is true if inserted (not duplicate)\n            result.push_back(x);\n    }\n    for (int i = 0; i < (int)result.size(); i++) {\n        if (i) cout << \" \";\n        cout << result[i];\n    }\n    cout << \"\\n\";\n    return 0;\n}",
+      "explanation": "`set::insert()` returns `{iterator, bool}`. The bool (`.second`) is `true` if the element was newly inserted (not a duplicate). This O(n) approach preserves insertion order. Note: `sort` + `unique` is O(n log n) and does NOT preserve order — a common wrong approach."
+    },
+
+    { "type": "divider" },
+    { "type": "heading", "level": 2, "content": "📋 vector Complexity Cheat Sheet" },
+    { "type": "table",
+      "headers": ["Operation", "Method", "Complexity"],
+      "rows": [
+        ["Access by index",          "`v[i]`",                    "O(1)"],
+        ["Append to back",           "`push_back` / `emplace_back`", "O(1) amortized"],
+        ["Remove from back",         "`pop_back`",                "O(1)"],
+        ["Insert at position",       "`v.insert(it, val)`",       "O(n)"],
+        ["Remove at position",       "`v.erase(it)`",             "O(n)"],
+        ["Sort",                     "`sort(v.begin(), v.end())`","O(n log n)"],
+        ["Binary search (sorted)",   "`lower_bound`",             "O(log n)"],
+        ["Find (unsorted)",          "`find(begin, end, val)`",   "O(n)"],
+        ["Swap two vectors",         "`swap(a, b)`",              "O(1)"],
+        ["Reverse",                  "`reverse(begin, end)`",     "O(n)"]
+      ]
+    }
+  ]
+}
