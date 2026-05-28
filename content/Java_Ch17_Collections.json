@@ -1,0 +1,248 @@
+{
+  "id": "Java_Ch17_Collections",
+  "track": "java",
+  "chapter": 17,
+  "title": "Collections: ArrayList, LinkedList, HashMap & HashSet",
+  "description": "Master Java's most exam-critical collection types — the data structures that appear in virtually every CSE110 practical and written question involving dynamic data.",
+  "sections": [
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📚 Why Collections Matter in CSE110 Exams"
+    },
+    {
+      "type": "paragraph",
+      "content": "Java's Collections Framework is tested in CSE110 in two ways: **conceptual questions** (which collection to use and why) and **code tracing questions** (predict output from a sequence of add/remove/get operations). Understanding the difference between List, Map, and Set, and knowing the method names for each, directly decides marks on written and practical exams."
+    },
+    {
+      "type": "callout",
+      "variant": "tip",
+      "label": "The import Statement",
+      "content": "All standard collections require `import java.util.*;` at the top of your file. Without it, you get a compile-time error. In exams, always write this import even if not prompted."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🗃️ The Collections Hierarchy — Big Picture"
+    },
+    {
+      "type": "paragraph",
+      "content": "Java collections implement two main interfaces: **Collection** (for groups of elements: List, Set, Queue) and **Map** (for key-value pairs). The most exam-relevant types are `ArrayList` (indexed list), `LinkedList` (doubly-linked, also a Deque), `HashMap` (key→value mapping), and `HashSet` (unique elements)."
+    },
+    {
+      "type": "table",
+      "headers": ["Interface", "Class", "Ordered?", "Duplicates?", "Key Feature"],
+      "rows": [
+        ["List", "ArrayList", "Yes (insertion order)", "Yes", "O(1) get by index"],
+        ["List", "LinkedList", "Yes (insertion order)", "Yes", "O(1) add/remove at ends"],
+        ["Set", "HashSet", "No", "No", "O(1) contains check"],
+        ["Set", "TreeSet", "Yes (sorted)", "No", "O(log N) operations"],
+        ["Map", "HashMap", "No", "Keys: No, Values: Yes", "O(1) get/put by key"],
+        ["Map", "TreeMap", "Yes (sorted by key)", "Keys: No", "O(log N) operations"]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📋 ArrayList — Dynamic Array"
+    },
+    {
+      "type": "paragraph",
+      "content": "`ArrayList<E>` is backed by a resizable array. It gives O(1) **random access** by index (like an array), but O(N) insertion/deletion in the middle (elements must shift). It is the most commonly used collection in Java and the one most frequently tested in CSE110."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "ArrayList — Complete Method Reference",
+      "code": "import java.util.*;\n\npublic class ArrayListDemo {\n    public static void main(String[] args) {\n        ArrayList<String> list = new ArrayList<>();\n\n        // Adding elements\n        list.add(\"Alice\");          // add to end\n        list.add(\"Bob\");\n        list.add(0, \"Zara\");        // add at index 0 (shifts others right)\n\n        // Accessing\n        System.out.println(list.get(0));        // \"Zara\"\n        System.out.println(list.size());        // 3\n        System.out.println(list.contains(\"Bob\")); // true\n        System.out.println(list.indexOf(\"Alice\")); // 1\n\n        // Modifying\n        list.set(1, \"Ava\");         // replace index 1\n        list.remove(\"Bob\");         // remove by value (first match)\n        list.remove(0);             // remove by index\n\n        // Iteration\n        for (String s : list) {\n            System.out.println(s);\n        }\n\n        // Sorting\n        Collections.sort(list);\n        System.out.println(list);   // [Ava] (only one left)\n\n        list.clear();\n        System.out.println(list.isEmpty()); // true\n    }\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "danger",
+      "label": "remove(int) vs remove(Object) — Most Common Exam Mistake",
+      "content": "For `ArrayList<Integer>`, calling `list.remove(2)` removes the element **at index 2**, NOT the element with value 2. To remove the value 2, you must write `list.remove(Integer.valueOf(2))`. This is a classic CSE110 trap in predict-output questions — a wrong answer here loses multiple marks."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔗 LinkedList — Doubly-Linked List"
+    },
+    {
+      "type": "paragraph",
+      "content": "`LinkedList<E>` implements both `List` and `Deque`. It excels at O(1) insertions and deletions at the **head or tail**, making it ideal for queue/stack operations. However, `get(i)` is O(N) because it must traverse from the front. Use `LinkedList` when you frequently add/remove from both ends."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "LinkedList as Queue and Stack",
+      "code": "import java.util.*;\n\npublic class LinkedListDemo {\n    public static void main(String[] args) {\n        LinkedList<Integer> ll = new LinkedList<>();\n\n        // Deque / Queue operations\n        ll.addFirst(10);    // [10]\n        ll.addLast(20);     // [10, 20]\n        ll.addFirst(5);     // [5, 10, 20]\n        ll.addLast(30);     // [5, 10, 20, 30]\n\n        System.out.println(ll.peekFirst()); // 5  (view without removing)\n        System.out.println(ll.peekLast());  // 30\n        System.out.println(ll.pollFirst()); // 5  (remove and return)\n        System.out.println(ll.pollLast());  // 30 (remove and return)\n        System.out.println(ll);             // [10, 20]\n\n        // Used as a Stack (LIFO)\n        LinkedList<String> stack = new LinkedList<>();\n        stack.push(\"A\");  // addFirst\n        stack.push(\"B\");  // addFirst  -> [B, A]\n        System.out.println(stack.pop()); // \"B\" (removeFirst)\n    }\n}"
+    },
+    {
+      "type": "table",
+      "headers": ["Operation", "ArrayList Time", "LinkedList Time", "Winner"],
+      "rows": [
+        ["get(index)", "O(1)", "O(N)", "ArrayList"],
+        ["add(end)", "O(1) amortized", "O(1)", "Tie"],
+        ["add(start)", "O(N)", "O(1)", "LinkedList"],
+        ["remove(middle)", "O(N)", "O(N) find + O(1) remove", "Tie"],
+        ["contains(val)", "O(N)", "O(N)", "Tie"],
+        ["Memory per element", "Less", "More (node pointers)", "ArrayList"]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🗺️ HashMap — Key-Value Mapping"
+    },
+    {
+      "type": "paragraph",
+      "content": "`HashMap<K, V>` stores key-value pairs with O(1) average time for `put`, `get`, and `containsKey`. Keys must be unique; values can repeat. It does **not** guarantee insertion order. For ordered iteration, use `TreeMap` (sorted by key) or `LinkedHashMap` (insertion order)."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "HashMap — Complete Method Reference",
+      "code": "import java.util.*;\n\npublic class HashMapDemo {\n    public static void main(String[] args) {\n        HashMap<String, Integer> scores = new HashMap<>();\n\n        // Putting entries\n        scores.put(\"Alice\", 95);\n        scores.put(\"Bob\", 80);\n        scores.put(\"Alice\", 98); // overwrites previous value for \"Alice\"\n\n        // Accessing\n        System.out.println(scores.get(\"Alice\"));        // 98\n        System.out.println(scores.get(\"Eve\"));          // null (key absent)\n        System.out.println(scores.getOrDefault(\"Eve\", 0)); // 0 (safe get)\n        System.out.println(scores.containsKey(\"Bob\")); // true\n        System.out.println(scores.containsValue(80));  // true\n        System.out.println(scores.size());              // 2\n\n        // Iterating\n        for (Map.Entry<String, Integer> entry : scores.entrySet()) {\n            System.out.println(entry.getKey() + \" -> \" + entry.getValue());\n        }\n\n        // Frequency counting pattern (very common in exams)\n        String text = \"hello\";\n        HashMap<Character, Integer> freq = new HashMap<>();\n        for (char c : text.toCharArray()) {\n            freq.put(c, freq.getOrDefault(c, 0) + 1);\n        }\n        System.out.println(freq); // {h=1, e=1, l=2, o=1}\n\n        scores.remove(\"Bob\");\n        scores.clear();\n    }\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "warning",
+      "label": "HashMap Iteration Order is Unpredictable",
+      "content": "When you iterate over a `HashMap` with `entrySet()` or `keySet()`, the order is **NOT guaranteed** to be insertion order or alphabetical. In predict-output questions, if the answer depends on iteration order of a HashMap, the exact output is implementation-dependent. If a question requires consistent order, a `TreeMap` (sorted) or `LinkedHashMap` (insertion-ordered) should be used."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔵 HashSet — Unique Elements"
+    },
+    {
+      "type": "paragraph",
+      "content": "`HashSet<E>` stores unique elements with O(1) `add`, `remove`, and `contains`. It is backed by a `HashMap`. Order is not guaranteed. The most common CSE110 use: checking membership, deduplication of a list, and set-theoretic operations (union, intersection)."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "HashSet — Operations and Set Logic",
+      "code": "import java.util.*;\n\npublic class HashSetDemo {\n    public static void main(String[] args) {\n        HashSet<Integer> set = new HashSet<>();\n        set.add(1);\n        set.add(2);\n        set.add(3);\n        set.add(2); // duplicate — ignored silently\n\n        System.out.println(set.size());        // 3\n        System.out.println(set.contains(2));   // true\n        set.remove(2);\n        System.out.println(set.contains(2));   // false\n\n        // Deduplicate a list using HashSet\n        ArrayList<Integer> withDups = new ArrayList<>(Arrays.asList(1,2,2,3,3,3));\n        HashSet<Integer> unique = new HashSet<>(withDups);\n        System.out.println(unique.size()); // 3\n\n        // Set operations\n        HashSet<Integer> a = new HashSet<>(Arrays.asList(1, 2, 3, 4));\n        HashSet<Integer> b = new HashSet<>(Arrays.asList(3, 4, 5, 6));\n\n        // Intersection (retainAll modifies in place — use a copy)\n        HashSet<Integer> intersect = new HashSet<>(a);\n        intersect.retainAll(b);\n        System.out.println(intersect); // [3, 4]\n\n        // Union\n        HashSet<Integer> union = new HashSet<>(a);\n        union.addAll(b);\n        System.out.println(union); // [1, 2, 3, 4, 5, 6]\n    }\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔁 Iterating Collections"
+    },
+    {
+      "type": "paragraph",
+      "content": "There are four standard ways to iterate collections in Java. Exams test all of them and may ask you to predict output from any variation. Know the syntax cold."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Four Ways to Iterate a List",
+      "code": "import java.util.*;\n\npublic class IterationDemo {\n    public static void main(String[] args) {\n        ArrayList<String> list = new ArrayList<>(Arrays.asList(\"A\", \"B\", \"C\"));\n\n        // 1. Enhanced for-loop (most common)\n        for (String s : list) System.out.print(s + \" \"); // A B C\n        System.out.println();\n\n        // 2. Index-based for loop\n        for (int i = 0; i < list.size(); i++) System.out.print(list.get(i) + \" \");\n        System.out.println();\n\n        // 3. Iterator\n        Iterator<String> it = list.iterator();\n        while (it.hasNext()) System.out.print(it.next() + \" \");\n        System.out.println();\n\n        // 4. forEach with lambda\n        list.forEach(s -> System.out.print(s + \" \"));\n        System.out.println();\n    }\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "warning",
+      "label": "ConcurrentModificationException",
+      "content": "Never add or remove elements from an `ArrayList` while iterating it with a for-each loop. This throws a **runtime** `ConcurrentModificationException`. To safely remove during iteration, use an `Iterator` and call `it.remove()`, or collect items to remove in a separate list and remove after the loop."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🛠️ Collections Utility Class"
+    },
+    {
+      "type": "paragraph",
+      "content": "The `Collections` class (note: not `Collection`) provides static utility methods that operate on collection objects. These appear frequently in exam code snippets."
+    },
+    {
+      "type": "table",
+      "headers": ["Method", "Description", "Example"],
+      "rows": [
+        ["`Collections.sort(list)`", "Sort ascending (natural order)", "`Collections.sort(list)`"],
+        ["`Collections.sort(list, comparator)`", "Sort with custom comparator", "`Collections.sort(list, Collections.reverseOrder())`"],
+        ["`Collections.reverse(list)`", "Reverse the list in-place", "`Collections.reverse(list)`"],
+        ["`Collections.max(list)`", "Return maximum element", "`Collections.max(list)`"],
+        ["`Collections.min(list)`", "Return minimum element", "`Collections.min(list)`"],
+        ["`Collections.frequency(list, obj)`", "Count occurrences of obj", "`Collections.frequency(list, 5)`"],
+        ["`Collections.shuffle(list)`", "Randomly shuffle list", "`Collections.shuffle(list)`"]
+      ]
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🏋️ Interactive Exercises"
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 1: ArrayList Operations Trace",
+      "language": "java",
+      "code": "import java.util.*;\npublic class Q1 {\n    public static void main(String[] args) {\n        ArrayList<Integer> list = new ArrayList<>();\n        list.add(10);\n        list.add(20);\n        list.add(30);\n        list.add(1, 15);\n        list.remove(0);\n        list.set(1, 25);\n        System.out.println(list);\n        System.out.println(list.size());\n        System.out.println(list.get(0));\n    }\n}",
+      "answer": "[15, 25, 30]\n3\n15",
+      "explanation": "Step-by-step: After 3 adds → [10, 20, 30]. After `add(1, 15)` → [10, 15, 20, 30] (15 inserted at index 1, others shift right). After `remove(0)` → [15, 20, 30] (removes element at index 0 which is 10). After `set(1, 25)` → [15, 25, 30] (replaces index 1). `size()` = 3. `get(0)` = 15."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 2: HashMap Frequency Count Trace",
+      "language": "java",
+      "code": "import java.util.*;\npublic class Q2 {\n    public static void main(String[] args) {\n        HashMap<String, Integer> map = new HashMap<>();\n        String[] words = {\"cat\", \"dog\", \"cat\", \"bird\", \"dog\", \"cat\"};\n        for (String w : words) {\n            map.put(w, map.getOrDefault(w, 0) + 1);\n        }\n        System.out.println(map.get(\"cat\"));\n        System.out.println(map.get(\"dog\"));\n        System.out.println(map.containsKey(\"fish\"));\n        System.out.println(map.size());\n    }\n}",
+      "answer": "3\n2\nfalse\n3",
+      "explanation": "The loop counts word frequency using `getOrDefault`. After processing all words: cat=3 (appears 3 times), dog=2, bird=1. `get(\"cat\")` = 3. `get(\"dog\")` = 2. `containsKey(\"fish\")` = false (not in the array). `size()` = 3 (three distinct keys: cat, dog, bird)."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 3: HashSet Deduplication and Membership",
+      "language": "java",
+      "code": "import java.util.*;\npublic class Q3 {\n    public static void main(String[] args) {\n        HashSet<Integer> set = new HashSet<>();\n        int[] arr = {3, 1, 4, 1, 5, 9, 2, 6, 5, 3};\n        for (int x : arr) set.add(x);\n        System.out.println(set.size());\n        System.out.println(set.contains(7));\n        set.remove(4);\n        System.out.println(set.contains(4));\n        System.out.println(set.size());\n    }\n}",
+      "answer": "7\nfalse\nfalse\n6",
+      "explanation": "The array has 10 elements but duplicates: 1 appears twice, 5 appears twice, 3 appears twice. Unique elements: {1, 2, 3, 4, 5, 6, 9} = 7 elements. `size()` = 7. `contains(7)` = false (7 is not in the array). After `remove(4)`: {1, 2, 3, 5, 6, 9}, `contains(4)` = false. `size()` = 6."
+    },
+    {
+      "type": "accordion",
+      "variant": "find-error",
+      "title": "Exercise 4: ConcurrentModification During Iteration",
+      "language": "java",
+      "code": "import java.util.*;\npublic class Q4 {\n    public static void main(String[] args) {\n        ArrayList<Integer> list = new ArrayList<>(Arrays.asList(1, 2, 3, 4, 5));\n        for (Integer x : list) {\n            if (x % 2 == 0) {\n                list.remove(x);  // BUG HERE\n            }\n        }\n        System.out.println(list);\n    }\n}",
+      "error": "Line 5 (`list.remove(x)` inside enhanced for-loop): Runtime ConcurrentModificationException. Modifying an ArrayList while iterating it with a for-each loop is forbidden — the iterator detects structural modification and throws this exception immediately.",
+      "fix": "import java.util.*;\npublic class Q4 {\n    public static void main(String[] args) {\n        ArrayList<Integer> list = new ArrayList<>(Arrays.asList(1, 2, 3, 4, 5));\n        // FIX 1: Use Iterator\n        Iterator<Integer> it = list.iterator();\n        while (it.hasNext()) {\n            int x = it.next();\n            if (x % 2 == 0) it.remove(); // safe removal via iterator\n        }\n        System.out.println(list); // [1, 3, 5]\n\n        // FIX 2 (alternative): removeIf (Java 8+)\n        // list.removeIf(x -> x % 2 == 0);\n    }\n}",
+      "explanation": "Java's ArrayList uses a `modCount` counter. The iterator checks this counter on every `next()` call. When `list.remove()` is called outside the iterator, `modCount` changes, and the iterator throws `ConcurrentModificationException` to prevent undefined behavior. Fix: use `Iterator.remove()` which updates `modCount` internally and is safe. Output after fix: [1, 3, 5]."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 5: Word Frequency — Find Most Common Word",
+      "language": "java",
+      "code": "// Given an array of words, find and print the word that appears most frequently.\n// If there's a tie, print any one of them.\n// Input: String[] words\n// Example: {\"apple\", \"banana\", \"apple\", \"cherry\", \"banana\", \"apple\"}\n// Output: apple (appears 3 times)",
+      "approach": "Use a HashMap<String, Integer> to count frequency of each word. Then iterate the map's entrySet to find the key with the maximum value. Two-pass approach: first pass builds the frequency map, second pass finds the maximum.",
+      "solution": "import java.util.*;\npublic class MostFrequent {\n    public static String findMostFrequent(String[] words) {\n        // Step 1: Build frequency map\n        HashMap<String, Integer> freq = new HashMap<>();\n        for (String w : words) {\n            freq.put(w, freq.getOrDefault(w, 0) + 1);\n        }\n\n        // Step 2: Find max frequency word\n        String result = null;\n        int maxCount = 0;\n        for (Map.Entry<String, Integer> entry : freq.entrySet()) {\n            if (entry.getValue() > maxCount) {\n                maxCount = entry.getValue();\n                result = entry.getKey();\n            }\n        }\n        return result;\n    }\n\n    public static void main(String[] args) {\n        String[] words = {\"apple\", \"banana\", \"apple\", \"cherry\", \"banana\", \"apple\"};\n        System.out.println(findMostFrequent(words)); // apple\n    }\n}",
+      "explanation": "Time: O(N) for both passes. Space: O(K) where K = number of distinct words. The `getOrDefault(w, 0) + 1` pattern is the standard Java idiom for frequency counting — commit this to memory as it appears in dozens of exam variations. Always iterate `entrySet()` when you need both key and value simultaneously, as it's more efficient than calling `get()` for each key separately."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📝 Quick Reference Summary"
+    },
+    {
+      "type": "list",
+      "ordered": false,
+      "items": [
+        "**ArrayList** — dynamic array; O(1) get by index; `add(val)`, `add(idx,val)`, `remove(idx)`, `remove(Object)`, `set(idx,val)`, `get(idx)`, `size()`, `contains(val)`, `clear()`, `isEmpty()`",
+        "**LinkedList** — doubly-linked; O(1) at ends; `addFirst`, `addLast`, `pollFirst`, `pollLast`, `peekFirst`, `peekLast`; also implements Deque/Stack via `push`/`pop`",
+        "**HashMap** — key→value; O(1) average; `put(k,v)`, `get(k)`, `getOrDefault(k,def)`, `containsKey(k)`, `containsValue(v)`, `remove(k)`, `size()`, `keySet()`, `values()`, `entrySet()`",
+        "**HashSet** — unique elements; O(1) average; `add(val)`, `remove(val)`, `contains(val)`, `size()`, `addAll(coll)` (union), `retainAll(coll)` (intersection), `removeAll(coll)` (difference)",
+        "**Import required**: `import java.util.*;` — always include this, never forget",
+        "**remove() trap**: `list.remove(2)` removes by index; `list.remove(Integer.valueOf(2))` removes by value — distinguish carefully",
+        "**Iteration safety**: never call `list.remove()` inside a for-each loop — use `Iterator.remove()` or `removeIf()` instead",
+        "**HashMap order**: not guaranteed; use `TreeMap` for sorted key order or `LinkedHashMap` for insertion order",
+        "**Frequency pattern**: `map.put(key, map.getOrDefault(key, 0) + 1)` — the single most tested HashMap idiom in CSE110",
+        "**Collections utility**: `Collections.sort()`, `Collections.reverse()`, `Collections.max()`, `Collections.min()`, `Collections.frequency()` operate on List objects"
+      ]
+    }
+  ]
+}

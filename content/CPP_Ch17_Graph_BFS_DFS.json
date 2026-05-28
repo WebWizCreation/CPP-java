@@ -1,0 +1,231 @@
+{
+  "id": "CPP_Ch17_Graph_BFS_DFS",
+  "track": "cpp",
+  "chapter": 17,
+  "title": "Graph BFS & DFS",
+  "description": "Master graph traversal with BFS and DFS — the backbone of hundreds of Codeforces problems from connectivity and bipartite checking to flood-fill and cycle detection.",
+  "sections": [
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🌐 The Graph Mindset for Competitive Programming"
+    },
+    {
+      "type": "paragraph",
+      "content": "Graphs are everywhere in CP: grids, social networks, dependency chains, state machines. A contestant who can **instantly** convert a problem into a graph model and apply BFS/DFS fluently solves 30–40% of Codeforces Div2 D and E problems. The key skill is not memorizing traversal code — it's *recognizing* when to use which traversal and *why*."
+    },
+    {
+      "type": "callout",
+      "variant": "tip",
+      "label": "CP Mental Model",
+      "content": "When you read a problem, ask: **\"Is there a relationship between elements?\"** If yes, that relationship is an edge. Elements are nodes. Now you have a graph. BFS for shortest paths / level-by-level; DFS for exploring all paths, components, cycles."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📦 Graph Representation: Adjacency List"
+    },
+    {
+      "type": "paragraph",
+      "content": "Always use **adjacency list** in CP. Adjacency matrix is only viable when N ≤ 1000 and you need O(1) edge lookup. For all other cases (N up to 2×10⁵), adjacency list is the standard. Store it as `vector<vector<int>> adj(n+1)` for unweighted graphs or `vector<vector<pair<int,int>>> adj(n+1)` for weighted."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Graph Setup Template (Unweighted & Weighted)",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int n, m;\n    cin >> n >> m;\n\n    // Unweighted undirected\n    vector<vector<int>> adj(n + 1);\n    for (int i = 0; i < m; i++) {\n        int u, v;\n        cin >> u >> v;\n        adj[u].push_back(v);\n        adj[v].push_back(u); // remove for directed graph\n    }\n\n    // Weighted undirected\n    vector<vector<pair<int,int>>> wadj(n + 1);\n    // cin >> u >> v >> w; wadj[u].push_back({v, w}); wadj[v].push_back({u, w});\n\n    return 0;\n}"
+    },
+    {
+      "type": "table",
+      "headers": ["Representation", "Space", "Add Edge", "Check Edge", "Iterate Neighbors", "Best For"],
+      "rows": [
+        ["Adjacency List", "O(V+E)", "O(1)", "O(degree)", "O(degree)", "Sparse graphs, CP standard"],
+        ["Adjacency Matrix", "O(V²)", "O(1)", "O(1)", "O(V)", "Dense graphs, V≤1000"],
+        ["Edge List", "O(E)", "O(1)", "O(E)", "O(E)", "Kruskal's MST only"]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔍 Depth-First Search (DFS)"
+    },
+    {
+      "type": "paragraph",
+      "content": "DFS explores as deep as possible along each branch before backtracking. It uses **O(V) stack space** (recursion stack). Key applications: connected components, cycle detection, topological sort, articulation points, tree DFS. Always maintain a `visited[]` array to avoid infinite loops."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "DFS — Iterative & Recursive",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nvector<vector<int>> adj;\nvector<bool> vis;\n\n// Recursive DFS\nvoid dfs(int u) {\n    vis[u] = true;\n    for (int v : adj[u]) {\n        if (!vis[v]) {\n            dfs(v);\n        }\n    }\n}\n\n// Iterative DFS (avoids stack overflow for large graphs)\nvoid dfs_iter(int start) {\n    stack<int> st;\n    st.push(start);\n    vis[start] = true;\n    while (!st.empty()) {\n        int u = st.top(); st.pop();\n        for (int v : adj[u]) {\n            if (!vis[v]) {\n                vis[v] = true;\n                st.push(v);\n            }\n        }\n    }\n}\n\nint main() {\n    int n, m;\n    cin >> n >> m;\n    adj.assign(n + 1, {});\n    vis.assign(n + 1, false);\n    for (int i = 0; i < m; i++) {\n        int u, v; cin >> u >> v;\n        adj[u].push_back(v);\n        adj[v].push_back(u);\n    }\n    // Count connected components\n    int components = 0;\n    for (int i = 1; i <= n; i++) {\n        if (!vis[i]) {\n            dfs(i);\n            components++;\n        }\n    }\n    cout << components << \"\\n\";\n    return 0;\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "danger",
+      "label": "Stack Overflow on Large Graphs",
+      "content": "Recursive DFS can crash with a **stack overflow** when N ≥ 10⁵ because C++ default stack is ~1–8 MB. On Codeforces, this is a frequent RE verdict. **Fix**: use iterative DFS with an explicit `stack<int>`, or increase stack size with compiler pragmas. Always prefer iterative for graphs with N > 5×10⁴."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🌊 Breadth-First Search (BFS)"
+    },
+    {
+      "type": "paragraph",
+      "content": "BFS explores nodes **level by level** from the source, guaranteeing that the first time a node is visited, it is via the **shortest path** (in terms of edge count). Use a `queue<int>` and mark nodes visited *before* pushing to the queue (not after popping) to avoid duplicate entries."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "BFS — Shortest Path in Unweighted Graph",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int n, m, src;\n    cin >> n >> m >> src;\n\n    vector<vector<int>> adj(n + 1);\n    for (int i = 0; i < m; i++) {\n        int u, v; cin >> u >> v;\n        adj[u].push_back(v);\n        adj[v].push_back(u);\n    }\n\n    vector<int> dist(n + 1, -1);\n    queue<int> q;\n    dist[src] = 0;\n    q.push(src);\n\n    while (!q.empty()) {\n        int u = q.front(); q.pop();\n        for (int v : adj[u]) {\n            if (dist[v] == -1) {   // not visited\n                dist[v] = dist[u] + 1;\n                q.push(v);          // mark BEFORE push, not after pop\n            }\n        }\n    }\n\n    for (int i = 1; i <= n; i++) {\n        cout << \"dist[\" << i << \"] = \" << dist[i] << \"\\n\";\n    }\n    return 0;\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "warning",
+      "label": "Mark Visited BEFORE Enqueuing",
+      "content": "A classic BFS bug: marking `visited` when you **pop** instead of when you **push**. This causes the same node to be enqueued multiple times, blowing up time complexity from O(V+E) to O(V²) or worse. Always set `dist[v] = dist[u]+1` or `vis[v] = true` **at the moment you push v into the queue**."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "⚖️ BFS vs DFS — When to Use Which"
+    },
+    {
+      "type": "table",
+      "headers": ["Problem Type", "Use", "Reason"],
+      "rows": [
+        ["Shortest path (unweighted)", "BFS", "Guarantees minimum edge count"],
+        ["Connected components", "Either", "DFS slightly faster in practice"],
+        ["Cycle detection (undirected)", "DFS", "Back-edge detection is natural"],
+        ["Cycle detection (directed)", "DFS", "Use color: white/gray/black"],
+        ["Bipartite / 2-coloring", "BFS or DFS", "BFS is more intuitive"],
+        ["Topological sort", "DFS (or Kahn's BFS)", "DFS post-order gives reverse topo"],
+        ["Flood fill (grid)", "BFS (shortest) or DFS (any path)", "BFS if distance needed"],
+        ["Reachability", "Either", "DFS often simpler to code"]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🗺️ Grid as Graph: Flood Fill"
+    },
+    {
+      "type": "paragraph",
+      "content": "Many CP problems disguise graphs as 2D grids. Each cell is a node; adjacent passable cells share an edge. Use `dx[]` and `dy[]` arrays for the 4 (or 8) directional moves. BFS gives shortest path in steps; DFS counts connected regions."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Grid BFS — Shortest Path in a Maze",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint dx[] = {0, 0, 1, -1};\nint dy[] = {1, -1, 0, 0};\n\nint main() {\n    int R, C;\n    cin >> R >> C;\n    vector<string> grid(R);\n    for (auto& row : grid) cin >> row;\n\n    // Find start 'S' and end 'E'\n    int sr, sc, er, ec;\n    for (int i = 0; i < R; i++)\n        for (int j = 0; j < C; j++) {\n            if (grid[i][j] == 'S') { sr = i; sc = j; }\n            if (grid[i][j] == 'E') { er = i; ec = j; }\n        }\n\n    vector<vector<int>> dist(R, vector<int>(C, -1));\n    queue<pair<int,int>> q;\n    dist[sr][sc] = 0;\n    q.push({sr, sc});\n\n    while (!q.empty()) {\n        auto [r, c] = q.front(); q.pop();\n        for (int d = 0; d < 4; d++) {\n            int nr = r + dx[d], nc = c + dy[d];\n            if (nr >= 0 && nr < R && nc >= 0 && nc < C &&\n                grid[nr][nc] != '#' && dist[nr][nc] == -1) {\n                dist[nr][nc] = dist[r][c] + 1;\n                q.push({nr, nc});\n            }\n        }\n    }\n\n    cout << dist[er][ec] << \"\\n\"; // -1 if unreachable\n    return 0;\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🎨 Bipartite Graph Check (2-Coloring)"
+    },
+    {
+      "type": "paragraph",
+      "content": "A graph is **bipartite** if its nodes can be split into two groups such that every edge crosses between groups. Equivalently, it contains **no odd-length cycles**. Check via BFS: try to 2-color the graph. If you ever need to assign both colors to the same node, it's not bipartite."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Bipartite Check via BFS",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int n, m;\n    cin >> n >> m;\n    vector<vector<int>> adj(n + 1);\n    for (int i = 0; i < m; i++) {\n        int u, v; cin >> u >> v;\n        adj[u].push_back(v);\n        adj[v].push_back(u);\n    }\n\n    vector<int> color(n + 1, -1);\n    bool bipartite = true;\n\n    for (int start = 1; start <= n && bipartite; start++) {\n        if (color[start] != -1) continue;\n        queue<int> q;\n        color[start] = 0;\n        q.push(start);\n        while (!q.empty() && bipartite) {\n            int u = q.front(); q.pop();\n            for (int v : adj[u]) {\n                if (color[v] == -1) {\n                    color[v] = 1 - color[u]; // flip color\n                    q.push(v);\n                } else if (color[v] == color[u]) {\n                    bipartite = false; // same color on both ends!\n                }\n            }\n        }\n    }\n\n    cout << (bipartite ? \"YES\" : \"NO\") << \"\\n\";\n    return 0;\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔄 Cycle Detection"
+    },
+    {
+      "type": "paragraph",
+      "content": "For **undirected** graphs: during DFS, if you visit a neighbor that is already visited and is NOT the parent of the current node, a cycle exists. For **directed** graphs: use 3-color DFS (0=unvisited, 1=in-stack, 2=done). A back-edge to a gray (in-stack) node = cycle."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Cycle Detection — Undirected Graph (DFS)",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nvector<vector<int>> adj;\nvector<bool> vis;\n\nbool hasCycle(int u, int parent) {\n    vis[u] = true;\n    for (int v : adj[u]) {\n        if (!vis[v]) {\n            if (hasCycle(v, u)) return true;\n        } else if (v != parent) {\n            return true; // back edge found\n        }\n    }\n    return false;\n}\n\nint main() {\n    int n, m; cin >> n >> m;\n    adj.assign(n + 1, {});\n    vis.assign(n + 1, false);\n    for (int i = 0; i < m; i++) {\n        int u, v; cin >> u >> v;\n        adj[u].push_back(v);\n        adj[v].push_back(u);\n    }\n    bool found = false;\n    for (int i = 1; i <= n; i++)\n        if (!vis[i] && hasCycle(i, -1))\n            found = true;\n    cout << (found ? \"YES\" : \"NO\") << \"\\n\";\n    return 0;\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🏝️ Multi-Source BFS"
+    },
+    {
+      "type": "paragraph",
+      "content": "**Multi-source BFS** starts from multiple sources simultaneously. This is extremely powerful for problems like \"find the distance from each cell to the nearest obstacle\" or \"spread of infection from multiple starting points.\" Initialize the queue with ALL sources at distance 0, then run standard BFS."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Multi-Source BFS — Distance to Nearest 1 in Grid",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint dx[] = {0, 0, 1, -1};\nint dy[] = {1, -1, 0, 0};\n\nint main() {\n    int R, C; cin >> R >> C;\n    vector<vector<int>> grid(R, vector<int>(C));\n    vector<vector<int>> dist(R, vector<int>(C, -1));\n    queue<pair<int,int>> q;\n\n    for (int i = 0; i < R; i++)\n        for (int j = 0; j < C; j++) {\n            cin >> grid[i][j];\n            if (grid[i][j] == 1) {\n                dist[i][j] = 0;\n                q.push({i, j}); // all sources enqueued at start\n            }\n        }\n\n    while (!q.empty()) {\n        auto [r, c] = q.front(); q.pop();\n        for (int d = 0; d < 4; d++) {\n            int nr = r + dx[d], nc = c + dy[d];\n            if (nr >= 0 && nr < R && nc >= 0 && nc < C && dist[nr][nc] == -1) {\n                dist[nr][nc] = dist[r][c] + 1;\n                q.push({nr, nc});\n            }\n        }\n    }\n    // dist[i][j] now holds distance to nearest 1\n    for (int i = 0; i < R; i++) {\n        for (int j = 0; j < C; j++) cout << dist[i][j] << \" \";\n        cout << \"\\n\";\n    }\n    return 0;\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "tip",
+      "label": "0-1 BFS for Edge Weights of 0 or 1",
+      "content": "When edge weights are only **0 or 1** (e.g., moving costs 0 or 1), use a `deque` instead of a queue: push weight-0 edges to the **front** and weight-1 edges to the **back**. This gives O(V+E) shortest paths — faster than Dijkstra's O((V+E) log V) for this special case."
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🏋️ Interactive Exercises"
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 1: BFS Layer Traversal Trace",
+      "language": "cpp",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    int n = 5;\n    vector<vector<int>> adj(n + 1);\n    adj[1] = {2, 3};\n    adj[2] = {1, 4, 5};\n    adj[3] = {1};\n    adj[4] = {2};\n    adj[5] = {2};\n\n    vector<int> dist(n + 1, -1);\n    queue<int> q;\n    dist[1] = 0; q.push(1);\n    while (!q.empty()) {\n        int u = q.front(); q.pop();\n        for (int v : adj[u]) {\n            if (dist[v] == -1) {\n                dist[v] = dist[u] + 1;\n                q.push(v);\n            }\n        }\n    }\n    for (int i = 1; i <= n; i++)\n        cout << dist[i] << \" \";\n    cout << \"\\n\";\n    return 0;\n}",
+      "answer": "0 1 1 2 2",
+      "explanation": "BFS from node 1 (dist=0). Neighbors 2 and 3 get dist=1. From node 2: neighbors 4 and 5 (1 is already visited) get dist=2. From node 3: neighbor 1 already visited, no new nodes. Result: dist[1]=0, dist[2]=1, dist[3]=1, dist[4]=2, dist[5]=2."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 2: DFS Component Count",
+      "language": "cpp",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\nvector<vector<int>> adj;\nvector<bool> vis;\nvoid dfs(int u) {\n    vis[u] = true;\n    for (int v : adj[u]) if (!vis[v]) dfs(v);\n}\nint main() {\n    int n = 6;\n    adj.assign(n + 1, {});\n    vis.assign(n + 1, false);\n    // Edges: 1-2, 2-3, 4-5\n    adj[1].push_back(2); adj[2].push_back(1);\n    adj[2].push_back(3); adj[3].push_back(2);\n    adj[4].push_back(5); adj[5].push_back(4);\n    int comp = 0;\n    for (int i = 1; i <= n; i++)\n        if (!vis[i]) { dfs(i); comp++; }\n    cout << comp << \"\\n\";\n    return 0;\n}",
+      "answer": "3",
+      "explanation": "Node 1: DFS visits 1→2→3, comp=1. Node 2: already visited. Node 3: already visited. Node 4: DFS visits 4→5, comp=2. Node 5: already visited. Node 6: isolated, DFS visits only 6, comp=3. Output: 3."
+    },
+    {
+      "type": "accordion",
+      "variant": "find-error",
+      "title": "Exercise 3: Buggy BFS — Wrong Visited Marking",
+      "language": "cpp",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    int n = 4;\n    vector<vector<int>> adj(n+1);\n    adj[1] = {2, 3}; adj[2] = {1, 4}; adj[3] = {1, 4}; adj[4] = {2, 3};\n    vector<int> dist(n+1, -1);\n    queue<int> q;\n    q.push(1);\n    dist[1] = 0;\n    while (!q.empty()) {\n        int u = q.front(); q.pop();\n        for (int v : adj[u]) {\n            q.push(v);              // BUG IS HERE\n            dist[v] = dist[u] + 1;\n        }\n    }\n    for (int i = 1; i <= n; i++) cout << dist[i] << \" \";\n}",
+      "error": "Line 13: Nodes are pushed to the queue and distances overwritten without checking if they were already visited (dist[v] == -1). This is a logical error causing nodes to be processed multiple times, incorrect distances, and infinite-like behavior.",
+      "fix": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    int n = 4;\n    vector<vector<int>> adj(n+1);\n    adj[1] = {2, 3}; adj[2] = {1, 4}; adj[3] = {1, 4}; adj[4] = {2, 3};\n    vector<int> dist(n+1, -1);\n    queue<int> q;\n    q.push(1);\n    dist[1] = 0;\n    while (!q.empty()) {\n        int u = q.front(); q.pop();\n        for (int v : adj[u]) {\n            if (dist[v] == -1) {    // FIX: check before pushing\n                dist[v] = dist[u] + 1;\n                q.push(v);\n            }\n        }\n    }\n    for (int i = 1; i <= n; i++) cout << dist[i] << \" \";\n}",
+      "explanation": "Without the guard, node 4 is pushed twice (once from 2 and once from 3), and its distance gets overwritten. Node 1 is also pushed again from 2 and 3 creating infinite loop potential. The fix: check `dist[v] == -1` before enqueueing, which both prevents duplicate processing and ensures the first (shortest) distance is preserved."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 4: Number of Islands (CF-style Grid DFS)",
+      "language": "cpp",
+      "code": "// Count the number of islands in a grid.\n// '1' = land, '0' = water. Connected land cells (4-directional)\n// form one island.\n// Input: R C, then R rows of C chars ('0' or '1')\n// Output: number of islands\n// Example:\n// 4 5\n// 11000\n// 11000\n// 00100\n// 00011\n// Output: 3",
+      "approach": "Iterate over every cell. When we find an unvisited land cell ('1'), increment answer and DFS/BFS to mark all connected land cells as visited. This way each island is counted exactly once. Use in-place marking (set visited cells to '0') to avoid a separate visited array.",
+      "solution": "#include <bits/stdc++.h>\nusing namespace std;\n\nint R, C;\nvector<string> grid;\nint dx[] = {0, 0, 1, -1};\nint dy[] = {1, -1, 0, 0};\n\nvoid dfs(int r, int c) {\n    if (r < 0 || r >= R || c < 0 || c >= C || grid[r][c] != '1') return;\n    grid[r][c] = '0'; // mark visited\n    for (int d = 0; d < 4; d++) dfs(r + dx[d], c + dy[d]);\n}\n\nint main() {\n    cin >> R >> C;\n    grid.resize(R);\n    for (auto& row : grid) cin >> row;\n\n    int islands = 0;\n    for (int i = 0; i < R; i++)\n        for (int j = 0; j < C; j++)\n            if (grid[i][j] == '1') {\n                dfs(i, j);\n                islands++;\n            }\n\n    cout << islands << \"\\n\";\n    return 0;\n}",
+      "explanation": "Time: O(R×C) — each cell is visited at most once. Space: O(R×C) recursion stack in worst case (all land). In-place marking eliminates the visited array. For very large grids (R×C > 10⁵), prefer iterative DFS with explicit stack to avoid stack overflow. This exact pattern appears in Codeforces problems involving connected regions, infection spread, and territory counting."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 5: Shortest Path with Obstacle Toggle (0-1 BFS)",
+      "language": "cpp",
+      "code": "// You have an R×C grid. '.' = free, '#' = wall.\n// Moving to a free cell costs 0. You can break ONE wall for cost 1.\n// Find minimum cost path from (0,0) to (R-1,C-1).\n// Input: R C, then R rows\n// Output: minimum cost\n// Example:\n// 3 3\n// .##\n// ..#\n// .##\n// Output: 1",
+      "approach": "Model each state as (row, col) with cost = number of walls broken. Since costs are 0 (free cell) or 1 (break wall), use 0-1 BFS with a deque. Free moves go to the front; wall-breaking moves go to the back. This is O(R×C) instead of Dijkstra's O(R×C×log(R×C)).",
+      "solution": "#include <bits/stdc++.h>\nusing namespace std;\n\nint dx[] = {0, 0, 1, -1};\nint dy[] = {1, -1, 0, 0};\n\nint main() {\n    int R, C; cin >> R >> C;\n    vector<string> grid(R);\n    for (auto& row : grid) cin >> row;\n\n    vector<vector<int>> dist(R, vector<int>(C, INT_MAX));\n    deque<pair<int,int>> dq;\n    dist[0][0] = 0;\n    dq.push_front({0, 0});\n\n    while (!dq.empty()) {\n        auto [r, c] = dq.front(); dq.pop_front();\n        for (int d = 0; d < 4; d++) {\n            int nr = r + dx[d], nc = c + dy[d];\n            if (nr < 0 || nr >= R || nc < 0 || nc >= C) continue;\n            int w = (grid[nr][nc] == '#') ? 1 : 0;\n            if (dist[r][c] + w < dist[nr][nc]) {\n                dist[nr][nc] = dist[r][c] + w;\n                if (w == 0) dq.push_front({nr, nc});\n                else        dq.push_back({nr, nc});\n            }\n        }\n    }\n    cout << dist[R-1][C-1] << \"\\n\";\n    return 0;\n}",
+      "explanation": "Time: O(R×C), Space: O(R×C). The key insight: 0-1 BFS maintains the invariant that the deque is sorted by cost at all times, so the front always has the minimum-cost state. This correctly extends Dijkstra's correctness guarantee to 0/1 weight graphs in linear time. Classic Codeforces pattern for maze problems with optional cost actions."
+    }
+  ]
+}

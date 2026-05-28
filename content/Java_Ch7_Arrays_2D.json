@@ -1,0 +1,224 @@
+{
+  "id": "Java_Ch7_Arrays_2D",
+  "track": "java",
+  "chapter": 7,
+  "title": "Arrays & 2D Arrays",
+  "description": "Master Java array declaration, initialization, traversal, and 2D grid manipulation — the foundation of nearly every CSE110 exam code trace and output prediction question.",
+  "sections": [
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📋 Why Arrays Dominate CSE110 Exams"
+    },
+    {
+      "type": "paragraph",
+      "content": "Arrays are the most exam-tested data structure in CSE110. Expect questions on **array initialization syntax**, **index-out-of-bounds** tracing, **2D array traversal order**, **array as method parameters**, and **output prediction** involving nested loops over grids. A single misread of row-vs-column order costs you an entire multi-part question."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📦 1D Array — Declaration, Initialization, Access"
+    },
+    {
+      "type": "paragraph",
+      "content": "In Java, an array is an **object** allocated on the heap. Declaration creates a reference variable; `new` allocates the actual memory. Arrays have a fixed **length** field and are **zero-indexed**. Default values are assigned automatically: `0` for int, `0.0` for double, `false` for boolean, `null` for objects."
+    },
+    {
+      "type": "table",
+      "headers": ["Declaration Style", "Example", "Notes"],
+      "rows": [
+        ["Declare then allocate", "`int[] arr; arr = new int[5];`", "Two-step; arr holds null until new"],
+        ["Declare + allocate", "`int[] arr = new int[5];`", "Most common; default-initialized"],
+        ["Declare + initialize literal", "`int[] arr = {10, 20, 30};`", "Size inferred from literal; no `new` needed"],
+        ["new with literal (verbose)", "`int[] arr = new int[]{10, 20, 30};`", "Useful when passing array literal to method"],
+        ["Multi-dimensional syntax A", "`int[] arr[]`", "Legal but confusing — avoid"],
+        ["Array of arrays", "`int[][] grid = new int[3][4];`", "3 rows, 4 columns"]
+      ]
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "1D Array Fundamentals",
+      "code": "public class ArrayBasics {\n    public static void main(String[] args) {\n        // Declaration + allocation\n        int[] scores = new int[4];   // [0, 0, 0, 0] by default\n        scores[0] = 85;\n        scores[1] = 92;\n        scores[2] = 78;\n        scores[3] = 95;\n\n        // Array literal initialization\n        String[] names = {\"Alice\", \"Bob\", \"Carol\"};\n\n        // .length property (NOT .length() — that's for String)\n        System.out.println(scores.length);   // 4\n        System.out.println(names.length);    // 3\n\n        // Standard for loop traversal\n        int sum = 0;\n        for (int i = 0; i < scores.length; i++) {\n            sum += scores[i];\n        }\n        System.out.println(\"Sum: \" + sum);   // Sum: 350\n\n        // Enhanced for loop (for-each)\n        for (String name : names) {\n            System.out.println(name);\n        }\n        // Alice\n        // Bob\n        // Carol\n    }\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "danger",
+      "label": "🚨 .length vs .length() — The #1 Array Mistake",
+      "content": "Arrays use `.length` (a **field**, no parentheses). Strings use `.length()` (a **method**, with parentheses). Writing `arr.length()` on an array is a **compile-time error**. Conversely, writing `str.length` on a String is also a compile-time error. This distinction appears on almost every CSE110 exam."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "⚠️ ArrayIndexOutOfBoundsException"
+    },
+    {
+      "type": "paragraph",
+      "content": "Accessing an index that doesn't exist — either negative or ≥ array.length — throws `ArrayIndexOutOfBoundsException` at **runtime**. This is one of the most common runtime errors tested in error-identification questions."
+    },
+    {
+      "type": "table",
+      "headers": ["Array Size", "Valid Indices", "Common Off-by-One Errors"],
+      "rows": [
+        ["`new int[5]`", "0, 1, 2, 3, 4", "`arr[5]` → out of bounds; loop `i <= 5` → OOB on last iteration"],
+        ["`new int[n]`", "0 to n-1", "`arr[n]` → out of bounds; loop `i <= arr.length` → OOB"],
+        ["Empty `new int[0]`", "None", "Any access is out of bounds; even `arr[0]`"]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔲 2D Arrays — Grids, Rows, and Columns"
+    },
+    {
+      "type": "paragraph",
+      "content": "A 2D array in Java is an **array of arrays**. `int[][] grid = new int[rows][cols]` creates `rows` row-arrays each of length `cols`. Access uses `grid[row][col]`. The outer loop iterates over **rows** (first index), the inner loop over **columns** (second index). Getting this order wrong is the single most common 2D array exam mistake."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "2D Array Declaration, Initialization, and Traversal",
+      "code": "public class TwoDArrays {\n    public static void main(String[] args) {\n        // Method 1: allocate, then assign\n        int[][] grid = new int[3][4]; // 3 rows, 4 columns\n        for (int row = 0; row < grid.length; row++) {       // grid.length = 3 (rows)\n            for (int col = 0; col < grid[row].length; col++) { // grid[row].length = 4 (cols)\n                grid[row][col] = row * 4 + col;\n            }\n        }\n        // grid = {{0,1,2,3},{4,5,6,7},{8,9,10,11}}\n\n        // Method 2: literal initialization\n        int[][] matrix = {\n            {1, 2, 3},\n            {4, 5, 6},\n            {7, 8, 9}\n        };\n\n        // Print matrix in grid form\n        for (int[] row : matrix) {\n            for (int val : row) {\n                System.out.printf(\"%3d\", val);\n            }\n            System.out.println();\n        }\n        //   1  2  3\n        //   4  5  6\n        //   7  8  9\n\n        // Dimensions\n        System.out.println(matrix.length);      // 3 (rows)\n        System.out.println(matrix[0].length);   // 3 (cols in row 0)\n    }\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "warning",
+      "label": "Jagged Arrays — Not All Rows Equal",
+      "content": "In Java, `int[][] arr = new int[3][]` creates 3 rows with **no columns yet**. You can then do `arr[0] = new int[2]; arr[1] = new int[4]; arr[2] = new int[1]` — each row has a different length. This is a **jagged array**. `arr.length` = 3 (rows), but `arr[0].length` = 2, `arr[1].length` = 4. Always use `grid[row].length` for column count, never assume it equals `grid[0].length`."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔄 Common 2D Array Traversal Patterns"
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Four Key 2D Traversal Patterns",
+      "code": "public class Traversals {\n    public static void main(String[] args) {\n        int[][] m = {\n            {1, 2, 3},\n            {4, 5, 6},\n            {7, 8, 9}\n        };\n        int n = m.length; // assuming square\n\n        // Pattern 1: Row-by-row (standard, row-major order)\n        System.out.println(\"Row-major:\");\n        for (int i = 0; i < n; i++)\n            for (int j = 0; j < n; j++)\n                System.out.print(m[i][j] + \" \");\n        // 1 2 3 4 5 6 7 8 9\n        System.out.println();\n\n        // Pattern 2: Column-by-column\n        System.out.println(\"Col-major:\");\n        for (int j = 0; j < n; j++)\n            for (int i = 0; i < n; i++)\n                System.out.print(m[i][j] + \" \");\n        // 1 4 7 2 5 8 3 6 9\n        System.out.println();\n\n        // Pattern 3: Main diagonal (i == j)\n        System.out.println(\"Main diagonal:\");\n        for (int i = 0; i < n; i++)\n            System.out.print(m[i][i] + \" \");  // 1 5 9\n        System.out.println();\n\n        // Pattern 4: Upper triangle (j >= i)\n        System.out.println(\"Upper triangle:\");\n        for (int i = 0; i < n; i++)\n            for (int j = i; j < n; j++)\n                System.out.print(m[i][j] + \" \"); // 1 2 3 5 6 9\n        System.out.println();\n    }\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔀 Arrays as Method Parameters"
+    },
+    {
+      "type": "paragraph",
+      "content": "Arrays in Java are **objects**, so when passed to a method, the method receives a **copy of the reference** — not a copy of the data. This means a method **can modify** the original array's elements. However, reassigning the parameter (`arr = new int[5]`) inside the method does **not** affect the caller's reference — only the local copy of the reference changes."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Array Reference Passing Behavior",
+      "code": "public class ArrayParams {\n    // This DOES modify the original array\n    static void doubleAll(int[] arr) {\n        for (int i = 0; i < arr.length; i++)\n            arr[i] *= 2;\n    }\n\n    // This does NOT affect caller — reassigns local ref only\n    static void tryReplace(int[] arr) {\n        arr = new int[]{99, 99, 99};  // local ref change only\n    }\n\n    // Returning a new array is explicit and unambiguous\n    static int[] getSquares(int[] arr) {\n        int[] result = new int[arr.length];\n        for (int i = 0; i < arr.length; i++)\n            result[i] = arr[i] * arr[i];\n        return result;\n    }\n\n    public static void main(String[] args) {\n        int[] nums = {1, 2, 3, 4};\n\n        doubleAll(nums);\n        System.out.println(nums[0]);  // 2  (modified in-place)\n\n        tryReplace(nums);\n        System.out.println(nums[0]);  // 2  (unchanged — reassign doesn't propagate)\n\n        int[] sq = getSquares(nums);\n        System.out.println(sq[1]);    // 16 (2^2 after doubling = 4, 4^2 = 16)\n    }\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "tip",
+      "label": "Returning vs Modifying Arrays",
+      "content": "Prefer **returning a new array** from methods when the transformation produces logically different data. **Modify in-place** only when the method's documented purpose is mutation (e.g., `sort`, `reverse`). This avoids subtle bugs where the caller doesn't realize their array was changed."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🛠️ java.util.Arrays Utility Methods"
+    },
+    {
+      "type": "table",
+      "headers": ["Method", "Signature", "Effect"],
+      "rows": [
+        ["`Arrays.sort`", "`sort(int[] a)`", "Sorts array in-place, ascending, O(n log n)"],
+        ["`Arrays.fill`", "`fill(int[] a, int val)`", "Sets all elements to val"],
+        ["`Arrays.copyOf`", "`copyOf(int[] a, int len)`", "Returns new array of given length (truncates or pads with 0)"],
+        ["`Arrays.copyOfRange`", "`copyOfRange(int[] a, int from, int to)`", "Returns subarray [from, to)"],
+        ["`Arrays.equals`", "`equals(int[] a, int[] b)`", "True if same length and same elements (use this, not ==)"],
+        ["`Arrays.toString`", "`toString(int[] a)`", "Returns \"[1, 2, 3]\" style string — great for debugging"]
+      ]
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Arrays Utility Showcase",
+      "code": "import java.util.Arrays;\n\npublic class ArrayUtils {\n    public static void main(String[] args) {\n        int[] arr = {5, 3, 8, 1, 9, 2};\n\n        System.out.println(Arrays.toString(arr));  // [5, 3, 8, 1, 9, 2]\n\n        Arrays.sort(arr);\n        System.out.println(Arrays.toString(arr));  // [1, 2, 3, 5, 8, 9]\n\n        int[] copy = Arrays.copyOf(arr, 4);\n        System.out.println(Arrays.toString(copy)); // [1, 2, 3, 5]\n\n        int[] padded = Arrays.copyOf(arr, 8);\n        System.out.println(Arrays.toString(padded)); // [1, 2, 3, 5, 8, 9, 0, 0]\n\n        Arrays.fill(copy, 7);\n        System.out.println(Arrays.toString(copy)); // [7, 7, 7, 7]\n\n        int[] a = {1, 2, 3};\n        int[] b = {1, 2, 3};\n        System.out.println(a == b);             // false (different objects)\n        System.out.println(Arrays.equals(a, b)); // true (same contents)\n    }\n}"
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🏋️ Practice Exercises"
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 1: 2D Array Loop Trace",
+      "language": "java",
+      "code": "public class Q1 {\n    public static void main(String[] args) {\n        int[][] a = {\n            {1, 2, 3},\n            {4, 5, 6},\n            {7, 8, 9}\n        };\n        for (int i = 0; i < a.length; i++) {\n            for (int j = 0; j < a[i].length; j++) {\n                if ((i + j) % 2 == 0)\n                    System.out.print(a[i][j] + \" \");\n            }\n        }\n    }\n}",
+      "answer": "1 3 5 7 9",
+      "explanation": "The condition `(i+j) % 2 == 0` selects cells where row+col is even. Trace each cell: (0,0)=1✓, (0,1)=2✗, (0,2)=3✓, (1,0)=4✗, (1,1)=5✓, (1,2)=6✗, (2,0)=7✓, (2,1)=8✗, (2,2)=9✓. These are the checkerboard positions with even sum: values 1, 3, 5, 7, 9 — coincidentally, the odd values in this matrix and the main+anti-diagonal pattern. Printed with a trailing space after each."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 2: Array Reference and Mutation Trace",
+      "language": "java",
+      "code": "public class Q2 {\n    static void modify(int[] arr, int idx, int val) {\n        arr[idx] = val;\n    }\n    static void reset(int[] arr) {\n        arr = new int[]{0, 0, 0};\n    }\n    public static void main(String[] args) {\n        int[] x = {10, 20, 30};\n        modify(x, 1, 99);\n        System.out.println(x[1]);\n        reset(x);\n        System.out.println(x[0] + \" \" + x[1] + \" \" + x[2]);\n    }\n}",
+      "answer": "99\n10 99 30",
+      "explanation": "Line by line: `x = {10, 20, 30}`. `modify(x, 1, 99)` passes the array reference — `arr[1] = 99` modifies the original. So `x[1]` is now 99 → prints `99`. `reset(x)` assigns `arr = new int[]{0,0,0}` which only changes the local copy of the reference inside `reset` — `x` in main still points to the original array `{10, 99, 30}`. So `x[0]+\" \"+x[1]+\" \"+x[2]` = `10 99 30`."
+    },
+    {
+      "type": "accordion",
+      "variant": "find-error",
+      "title": "Exercise 3: Off-by-One and Dimension Error",
+      "language": "java",
+      "code": "public class Q3 {\n    public static void main(String[] args) {\n        int[][] grid = new int[3][4];\n        for (int i = 0; i <= grid.length; i++) {\n            for (int j = 0; j <= grid.length; j++) {\n                grid[i][j] = i + j;\n            }\n        }\n        System.out.println(grid[2][3]);\n    }\n}",
+      "error": "Line 4: `i <= grid.length` should be `i < grid.length`. With `<=`, i reaches 3 and `grid[3]` throws ArrayIndexOutOfBoundsException (runtime error). Line 5: `j <= grid.length` uses row count (3) instead of column count — should be `j < grid[i].length` (which is 4). With `<=` and grid.length=3, j only reaches 3, missing column 3 entirely — logical error. Both are runtime/logical errors.",
+      "fix": "public class Q3 {\n    public static void main(String[] args) {\n        int[][] grid = new int[3][4];\n        for (int i = 0; i < grid.length; i++) {\n            for (int j = 0; j < grid[i].length; j++) {\n                grid[i][j] = i + j;\n            }\n        }\n        System.out.println(grid[2][3]);  // 5\n    }\n}",
+      "explanation": "Two bugs: (1) `i <= grid.length` uses `<=` which allows i=3 — accessing grid[3] on a 3-row array (indices 0–2) throws ArrayIndexOutOfBoundsException at runtime. Fix: `i < grid.length`. (2) `j <= grid.length` uses the row count (3) for the column limit — the grid has 4 columns (indices 0–3) so this misses column 3 entirely. Fix: `j < grid[i].length`. The corrected grid[2][3] = 2+3 = 5."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 4: Column-Sum Pattern",
+      "language": "java",
+      "code": "public class Q4 {\n    public static void main(String[] args) {\n        int[][] mat = {\n            {1, 4, 7},\n            {2, 5, 8},\n            {3, 6, 9}\n        };\n        for (int col = 0; col < mat[0].length; col++) {\n            int sum = 0;\n            for (int row = 0; row < mat.length; row++) {\n                sum += mat[row][col];\n            }\n            System.out.print(sum + \" \");\n        }\n    }\n}",
+      "answer": "6 15 24",
+      "explanation": "The outer loop iterates over columns (0, 1, 2). For each column, the inner loop sums all rows. Column 0: mat[0][0]+mat[1][0]+mat[2][0] = 1+2+3 = 6. Column 1: mat[0][1]+mat[1][1]+mat[2][1] = 4+5+6 = 15. Column 2: mat[0][2]+mat[1][2]+mat[2][2] = 7+8+9 = 24. Note the outer loop goes over *columns* (using mat[0].length) and the inner over *rows* (using mat.length) — a column-major traversal."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 5: Transpose a Square Matrix",
+      "language": "java",
+      "code": "// Write a method that transposes a square n×n matrix in-place.\n// The transpose swaps mat[i][j] with mat[j][i] for all i < j.\n// Print the matrix after transposing.\n// Example input matrix:\n// 1 2 3\n// 4 5 6\n// 7 8 9\n// Expected output after transpose:\n// 1 4 7\n// 2 5 8\n// 3 6 9",
+      "approach": "Only swap elements above the main diagonal (where j > i) to avoid double-swapping. Loop i from 0 to n-1, j from i+1 to n-1, and swap mat[i][j] with mat[j][i]. Then print the matrix row by row.",
+      "solution": "public class Transpose {\n    static void transpose(int[][] mat) {\n        int n = mat.length;\n        for (int i = 0; i < n; i++) {\n            for (int j = i + 1; j < n; j++) {\n                int temp = mat[i][j];\n                mat[i][j] = mat[j][i];\n                mat[j][i] = temp;\n            }\n        }\n    }\n\n    static void printMatrix(int[][] mat) {\n        for (int[] row : mat) {\n            for (int val : row)\n                System.out.printf(\"%3d\", val);\n            System.out.println();\n        }\n    }\n\n    public static void main(String[] args) {\n        int[][] mat = {\n            {1, 2, 3},\n            {4, 5, 6},\n            {7, 8, 9}\n        };\n        transpose(mat);\n        printMatrix(mat);\n    }\n}",
+      "explanation": "The key insight: only iterate where `j > i` (upper triangle). If you also loop where j < i, you swap each pair twice, ending up with the original. The three-way swap using `temp` is necessary — without it, writing `mat[i][j] = mat[j][i]` overwrites the value before it's saved. The diagonal (i==j) never needs swapping. Time: O(n²). Space: O(1) in-place. The method modifies the original array since arrays are passed by reference in Java."
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📌 Quick Reference Summary"
+    },
+    {
+      "type": "list",
+      "ordered": false,
+      "items": [
+        "**Array length**: use `.length` (field, no parentheses) — using `.length()` is a compile-time error",
+        "**Default values**: `int[]` → 0, `double[]` → 0.0, `boolean[]` → false, `Object[]` → null",
+        "**Index bounds**: valid indices are 0 to `arr.length - 1`; accessing `arr[arr.length]` throws `ArrayIndexOutOfBoundsException`",
+        "**2D dimensions**: `grid.length` = row count; `grid[i].length` = column count of row i — never use `grid.length` for column count",
+        "**Array parameter passing**: arrays passed by reference — methods **can** modify element values; reassigning the parameter (`arr = new int[]{}`) does **not** affect caller",
+        "**Equality check**: use `Arrays.equals(a, b)` for content equality; `a == b` only checks if they are the same object",
+        "**Traversal order**: for 2D, outer loop = rows (`i`), inner loop = columns (`j`); swapping them gives column-major order",
+        "**Jagged arrays**: Java allows rows of different lengths; always use `grid[i].length` not a hardcoded column count",
+        "**Useful utilities**: `Arrays.sort()`, `Arrays.fill()`, `Arrays.copyOf()`, `Arrays.toString()` — all in `java.util.Arrays`",
+        "**Enhanced for-each**: `for (int x : arr)` iterates values read-only; you cannot modify array elements through the loop variable"
+      ]
+    }
+  ]
+}

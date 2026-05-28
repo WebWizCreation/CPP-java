@@ -1,0 +1,212 @@
+{
+  "id": "Java_Ch12_Polymorphism",
+  "track": "java",
+  "chapter": 12,
+  "title": "Polymorphism",
+  "description": "Decode dynamic dispatch, @Override, upcasting, downcasting, and runtime type checks — the polymorphism mechanics that make or break CSE110 output-prediction questions.",
+  "sections": [
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📚 Why Polymorphism is CSE110's Hardest Topic"
+    },
+    {
+      "type": "paragraph",
+      "content": "Polymorphism questions are the **hardest output-prediction problems** in CSE110 exams because they require you to track two types simultaneously: the **declared (compile-time) type** and the **actual (runtime) type**. The declared type controls which methods are *accessible*. The actual type controls which method body *runs*. Confusing these two is the source of most exam mistakes."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔑 Two Types, Two Rules"
+    },
+    {
+      "type": "table",
+      "headers": ["Question", "Determined By", "Example"],
+      "rows": [
+        ["Which methods can I call?", "**Declared (compile-time) type**", "`Animal a = new Dog()` → only Animal methods accessible"],
+        ["Which method body runs?", "**Actual (runtime) type**", "`a.speak()` → Dog's speak() runs"],
+        ["Applies to?", "Instance methods only", "NOT static methods, NOT fields"],
+        ["Technical name", "Dynamic dispatch / late binding", "JVM resolves at runtime via vtable"]
+      ]
+    },
+    {
+      "type": "callout",
+      "variant": "danger",
+      "label": "🚨 The Golden Rule of Polymorphism",
+      "content": "For **instance methods**: always ask 'what is the actual runtime type of this object?' — that's whose method body runs. For **static methods and fields**: always ask 'what is the declared type of the reference?' — that's what gets used. Exam questions are specifically designed to make you mix these up."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📐 Upcasting — Widening Reference Conversion"
+    },
+    {
+      "type": "paragraph",
+      "content": "**Upcasting** is assigning a subclass reference to a superclass variable. It is always **safe and automatic** — no cast syntax needed. After upcasting, the reference can only access methods defined in the declared (superclass) type, even though the object itself is still the subclass."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Upcasting and Dynamic Dispatch",
+      "code": "public class Animal {\n    public void speak() {\n        System.out.println(\"Animal speaks\");\n    }\n    public void breathe() {\n        System.out.println(\"Animal breathes\");\n    }\n}\n\npublic class Dog extends Animal {\n    @Override\n    public void speak() {\n        System.out.println(\"Dog barks\");\n    }\n    public void fetch() {\n        System.out.println(\"Dog fetches\");\n    }\n}\n\npublic class Test {\n    public static void main(String[] args) {\n        Animal a = new Dog();   // upcast: Dog → Animal (automatic)\n\n        a.speak();              // Dog barks   ← runtime type = Dog\n        a.breathe();            // Animal breathes ← inherited, not overridden\n        // a.fetch();           // COMPILE ERROR: fetch() not in Animal\n    }\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "note",
+      "label": "Why Upcast at All?",
+      "content": "Upcasting enables writing **generic code** that works with any subclass. Example: `void processAnimal(Animal a)` accepts Dog, Cat, Bird — all passed as Animal. Inside, `a.speak()` calls each animal's own version. This is the power of polymorphism."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📉 Downcasting — Narrowing Reference Conversion"
+    },
+    {
+      "type": "paragraph",
+      "content": "**Downcasting** converts a superclass reference back to a subclass type. It requires **explicit cast syntax** `(SubClass) ref` and can cause a **`ClassCastException`** at runtime if the actual object is not of that subclass. Always use `instanceof` to check before downcasting."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Safe Downcasting with instanceof",
+      "code": "public class Test {\n    public static void main(String[] args) {\n        Animal a1 = new Dog();   // actual type: Dog\n        Animal a2 = new Animal(); // actual type: Animal\n\n        // Safe downcast\n        if (a1 instanceof Dog) {\n            Dog d = (Dog) a1;   // OK: actual type IS Dog\n            d.fetch();          // Dog fetches\n        }\n\n        // Unsafe downcast — would throw ClassCastException\n        try {\n            Dog d2 = (Dog) a2;  // actual type is Animal, NOT Dog!\n            d2.fetch();\n        } catch (ClassCastException e) {\n            System.out.println(\"ClassCastException caught!\");\n        }\n    }\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔁 Polymorphism in Action — Method Dispatch Table"
+    },
+    {
+      "type": "paragraph",
+      "content": "When tracing polymorphic output, build a mental table: for each method call, identify (1) the declared type to check accessibility, (2) the actual type to find the executing method body, and (3) whether it is an instance or static method."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Full Dispatch Trace Example",
+      "code": "public class Vehicle {\n    String type = \"vehicle\";\n    public String describe() { return \"I am a \" + type; }\n    public static String category() { return \"Vehicle category\"; }\n}\n\npublic class Car extends Vehicle {\n    String type = \"car\";   // shadows Vehicle.type\n    @Override\n    public String describe() { return \"I am a \" + type; }\n    public static String category() { return \"Car category\"; }\n}\n\npublic class Demo {\n    public static void main(String[] args) {\n        Vehicle v = new Car();\n        System.out.println(v.describe());    // Line A\n        System.out.println(v.category());   // Line B\n        System.out.println(v.type);          // Line C\n\n        Car c = new Car();\n        System.out.println(c.describe());    // Line D\n        System.out.println(c.category());   // Line E\n        System.out.println(c.type);          // Line F\n    }\n}\n// Line A: \"I am a car\"     ← dynamic dispatch → Car.describe(), Car.type used inside\n// Line B: \"Vehicle category\" ← static → declared type Vehicle\n// Line C: \"vehicle\"         ← field → declared type Vehicle (no dispatch for fields)\n// Line D: \"I am a car\"     ← Car.describe()\n// Line E: \"Car category\"   ← static → declared type Car\n// Line F: \"car\"             ← field → declared type Car"
+    },
+    {
+      "type": "callout",
+      "variant": "warning",
+      "label": "Fields Are NOT Polymorphic!",
+      "content": "Unlike methods, **instance fields** are resolved by the **declared type**, not the runtime type. If both parent and child have a field named `type`, accessing `v.type` where `v` is declared as `Vehicle` always gives the Vehicle field — even if the actual object is a Car. This is field shadowing, not overriding."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📊 Dispatch Rules at a Glance"
+    },
+    {
+      "type": "table",
+      "headers": ["Member", "Resolved By", "Can Override?", "Polymorphic?"],
+      "rows": [
+        ["Instance method", "Runtime (actual) type", "Yes", "Yes ✅"],
+        ["Static method", "Compile-time (declared) type", "Hidden, not overridden", "No ❌"],
+        ["Instance field", "Compile-time (declared) type", "Shadowed, not overridden", "No ❌"],
+        ["Static field", "Compile-time (declared) type", "Shadowed", "No ❌"],
+        ["Constructor", "N/A — not inherited", "N/A", "N/A"]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🧩 Polymorphism with Abstract Classes (Preview)"
+    },
+    {
+      "type": "paragraph",
+      "content": "Polymorphism becomes even more powerful with abstract classes and interfaces (covered in Ch13). An abstract class forces every subclass to provide its own implementation of certain methods, guaranteeing that `shape.area()` always works — even without knowing whether `shape` is a Circle, Rectangle, or Triangle at compile time."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Polymorphic Array — One Loop, Many Behaviors",
+      "code": "public class Shape {\n    public double area() { return 0.0; }\n    public String name()  { return \"Shape\"; }\n}\n\npublic class Circle extends Shape {\n    double r;\n    public Circle(double r) { this.r = r; }\n    @Override public double area() { return Math.PI * r * r; }\n    @Override public String name()  { return \"Circle\"; }\n}\n\npublic class Rectangle extends Shape {\n    double w, h;\n    public Rectangle(double w, double h) { this.w=w; this.h=h; }\n    @Override public double area() { return w * h; }\n    @Override public String name()  { return \"Rectangle\"; }\n}\n\npublic class Test {\n    public static void main(String[] args) {\n        Shape[] shapes = { new Circle(5), new Rectangle(4, 6), new Circle(3) };\n        for (Shape s : shapes) {\n            System.out.printf(\"%s area = %.2f%n\", s.name(), s.area());\n        }\n    }\n}\n// Circle area = 78.54\n// Rectangle area = 24.00\n// Circle area = 28.27"
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🏋️ Interactive Exercises"
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 1: Classic Dynamic Dispatch Chain",
+      "language": "java",
+      "code": "public class P {\n    public void m1() { System.out.println(\"P.m1\"); m2(); }\n    public void m2() { System.out.println(\"P.m2\"); }\n}\npublic class Q extends P {\n    public void m2() { System.out.println(\"Q.m2\"); }\n}\npublic class R extends Q {\n    public void m1() { super.m1(); System.out.println(\"R.m1\"); }\n}\npublic class Test {\n    public static void main(String[] args) {\n        P obj = new R();\n        obj.m1();\n    }\n}",
+      "answer": "P.m1\nQ.m2\nR.m1",
+      "explanation": "Step 1: `obj.m1()` — declared type P, actual type R. R overrides m1(). So R.m1() runs. Step 2: Inside R.m1(), `super.m1()` is called. `super` refers to Q. Q does NOT override m1(), so we go up to P.m1(). Step 3: P.m1() prints 'P.m1', then calls `m2()`. Here is the key: `this` inside P.m1() still refers to the original R object → dynamic dispatch for m2() → finds Q.m2() (R doesn't override m2, Q does). Prints 'Q.m2'. Step 4: P.m1() returns. Back in R.m1(): prints 'R.m1'. Final output: P.m1 / Q.m2 / R.m1."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 2: Field Shadowing vs Method Override",
+      "language": "java",
+      "code": "public class Base {\n    int x = 10;\n    public int getX() { return x; }\n}\npublic class Derived extends Base {\n    int x = 20;\n    public int getX() { return x; }\n}\npublic class Test {\n    public static void main(String[] args) {\n        Base b = new Derived();\n        System.out.println(b.x);\n        System.out.println(b.getX());\n        Derived d = (Derived) b;\n        System.out.println(d.x);\n        System.out.println(d.getX());\n    }\n}",
+      "answer": "10\n20\n20\n20",
+      "explanation": "Line 1 `b.x`: `b` declared as Base → field access uses declared type → Base.x = 10. Line 2 `b.getX()`: instance method → dynamic dispatch → actual type is Derived → Derived.getX() returns Derived.x = 20. Line 3 `d.x`: `d` declared as Derived → field access uses declared type Derived → Derived.x = 20. Line 4 `d.getX()`: declared type Derived, actual type Derived → Derived.getX() = 20. Key lesson: fields use declared type, methods use actual type — same object, different rules."
+    },
+    {
+      "type": "accordion",
+      "variant": "find-error",
+      "title": "Exercise 3: Illegal Method Call on Upcast Reference",
+      "language": "java",
+      "code": "public class Animal {\n    public void eat() { System.out.println(\"Animal eats\"); }\n}\npublic class Cat extends Animal {\n    public void purr() { System.out.println(\"Cat purrs\"); }\n    public static void main(String[] args) {\n        Animal a = new Cat();\n        a.eat();\n        a.purr();    // Line 9\n    }\n}",
+      "error": "Line 9: Compile-time error — method purr() is not defined in class Animal. The declared type of `a` is Animal, and Animal has no purr() method. Even though the actual object is a Cat, the compiler only checks the declared type for method accessibility.",
+      "fix": "public class Cat extends Animal {\n    public void purr() { System.out.println(\"Cat purrs\"); }\n    public static void main(String[] args) {\n        Animal a = new Cat();\n        a.eat();                   // OK: eat() is in Animal\n\n        // Option 1: downcast before calling subclass method\n        if (a instanceof Cat) {\n            ((Cat) a).purr();      // Safe downcast\n        }\n\n        // Option 2: use Cat reference directly\n        Cat c = new Cat();\n        c.eat();\n        c.purr();\n    }\n}",
+      "explanation": "The declared type of the reference (Animal) acts as the 'menu' of what the compiler allows you to call. purr() is not on that menu. To access it, downcast to Cat using `(Cat) a` — but only after verifying with instanceof to avoid ClassCastException at runtime. This is a **compile-time** error."
+    },
+    {
+      "type": "accordion",
+      "variant": "find-error",
+      "title": "Exercise 4: ClassCastException at Runtime",
+      "language": "java",
+      "code": "public class Shape {\n    public double area() { return 0; }\n}\npublic class Circle extends Shape {\n    double r;\n    public Circle(double r) { this.r = r; }\n    public double area() { return Math.PI * r * r; }\n}\npublic class Square extends Shape {\n    double side;\n    public Square(double s) { this.side = s; }\n    public double area() { return side * side; }\n}\npublic class Test {\n    public static void main(String[] args) {\n        Shape s = new Square(4);\n        Circle c = (Circle) s;    // Line 16\n        System.out.println(c.area());\n    }\n}",
+      "error": "Line 16: Runtime error — ClassCastException. The actual type of `s` is Square, not Circle. Casting a Square to Circle is illegal at runtime even though both are subclasses of Shape. This compiles successfully because the compiler only checks that Square and Circle share a common ancestor (Shape). The JVM throws ClassCastException when it executes the cast.",
+      "fix": "public class Test {\n    public static void main(String[] args) {\n        Shape s = new Square(4);\n\n        // Always check before downcasting\n        if (s instanceof Circle) {\n            Circle c = (Circle) s;\n            System.out.println(c.area());\n        } else if (s instanceof Square) {\n            Square sq = (Square) s;\n            System.out.println(sq.area());\n        } else {\n            System.out.println(s.area());\n        }\n    }\n}",
+      "explanation": "This is a **runtime** error (ClassCastException), NOT a compile-time error. The compiler allows the cast because Square and Circle are related through Shape — the compiler cannot always determine the actual type. The JVM checks the actual type at runtime and throws ClassCastException when they don't match. Always use instanceof before downcasting."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 5: Polymorphic Constructor and toString() Override",
+      "language": "java",
+      "code": "public class Account {\n    double balance;\n    public Account(double b) {\n        this.balance = b;\n        System.out.println(\"Account: \" + getBalance());\n    }\n    public double getBalance() { return balance; }\n}\npublic class Premium extends Account {\n    double bonus;\n    public Premium(double b, double bonus) {\n        super(b);\n        this.bonus = bonus;\n        System.out.println(\"Premium: \" + getBalance());\n    }\n    @Override\n    public double getBalance() { return balance + bonus; }\n}\npublic class Test {\n    public static void main(String[] args) {\n        Account a = new Premium(1000, 200);\n        System.out.println(a.getBalance());\n    }\n}",
+      "answer": "Account: 1200.0\nPremium: 1200.0\n1200.0",
+      "explanation": "This is a subtle polymorphism-in-constructor trap. Step 1: `new Premium(1000, 200)` → calls Premium(1000, 200) → first line is `super(1000)` → Account constructor runs with balance=1000. Step 2: Inside Account constructor, `getBalance()` is called. THIS is where polymorphism applies even during construction — the actual type is already Premium, so Premium.getBalance() runs (not Account.getBalance()). At this point bonus is 0.0 (default, not yet set). Wait — balance=1000, bonus=0.0 → getBalance()=1000+0=1000.0. Hmm, but then after super() returns, `this.bonus=200` is set. Let me retrace: In Account constructor: balance=1000 (set by this.balance=b). getBalance() called — actual type Premium → returns balance+bonus = 1000+0.0 = 1000.0. Prints 'Account: 1000.0'. Back in Premium: this.bonus=200. Now getBalance()=1200.0. Prints 'Premium: 1200.0'. main: a.getBalance() → Premium → 1200.0. Output: Account: 1000.0 / Premium: 1200.0 / 1200.0."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 6: Implement a Polymorphic Shape Calculator",
+      "language": "java",
+      "code": "// Create a Shape hierarchy:\n// Shape (base) → has name(), area(), perimeter()\n// Circle → area = PI*r*r, perimeter = 2*PI*r\n// Rectangle → area = w*h, perimeter = 2*(w+h)\n// Triangle (sides a, b, c) → perimeter = a+b+c,\n//                             area = Heron's formula\n//\n// Write processAll(Shape[] shapes) that prints:\n//   \"[name]: area=[area], perimeter=[perimeter]\"\n// for each shape (rounded to 2 decimal places).\n// Demonstrate with: Circle(7), Rectangle(4,9), Triangle(3,4,5)",
+      "approach": "Define Shape with abstract-style methods (return 0 as defaults). Override in each subclass. The processAll() method takes a Shape[] array and calls name(), area(), perimeter() on each — dynamic dispatch selects the right implementation. Heron's formula: s=(a+b+c)/2, area=sqrt(s*(s-a)*(s-b)*(s-c)).",
+      "solution": "public class Shape {\n    public String name()      { return \"Shape\"; }\n    public double area()      { return 0.0; }\n    public double perimeter() { return 0.0; }\n}\n\nclass Circle extends Shape {\n    double r;\n    public Circle(double r) { this.r = r; }\n    @Override public String name()      { return \"Circle\"; }\n    @Override public double area()      { return Math.PI * r * r; }\n    @Override public double perimeter() { return 2 * Math.PI * r; }\n}\n\nclass Rectangle extends Shape {\n    double w, h;\n    public Rectangle(double w, double h) { this.w=w; this.h=h; }\n    @Override public String name()      { return \"Rectangle\"; }\n    @Override public double area()      { return w * h; }\n    @Override public double perimeter() { return 2*(w+h); }\n}\n\nclass Triangle extends Shape {\n    double a, b, c;\n    public Triangle(double a, double b, double c) {\n        this.a=a; this.b=b; this.c=c;\n    }\n    @Override public String name()      { return \"Triangle\"; }\n    @Override public double perimeter() { return a+b+c; }\n    @Override public double area() {\n        double s = (a+b+c) / 2;\n        return Math.sqrt(s*(s-a)*(s-b)*(s-c));\n    }\n}\n\npublic class ShapeCalculator {\n    static void processAll(Shape[] shapes) {\n        for (Shape s : shapes) {\n            System.out.printf(\"%s: area=%.2f, perimeter=%.2f%n\",\n                s.name(), s.area(), s.perimeter());\n        }\n    }\n    public static void main(String[] args) {\n        Shape[] shapes = {\n            new Circle(7),\n            new Rectangle(4, 9),\n            new Triangle(3, 4, 5)\n        };\n        processAll(shapes);\n    }\n}\n// Circle: area=153.94, perimeter=43.98\n// Rectangle: area=36.00, perimeter=26.00\n// Triangle: area=6.00, perimeter=12.00",
+      "explanation": "processAll() demonstrates runtime polymorphism: the Shape[] array holds objects of different actual types. The call `s.area()` dispatches to the correct subclass implementation at runtime via dynamic dispatch. Notice how the method signature stays `Shape` — this is the open/closed principle: we can add a new shape type without changing processAll(). Triangle(3,4,5): s=6, area=sqrt(6*3*2*1)=sqrt(36)=6.0. ✓"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📋 Quick Reference Summary"
+    },
+    {
+      "type": "list",
+      "ordered": false,
+      "items": [
+        "**Dynamic dispatch**: for instance methods, the method body that runs is determined by the **actual (runtime) type**, not the declared type",
+        "**Upcasting**: subclass → superclass reference; automatic, always safe; limits accessible methods to declared type",
+        "**Downcasting**: superclass → subclass reference; requires explicit cast `(SubClass)`; throws `ClassCastException` at runtime if actual type doesn't match",
+        "**`instanceof`**: always check before downcasting; returns `false` for `null`",
+        "**Fields are NOT polymorphic**: field access resolves by declared type — even when an overriding instance method would use the subclass version",
+        "**Static methods are NOT polymorphic**: resolved at compile time by declared type (method hiding, not overriding)",
+        "**Polymorphism in constructors**: even during object construction, instance method calls use dynamic dispatch — subclass methods can be called before subclass constructor has run, so subclass fields may be at their default values",
+        "**`@Override` annotation**: use always; causes compile error if the signature doesn't actually override a parent method, preventing silent bugs",
+        "**Compile-time vs runtime errors**: calling a method not in the declared type = compile error; bad downcast = `ClassCastException` at runtime"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,268 @@
+{
+  "id": "Java_Ch15_Exception_Handling",
+  "track": "java",
+  "chapter": 15,
+  "title": "Exception Handling",
+  "description": "Understand Java's exception hierarchy, master try/catch/finally control flow, and learn to write robust programs with custom exceptions — exactly as tested in CSE110 exam predict-output and error-identification questions.",
+  "sections": [
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "⚠️ Why Exception Handling Dominates CSE110 Exams"
+    },
+    {
+      "type": "paragraph",
+      "content": "Exception handling is one of the highest-yield topics in CSE110 because it introduces **non-linear control flow**: a `throw` statement can jump over multiple lines, a `finally` block always runs (even when you think it shouldn't), and catching the wrong type silently lets errors propagate. Exam questions exploit every one of these surprises. This chapter traces every execution path so you are never surprised."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🌳 The Exception Hierarchy"
+    },
+    {
+      "type": "paragraph",
+      "content": "Java exceptions are objects in an inheritance hierarchy. At the top is `Throwable`. Its two children are `Error` (JVM failures like `OutOfMemoryError` — you don't catch these) and `Exception` (program-level problems — you do catch these). `Exception` divides into **checked exceptions** (must be declared or caught) and **unchecked exceptions** (`RuntimeException` and its children — optional to catch)."
+    },
+    {
+      "type": "table",
+      "headers": [
+        "Category",
+        "Examples",
+        "Must Catch/Declare?",
+        "Common Cause"
+      ],
+      "rows": [
+        [
+          "Checked Exception",
+          "`IOException`, `FileNotFoundException`, `SQLException`",
+          "Yes — compiler enforces",
+          "External resources (files, DBs)"
+        ],
+        [
+          "Unchecked (Runtime)",
+          "`NullPointerException`, `ArrayIndexOutOfBoundsException`, `ClassCastException`, `ArithmeticException`",
+          "No — optional",
+          "Programming bugs"
+        ],
+        [
+          "Error",
+          "`StackOverflowError`, `OutOfMemoryError`",
+          "No — don't catch",
+          "JVM/resource exhaustion"
+        ]
+      ]
+    },
+    {
+      "type": "callout",
+      "variant": "danger",
+      "label": "Most Common Exam Mistake",
+      "content": "Confusing checked vs unchecked exceptions. `NullPointerException` and `ArrayIndexOutOfBoundsException` are **unchecked** (extend `RuntimeException`) — you do NOT need to declare them with `throws`. `IOException` is **checked** — you MUST either catch it or declare `throws IOException`. Exam questions test this distinction directly."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔧 try / catch / finally: Syntax and Control Flow"
+    },
+    {
+      "type": "paragraph",
+      "content": "The `try` block contains code that might throw. Each `catch` block handles a specific exception type. The `finally` block runs **always** — whether an exception was thrown, caught, or not thrown at all. This is the most exam-critical property of `finally`."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Basic try/catch/finally Structure",
+      "code": "public class TryCatchDemo {\n    public static void main(String[] args) {\n        System.out.println(\"Before try\");\n        try {\n            System.out.println(\"In try\");\n            int result = 10 / 0;             // throws ArithmeticException\n            System.out.println(\"After divide\");  // SKIPPED\n        } catch (ArithmeticException e) {\n            System.out.println(\"Caught: \" + e.getMessage());\n        } finally {\n            System.out.println(\"Finally always runs\");\n        }\n        System.out.println(\"After try-catch\");\n    }\n}\n// Output:\n// Before try\n// In try\n// Caught: / by zero\n// Finally always runs\n// After try-catch"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔗 Multiple catch Blocks and catch Order"
+    },
+    {
+      "type": "paragraph",
+      "content": "You can chain multiple `catch` blocks. Java checks them **top to bottom** and executes only the **first matching** catch. This means: always place more-specific (child) exception types before more-general (parent) types. Placing a parent type first makes the child type's catch block **unreachable** — a compile error."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Multiple catch — Correct Ordering",
+      "code": "public class MultiCatch {\n    public static void riskyMethod(int x) {\n        if (x == 0) throw new ArithmeticException(\"Division by zero\");\n        if (x < 0) throw new IllegalArgumentException(\"Negative input\");\n        int[] arr = new int[x];\n        arr[x] = 1;  // always throws ArrayIndexOutOfBoundsException\n    }\n\n    public static void main(String[] args) {\n        for (int i = 0; i >= 0; i--) {  // i: 0, then -1... but try each case:\n        }\n        // Demo each case separately:\n        test(0);\n        test(-1);\n        test(3);\n    }\n\n    static void test(int x) {\n        try {\n            riskyMethod(x);\n        } catch (ArithmeticException e) {          // most specific first\n            System.out.println(\"Arithmetic: \" + e.getMessage());\n        } catch (IllegalArgumentException e) {\n            System.out.println(\"IllegalArg: \" + e.getMessage());\n        } catch (ArrayIndexOutOfBoundsException e) {\n            System.out.println(\"ArrayOOB: index \" + x);\n        } catch (RuntimeException e) {             // general — catches anything remaining\n            System.out.println(\"Runtime: \" + e.getMessage());\n        }\n    }\n}\n// test(0)  -> Arithmetic: Division by zero\n// test(-1) -> IllegalArg: Negative input\n// test(3)  -> ArrayOOB: index 3"
+    },
+    {
+      "type": "callout",
+      "variant": "warning",
+      "label": "Unreachable catch Block",
+      "content": "If you write `catch (Exception e)` before `catch (ArithmeticException e)`, the compiler flags a **compile-time error**: `exception ArithmeticException has already been caught`. Since `ArithmeticException` extends `RuntimeException` which extends `Exception`, the general handler catches everything — making the specific handler unreachable."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📤 throws Declaration and throw Statement"
+    },
+    {
+      "type": "paragraph",
+      "content": "The `throws` keyword in a method signature declares that the method **may throw** a checked exception, delegating handling to the caller. The `throw` keyword (no `s`) **actually throws** an exception object. These are two different things — a common source of exam confusion."
+    },
+    {
+      "type": "table",
+      "headers": [
+        "Keyword",
+        "Usage",
+        "Example"
+      ],
+      "rows": [
+        [
+          "`throw`",
+          "Statement that actually throws an exception instance",
+          "`throw new IllegalArgumentException(\"msg\");`"
+        ],
+        [
+          "`throws`",
+          "Method signature declaration for checked exceptions",
+          "`public void read() throws IOException`"
+        ],
+        [
+          "`try`",
+          "Block that wraps potentially-throwing code",
+          "`try { ... }`"
+        ],
+        [
+          "`catch`",
+          "Block that handles a specific exception type",
+          "`catch (IOException e) { ... }`"
+        ],
+        [
+          "`finally`",
+          "Block that always executes regardless of exception",
+          "`finally { closeResource(); }`"
+        ]
+      ]
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "throw vs throws — Method Chain",
+      "code": "public class ThrowsDemo {\n\n    // throws declares this method may throw a checked exception\n    public static int divide(int a, int b) throws ArithmeticException {\n        if (b == 0)\n            throw new ArithmeticException(\"Cannot divide by zero\"); // throw creates & throws\n        return a / b;\n    }\n\n    // Caller must handle or re-declare\n    public static void calculate(int a, int b) {\n        try {\n            int result = divide(a, b);\n            System.out.println(a + \" / \" + b + \" = \" + result);\n        } catch (ArithmeticException e) {\n            System.out.println(\"Error: \" + e.getMessage());\n        }\n    }\n\n    public static void main(String[] args) {\n        calculate(10, 2);  // 10 / 2 = 5\n        calculate(10, 0);  // Error: Cannot divide by zero\n    }\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔄 finally and return: The Tricky Interaction"
+    },
+    {
+      "type": "paragraph",
+      "content": "The `finally` block runs even when a `return` statement is inside `try` or `catch`. More surprisingly: if `finally` itself contains a `return`, it **overrides** any `return` in `try` or `catch`. This is a notorious exam trap."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "finally Overrides return — Classic Exam Trap",
+      "code": "public class FinallyReturn {\n\n    static int method1() {\n        try {\n            return 1;\n        } finally {\n            System.out.println(\"finally1\");\n            // no return here — finally runs, then 1 is returned\n        }\n    }\n\n    static int method2() {\n        try {\n            return 1;\n        } finally {\n            System.out.println(\"finally2\");\n            return 2;  // OVERRIDES the return 1!\n        }\n    }\n\n    public static void main(String[] args) {\n        System.out.println(method1());\n        System.out.println(method2());\n    }\n}\n// Output:\n// finally1\n// 1\n// finally2\n// 2"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🛠️ Custom Exceptions"
+    },
+    {
+      "type": "paragraph",
+      "content": "You can create your own exception classes by extending `Exception` (checked) or `RuntimeException` (unchecked). Custom exceptions improve readability and allow domain-specific error types. CSE110 exams may ask you to trace programs that throw and catch custom exceptions."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Custom Exception — InsufficientFundsException",
+      "code": "// Custom checked exception\nclass InsufficientFundsException extends Exception {\n    private double amount;\n\n    public InsufficientFundsException(double amount) {\n        super(\"Insufficient funds. Short by: \" + amount);\n        this.amount = amount;\n    }\n\n    public double getAmount() { return amount; }\n}\n\nclass BankAccount {\n    private double balance;\n\n    public BankAccount(double balance) { this.balance = balance; }\n\n    public void withdraw(double amount) throws InsufficientFundsException {\n        if (amount > balance) {\n            throw new InsufficientFundsException(amount - balance);\n        }\n        balance -= amount;\n        System.out.println(\"Withdrew: \" + amount + \". Balance: \" + balance);\n    }\n}\n\npublic class CustomExDemo {\n    public static void main(String[] args) {\n        BankAccount acc = new BankAccount(100.0);\n        try {\n            acc.withdraw(60.0);\n            acc.withdraw(70.0);   // balance now 40, shortfall = 30\n        } catch (InsufficientFundsException e) {\n            System.out.println(\"Caught: \" + e.getMessage());\n            System.out.println(\"Shortfall: \" + e.getAmount());\n        }\n    }\n}\n// Output:\n// Withdrew: 60.0. Balance: 40.0\n// Caught: Insufficient funds. Short by: 30.0\n// Shortfall: 30.0"
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🧪 Interactive Exercises"
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 1: Classic finally Execution Trace",
+      "language": "java",
+      "code": "public class Ex1 {\n    public static void main(String[] args) {\n        System.out.println(\"start\");\n        try {\n            System.out.println(\"try\");\n            if (true) throw new RuntimeException(\"oops\");\n            System.out.println(\"after throw\");\n        } catch (RuntimeException e) {\n            System.out.println(\"catch: \" + e.getMessage());\n        } finally {\n            System.out.println(\"finally\");\n        }\n        System.out.println(\"end\");\n    }\n}",
+      "answer": "start\ntry\ncatch: oops\nfinally\nend",
+      "explanation": "Execution trace line by line:\n1. `\"start\"` prints.\n2. Enter try block, `\"try\"` prints.\n3. `if (true)` is always true → `throw new RuntimeException(\"oops\")` executes. The remaining try-block line `\"after throw\"` is **skipped**.\n4. RuntimeException matches `catch (RuntimeException e)` → prints `\"catch: oops\"` (getMessage() returns `\"oops\"`).\n5. `finally` block always executes → prints `\"finally\"`.\n6. Execution continues after try-catch-finally → prints `\"end\"`."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 2: Uncaught Exception and finally",
+      "language": "java",
+      "code": "public class Ex2 {\n    public static void main(String[] args) {\n        try {\n            System.out.println(\"A\");\n            int[] arr = new int[3];\n            arr[5] = 10;  // index 5 on size-3 array\n            System.out.println(\"B\");\n        } catch (NullPointerException e) {\n            System.out.println(\"NPE caught\");\n        } finally {\n            System.out.println(\"C\");\n        }\n        System.out.println(\"D\");\n    }\n}",
+      "answer": "A\nC\nException in thread \"main\" java.lang.ArrayIndexOutOfBoundsException: Index 5 out of bounds for length 3",
+      "explanation": "1. Prints `\"A\"`.\n2. `arr[5] = 10` on a size-3 array throws `ArrayIndexOutOfBoundsException`. `\"B\"` is skipped.\n3. The catch block handles `NullPointerException` — `ArrayIndexOutOfBoundsException` is a **different type** and does **not match**. The catch block is skipped.\n4. `finally` still runs → prints `\"C\"`.\n5. Since the exception was never caught, it propagates up. `main` has no outer handler, so the JVM prints the exception and terminates. `\"D\"` is **never reached**."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 3: finally with return — What Gets Returned?",
+      "language": "java",
+      "code": "public class Ex3 {\n    static String test(boolean throwIt) {\n        try {\n            if (throwIt) throw new Exception();\n            return \"try\";\n        } catch (Exception e) {\n            return \"catch\";\n        } finally {\n            System.out.println(\"finally runs\");\n        }\n    }\n\n    public static void main(String[] args) {\n        System.out.println(test(false));\n        System.out.println(test(true));\n    }\n}",
+      "answer": "finally runs\ntry\nfinally runs\ncatch",
+      "explanation": "**Call 1: `test(false)`**: No exception thrown → `return \"try\"` is staged. Before returning, `finally` runs → prints `\"finally runs\"`. Then the staged return value `\"try\"` is returned. Main prints `\"try\"`.\n**Call 2: `test(true)`**: `throw new Exception()` → jumps to catch → `return \"catch\"` is staged. Before returning, `finally` runs → prints `\"finally runs\"`. Then `\"catch\"` is returned. Main prints `\"catch\"`.\n**Key rule**: `finally` always runs before the method returns, even if `try` or `catch` contains a `return`. The staged return value is preserved unless `finally` itself has a `return`."
+    },
+    {
+      "type": "accordion",
+      "variant": "find-error",
+      "title": "Exercise 4: Wrong Exception Catch Order (Unreachable catch)",
+      "language": "java",
+      "code": "public class Ex4 {\n    public static void main(String[] args) {\n        try {\n            String s = null;\n            s.length();\n        } catch (Exception e) {\n            System.out.println(\"General: \" + e.getMessage());\n        } catch (NullPointerException e) {\n            System.out.println(\"NPE caught\");\n        }\n    }\n}",
+      "error": "Line 8 (`catch (NullPointerException e)`): compile-time error — `NullPointerException` has already been caught by the earlier `catch (Exception e)` block. Since `NullPointerException` extends `RuntimeException` which extends `Exception`, the first catch handles all exceptions including NPE, making the second catch block unreachable.",
+      "fix": "public class Ex4 {\n    public static void main(String[] args) {\n        try {\n            String s = null;\n            s.length();\n        } catch (NullPointerException e) {      // specific type FIRST\n            System.out.println(\"NPE caught\");\n        } catch (Exception e) {                  // general type LAST\n            System.out.println(\"General: \" + e.getMessage());\n        }\n    }\n}",
+      "explanation": "This is a **compile-time error**: `exception NullPointerException has already been caught`. The Java compiler enforces that more-specific exception types must appear before more-general ones in a catch chain. `Exception` is the parent of all checked and unchecked exceptions — placing it first makes all subsequent catch blocks unreachable. The fix is to place the most-specific types first and the most-general type last."
+    },
+    {
+      "type": "accordion",
+      "variant": "find-error",
+      "title": "Exercise 5: Missing throws Declaration for Checked Exception",
+      "language": "java",
+      "code": "import java.io.*;\n\npublic class Ex5 {\n    public static void readFile(String path) {\n        FileReader fr = new FileReader(path);\n        System.out.println(\"File opened\");\n    }\n\n    public static void main(String[] args) {\n        readFile(\"data.txt\");\n    }\n}",
+      "error": "Line 5 (`new FileReader(path)`): compile-time error — `FileNotFoundException` (a checked exception that extends `IOException`) is thrown by `FileReader`'s constructor. Since `readFile` neither catches this exception nor declares `throws FileNotFoundException` (or `throws IOException`), the compiler rejects the code.",
+      "fix": "import java.io.*;\n\npublic class Ex5 {\n    // Option 1: declare throws\n    public static void readFile(String path) throws IOException {\n        FileReader fr = new FileReader(path);\n        System.out.println(\"File opened\");\n        fr.close();\n    }\n\n    // Option 2 (alternative): catch inside the method\n    // public static void readFile(String path) {\n    //     try {\n    //         FileReader fr = new FileReader(path);\n    //         System.out.println(\"File opened\");\n    //     } catch (FileNotFoundException e) {\n    //         System.out.println(\"File not found: \" + e.getMessage());\n    //     }\n    // }\n\n    public static void main(String[] args) {\n        try {\n            readFile(\"data.txt\");\n        } catch (IOException e) {\n            System.out.println(\"IO Error: \" + e.getMessage());\n        }\n    }\n}",
+      "explanation": "This is a **compile-time error**. `FileReader(String)` throws `FileNotFoundException`, which is a **checked exception**. Java requires that every checked exception either be caught in a `try-catch` block or declared in the method's `throws` clause. Unlike `RuntimeException` (unchecked), checked exceptions cannot be silently ignored — the compiler enforces handling. There are two valid fixes: (1) add `throws IOException` to the method signature and handle it in the caller, or (2) wrap the `FileReader` constructor call in a `try-catch` inside `readFile`."
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 6: Write a Safe Integer Parser",
+      "language": "java",
+      "code": "// Write a method parseInt(String s) that:\n// - Returns the integer value if s is a valid integer string\n// - Returns 0 if s is null\n// - Returns -1 if s is not a valid integer (e.g., \"abc\", \"12.5\")\n// - Prints a descriptive message for each error case\n// Test with: \"42\", \"-7\", \"abc\", null, \"12.5\"\n// Expected output:\n// Parsed: 42\n// Parsed: -7\n// Invalid integer: abc\n// Null input received\n// Invalid integer: 12.5",
+      "approach": "Use `Integer.parseInt(s)` inside a try block — it throws `NumberFormatException` (an unchecked exception) if the string is not a valid integer. Handle null separately with a null check before parsing (calling `Integer.parseInt(null)` throws NumberFormatException but the message is unclear, so check null first). Return the parsed value on success, -1 on NumberFormatException, 0 on null.",
+      "solution": "public class SafeParser {\n    public static int parseInt(String s) {\n        if (s == null) {\n            System.out.println(\"Null input received\");\n            return 0;\n        }\n        try {\n            int value = Integer.parseInt(s);\n            System.out.println(\"Parsed: \" + value);\n            return value;\n        } catch (NumberFormatException e) {\n            System.out.println(\"Invalid integer: \" + s);\n            return -1;\n        }\n    }\n\n    public static void main(String[] args) {\n        parseInt(\"42\");\n        parseInt(\"-7\");\n        parseInt(\"abc\");\n        parseInt(null);\n        parseInt(\"12.5\");\n    }\n}",
+      "explanation": "**Why this pattern works**: `Integer.parseInt` throws `NumberFormatException` — an unchecked `RuntimeException` — for any non-integer string. Wrapping it in `try-catch` makes the method robust. The null check comes first because `Integer.parseInt(null)` would throw a `NumberFormatException` with a confusing message; explicit null handling gives a clearer error.\n**Key learning**: `NumberFormatException` is unchecked, so no `throws` declaration is needed in the method signature. The return values (-1, 0, valid integer) form a simple contract that callers can check.\n**Output verification**: `\"42\"` → Parsed: 42. `\"-7\"` → Parsed: -7. `\"abc\"` → Invalid integer: abc. `null` → Null input received. `\"12.5\"` → Invalid integer: 12.5 (the decimal point makes it not an integer). ✓"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📋 Quick Reference Summary"
+    },
+    {
+      "type": "list",
+      "ordered": false,
+      "items": [
+        "**Exception hierarchy**: `Throwable` → `Error` (don't catch) / `Exception` (catch these).",
+        "`Exception` branches into **checked** (must catch or declare) and **unchecked** (`RuntimeException` subclasses — optional).",
+        "Common unchecked: `NullPointerException`, `ArrayIndexOutOfBoundsException`, `ClassCastException`, `ArithmeticException`.",
+        "Common checked: `IOException`, `FileNotFoundException`, `SQLException`.",
+        "**`throw`** (no s) is a statement that throws an exception object: `throw new ExType(\"msg\")`.",
+        "**`throws`** (with s) in a method signature declares the method may propagate a checked exception.",
+        "`finally` **always executes** — even if no exception, even if there's a `return` in try or catch.",
+        "If `finally` contains a `return`, it **overrides** any `return` in `try` or `catch`.",
+        "Multiple `catch` blocks are checked **top-to-bottom** — place specific types before general types or you get a compile error.",
+        "Custom exceptions: extend `Exception` for checked, `RuntimeException` for unchecked. Call `super(message)` in the constructor.",
+        "An uncaught exception propagates up the call stack; if unhandled in `main`, the JVM prints the stack trace and terminates."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,222 @@
+{
+  "id": "Java_Ch9_OOP_Classes",
+  "track": "java",
+  "chapter": 9,
+  "title": "OOP: Classes & Objects",
+  "description": "Build the foundation of object-oriented programming — defining classes with fields and methods, creating objects on the heap, and understanding reference semantics — exactly as tested in CSE110 exams.",
+  "sections": [
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🎓 Why OOP Classes Matter in CSE110 Exams"
+    },
+    {
+      "type": "paragraph",
+      "content": "CSE110 exam questions about classes almost always test one of three things: **tracing object state** (what are the field values after a sequence of method calls?), **reference semantics** (does a method change the original object or a copy?), and **null / aliasing traps** (what happens when two variables point to the same object?). The material in this chapter is the direct prerequisite for every subsequent OOP chapter — inheritance, polymorphism, encapsulation — so invest the time to understand it deeply rather than memorising syntax."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🏗️ Anatomy of a Java Class"
+    },
+    {
+      "type": "paragraph",
+      "content": "A **class** is a blueprint for creating objects. It defines two kinds of members: **fields** (also called instance variables) that store the state of each object, and **methods** that define the behaviours objects can perform. Each time you call `new ClassName()`, Java allocates a fresh block of memory on the **heap** and fills the fields with their default values (0, false, null) before executing the constructor."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Full Class Anatomy — BankAccount Example",
+      "code": "// A class is a template; each object is a separate instance\npublic class BankAccount {\n    // --- Fields (instance variables) ---\n    // Each object gets its own copy of these\n    String owner;       // defaults to null\n    double balance;     // defaults to 0.0\n    int transCount;     // defaults to 0\n\n    // --- Constructor ---\n    // Called automatically when you write: new BankAccount(\"Alice\", 500)\n    public BankAccount(String owner, double initialBalance) {\n        this.owner = owner;           // 'this' refers to the current object\n        this.balance = initialBalance;\n        this.transCount = 0;\n    }\n\n    // --- Instance Methods ---\n    // 'this' is implicitly available inside every instance method\n    public void deposit(double amount) {\n        balance += amount;\n        transCount++;\n    }\n\n    public boolean withdraw(double amount) {\n        if (amount > balance) return false;\n        balance -= amount;\n        transCount++;\n        return true;\n    }\n\n    public double getBalance() {\n        return balance;\n    }\n\n    public String getSummary() {\n        return owner + \": $\" + balance + \" (\" + transCount + \" transactions)\";\n    }\n}\n\n// --- Driver class to test it ---\npublic class Main {\n    public static void main(String[] args) {\n        BankAccount acc = new BankAccount(\"Alice\", 500.0);\n        acc.deposit(200.0);\n        System.out.println(acc.getBalance());    // 700.0\n        System.out.println(acc.withdraw(1000.0)); // false\n        System.out.println(acc.getSummary());     // Alice: $700.0 (1 transactions)\n    }\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📦 Objects on the Heap — Stack vs Heap"
+    },
+    {
+      "type": "paragraph",
+      "content": "In Java, **primitive variables** (int, double, boolean, char) are stored directly on the **call stack** — the value lives in the variable itself. **Object references** are also stored on the stack, but they hold only a **memory address** pointing into the **heap** where the actual object data lives. This distinction — reference vs value — is the single most important concept for understanding Java's behaviour when passing arguments to methods or assigning one variable to another."
+    },
+    {
+      "type": "table",
+      "headers": ["Aspect", "Stack", "Heap"],
+      "rows": [
+        ["What is stored", "Primitive values; object references (addresses)", "Actual object data (fields)"],
+        ["Lifetime", "Exists only for the duration of the method call", "Exists until garbage collected (no more references)"],
+        ["Access speed", "Very fast (direct)", "Slightly slower (indirect via reference)"],
+        ["Examples", "`int x = 5;`, `BankAccount ref` (the address)", "`new BankAccount(...)` (the object itself)"],
+        ["Assignment `a = b`", "Copies the primitive value OR copies the address", "The object itself is NOT copied — both point to same heap object"]
+      ]
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Visualising Stack vs Heap",
+      "code": "public class StackVsHeap {\n    public static void main(String[] args) {\n        // Primitives: value is stored directly in the variable\n        int x = 10;\n        int y = x;   // y gets a COPY of the value 10\n        y = 99;\n        System.out.println(x); // 10 — x is unaffected\n\n        // Objects: variable stores a REFERENCE (address), not the object itself\n        BankAccount a = new BankAccount(\"Alice\", 500);\n        BankAccount b = a;  // b gets a COPY of the REFERENCE (address)\n                            // Both a and b now point to the SAME heap object!\n\n        b.deposit(100);     // modifies the shared object\n        System.out.println(a.getBalance()); // 600.0 — a sees the change!\n\n        // Create a truly independent object\n        BankAccount c = new BankAccount(\"Carol\", 500);\n        c.deposit(100);     // only affects c's object\n        System.out.println(a.getBalance()); // still 600.0\n    }\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "danger",
+      "label": "Exam Trap: Assignment Does NOT Copy Objects",
+      "content": "Writing `BankAccount b = a;` does **NOT** create a new BankAccount. It copies the reference (memory address). After this line, `a` and `b` are aliases — two variable names for **the same single object**. Any change through `b` is visible through `a`. This mistake accounts for a large number of lost marks on CSE110 trace questions. Always ask: *'Are these two variables pointing to the same heap object or different ones?'*"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔑 The `this` Keyword"
+    },
+    {
+      "type": "paragraph",
+      "content": "Inside any instance method or constructor, `this` is an **implicit reference to the current object** — the one on which the method was called. You need `this` explicitly in two situations: (1) when a parameter name **shadows** a field name (both have the same identifier), and (2) when you want to pass the current object as an argument to another method. You do **not** need `this` when there is no name conflict — Java resolves field access automatically — but many programmers use it for clarity."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "this Keyword — When You Need It and When You Don't",
+      "code": "public class Point {\n    double x;\n    double y;\n\n    // Without 'this': parameter names shadow field names!\n    public void setBadStyle(double x, double y) {\n        x = x; // WRONG: assigns parameter to itself, fields stay at default 0.0\n        y = y; // WRONG: same problem\n    }\n\n    // With 'this': unambiguous\n    public void setGoodStyle(double x, double y) {\n        this.x = x; // 'this.x' is the field; 'x' (right side) is the parameter\n        this.y = y;\n    }\n\n    // No name conflict: 'this' optional but clarifying\n    public double distanceTo(Point other) {\n        double dx = this.x - other.x; // same as: dx = x - other.x\n        double dy = this.y - other.y;\n        return Math.sqrt(dx*dx + dy*dy);\n    }\n\n    // Passing 'this' as argument\n    public void registerWith(PointRegistry registry) {\n        registry.add(this); // passes the current Point object\n    }\n\n    public static void main(String[] args) {\n        Point p = new Point();\n        p.setBadStyle(3.0, 4.0);\n        System.out.println(p.x + \" \" + p.y); // 0.0 0.0  (BUG!)\n\n        Point q = new Point();\n        q.setGoodStyle(3.0, 4.0);\n        System.out.println(q.x + \" \" + q.y); // 3.0 4.0  (correct)\n    }\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔗 Reference Semantics in Method Calls"
+    },
+    {
+      "type": "paragraph",
+      "content": "Java is **strictly pass-by-value** — but for objects, the *value* being passed is a **copy of the reference** (the memory address). This means a method can modify the object that a reference points to (the heap object changes), but cannot make the caller's variable point to a different object (the local copy of the reference is discarded when the method returns). This distinction is subtle and appears on almost every OOP exam."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Pass-by-Value with References — The Classic Exam Trap",
+      "code": "public class RefDemo {\n\n    // This method CAN modify the object's contents\n    static void addFunds(BankAccount acc, double amount) {\n        acc.deposit(amount);  // 'acc' refers to the same heap object as caller's variable\n    }\n\n    // This method CANNOT make the caller's variable point elsewhere\n    static void replaceAccount(BankAccount acc) {\n        acc = new BankAccount(\"Hacker\", 9999); // only changes LOCAL copy of reference\n        // caller's original variable is completely unaffected\n    }\n\n    public static void main(String[] args) {\n        BankAccount myAcc = new BankAccount(\"Bob\", 100.0);\n\n        addFunds(myAcc, 50.0);\n        System.out.println(myAcc.getBalance()); // 150.0 — object was modified\n\n        replaceAccount(myAcc);\n        System.out.println(myAcc.owner);        // Bob — NOT Hacker! reference unchanged\n        System.out.println(myAcc.getBalance()); // 150.0 — same object\n    }\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "warning",
+      "label": "Subtle: Strings Look Like Value Types But Are Objects",
+      "content": "Strings are objects in Java, so `String s = \"hello\"; String t = s;` makes `t` an alias for the same String object. However, String is **immutable** — no method ever modifies a String object in place. Instead, operations like `s.toUpperCase()` return a **new** String. So even though `s` and `t` are aliases, calling `s = s.toUpperCase()` only reassigns the local variable `s`; `t` still refers to the original `\"hello\"`. This makes Strings *behave* like value types in most situations, which is a common source of exam confusion."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔍 Default Values and null References"
+    },
+    {
+      "type": "paragraph",
+      "content": "When an object is created with `new`, all its fields are automatically initialised to **default values** before the constructor runs. For reference-type fields (any class type, including String), the default is `null` — a reference that points to nothing. Calling any method on a null reference immediately throws a `NullPointerException` at runtime, which is Java's most common runtime error."
+    },
+    {
+      "type": "table",
+      "headers": ["Type", "Default Value", "Notes"],
+      "rows": [
+        ["`int`, `short`, `byte`, `long`", "`0`", "Numeric integer types"],
+        ["`double`, `float`", "`0.0`", "Numeric floating-point types"],
+        ["`boolean`", "`false`", "—"],
+        ["`char`", "`'\\u0000'` (null char)", "Not printable; different from `'0'`"],
+        ["Any class type (e.g. `String`, `BankAccount`)", "`null`", "Calling any method → NullPointerException!"]
+      ]
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "null References and NullPointerException",
+      "code": "public class NullDemo {\n    String name;     // defaults to null\n    int age;         // defaults to 0\n\n    public static void main(String[] args) {\n        NullDemo obj = new NullDemo(); // constructor NOT defined; uses default\n        System.out.println(obj.age);   // 0\n        System.out.println(obj.name);  // null (prints the word \"null\")\n\n        // Calling a method on null -> NullPointerException!\n        // System.out.println(obj.name.length()); // CRASH: NullPointerException\n\n        // Defensive check:\n        if (obj.name != null) {\n            System.out.println(obj.name.length());\n        } else {\n            System.out.println(\"name is null\");\n        }\n\n        // null reference check in condition\n        NullDemo other = null;\n        System.out.println(other == null); // true\n        // other.age;  // NullPointerException — can't access fields of null\n    }\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📋 Instance Members vs Class (Static) Members"
+    },
+    {
+      "type": "paragraph",
+      "content": "Every field and method you have written so far is an **instance member** — each object gets its own copy of instance fields, and instance methods implicitly receive `this`. In Chapter 10 you will study **static members**, which belong to the class itself (not any individual object). For now it is essential to understand the contrast: if `balance` is an instance field, `acc1.balance` and `acc2.balance` are completely independent. If `interestRate` were a static field, all accounts would share one copy."
+    },
+    {
+      "type": "table",
+      "headers": ["Feature", "Instance Member", "Static Member (preview)"],
+      "rows": [
+        ["Belongs to", "Each individual object", "The class itself (shared by all objects)"],
+        ["Access via", "`objectReference.member`", "`ClassName.member`"],
+        ["How many copies?", "One per object", "Exactly one, shared by all"],
+        ["Can use `this`?", "Yes", "No — no `this` inside static context"],
+        ["Typical use", "Object state (name, balance, age)", "Shared constants, counters, utility methods"]
+      ]
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🏋️ Practice Exercises"
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 1: Tracing Object State Through Method Calls",
+      "language": "java",
+      "code": "public class Counter {\n    int count;\n    String label;\n\n    public Counter(String label) {\n        this.label = label;\n        this.count = 0;\n    }\n    public void increment() { count++; }\n    public void add(int n)   { count += n; }\n    public void reset()      { count = 0; }\n    public String toString() { return label + \": \" + count; }\n\n    public static void main(String[] args) {\n        Counter a = new Counter(\"A\");\n        Counter b = new Counter(\"B\");\n        a.increment();\n        a.increment();\n        b.add(5);\n        a.add(b.count);\n        b.reset();\n        System.out.println(a);\n        System.out.println(b);\n        b.increment();\n        Counter c = a;\n        c.increment();\n        System.out.println(a);\n        System.out.println(c == a);\n    }\n}",
+      "answer": "A: 7\nB: 0\nA: 8\ntrue",
+      "explanation": "Let's trace step by step:\n\n1. `Counter a = new Counter(\"A\")` → a.label=\"A\", a.count=0\n2. `Counter b = new Counter(\"B\")` → b.label=\"B\", b.count=0\n3. `a.increment()` → a.count=1\n4. `a.increment()` → a.count=2\n5. `b.add(5)` → b.count=5\n6. `a.add(b.count)` → a.add(5) → a.count=2+5=7\n7. `b.reset()` → b.count=0\n\n**First print:** `a.toString()` → \"A: 7\", `b.toString()` → \"B: 0\"\n\n8. `b.increment()` → b.count=1 (irrelevant to remaining output)\n9. `Counter c = a` → c is an **alias** for the same object as a (no new object!)\n10. `c.increment()` → increments the shared object → a.count=8 (and c.count=8 since they're the same)\n\n**Second print:** `a.toString()` → \"A: 8\"\n\n11. `c == a` compares references — they point to the exact same object → `true`"
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 2: Reference Semantics Through a Method Call",
+      "language": "java",
+      "code": "public class Box {\n    int value;\n    public Box(int v) { this.value = v; }\n\n    static void doubleIt(Box b) {\n        b.value *= 2;\n    }\n\n    static void replaceIt(Box b) {\n        b = new Box(999);\n    }\n\n    static void swap(Box x, Box y) {\n        int temp = x.value;\n        x.value = y.value;\n        y.value = temp;\n    }\n\n    public static void main(String[] args) {\n        Box b1 = new Box(10);\n        Box b2 = new Box(30);\n\n        doubleIt(b1);\n        System.out.println(b1.value);\n\n        replaceIt(b2);\n        System.out.println(b2.value);\n\n        swap(b1, b2);\n        System.out.println(b1.value + \" \" + b2.value);\n    }\n}",
+      "answer": "20\n30\n30 20",
+      "explanation": "**Line 1 — `doubleIt(b1)`:** passes a copy of b1's reference. Inside the method, `b.value *= 2` modifies the actual heap object that b1 points to. After the call, b1.value = 20. → prints **20**.\n\n**Line 2 — `replaceIt(b2)`:** passes a copy of b2's reference into parameter `b`. Inside the method, `b = new Box(999)` makes the **local parameter** `b` point to a new Box. The original variable `b2` in main still points to its original Box(30). The heap object Box(999) has no references after the method returns and is garbage collected. → prints **30** (unchanged).\n\n**Line 3 — `swap(b1, b2)`:** b1 currently has value 20, b2 has value 30. The swap method swaps the `value` **fields** inside the objects — it does NOT try to swap the references themselves. After: b1.value = 30, b2.value = 20. → prints **30 20**."
+    },
+    {
+      "type": "accordion",
+      "variant": "find-error",
+      "title": "Exercise 3: Spot the Field-Shadowing Bug",
+      "language": "java",
+      "code": "public class Rectangle {\n    double width;\n    double height;\n\n    public Rectangle(double width, double height) {\n        width = width;\n        height = height;\n    }\n\n    public double area() {\n        return width * height;\n    }\n\n    public static void main(String[] args) {\n        Rectangle r = new Rectangle(5.0, 3.0);\n        System.out.println(r.area()); // Expected: 15.0\n    }\n}",
+      "error": "Lines 6–7: Logical error. `width = width` and `height = height` assign each constructor parameter to itself. The instance fields `this.width` and `this.height` are never set — they keep their default values of 0.0. The area() method then returns 0.0 * 0.0 = 0.0 instead of 15.0.",
+      "fix": "public class Rectangle {\n    double width;\n    double height;\n\n    public Rectangle(double width, double height) {\n        this.width = width;   // 'this.width' = instance field; 'width' = parameter\n        this.height = height; // 'this.height' = instance field; 'height' = parameter\n    }\n\n    public double area() {\n        return width * height;\n    }\n\n    public static void main(String[] args) {\n        Rectangle r = new Rectangle(5.0, 3.0);\n        System.out.println(r.area()); // 15.0\n    }\n}",
+      "explanation": "When a constructor parameter has the same name as an instance field, the parameter **shadows** the field within the constructor scope. Writing `width = width` on both sides refers to the parameter twice — it is a no-op. The instance field is only reachable as `this.width`.\n\nThis is a **logical error** (not a compile-time error) because Java syntax allows `width = width`; the compiler does not flag it as suspicious. The bug only shows up at runtime when the object behaves incorrectly. Always use `this.field = parameter` in constructors where parameter names match field names."
+    },
+    {
+      "type": "accordion",
+      "variant": "find-error",
+      "title": "Exercise 4: NullPointerException at Runtime",
+      "language": "java",
+      "code": "public class Student {\n    String name;\n    int grade;\n\n    public Student(int grade) {\n        this.grade = grade;\n        // forgot to initialise name\n    }\n\n    public void printInfo() {\n        System.out.println(name.toUpperCase() + \": \" + grade);\n    }\n\n    public static void main(String[] args) {\n        Student s = new Student(85);\n        s.printInfo();\n    }\n}",
+      "error": "Line 11: Runtime error — NullPointerException. The field `name` is never assigned in the constructor, so it retains its default value of `null`. Calling `name.toUpperCase()` on a null reference throws NullPointerException at runtime.",
+      "fix": "public class Student {\n    String name;\n    int grade;\n\n    public Student(String name, int grade) {\n        this.name = name;\n        this.grade = grade;\n    }\n\n    public void printInfo() {\n        if (name != null) {\n            System.out.println(name.toUpperCase() + \": \" + grade);\n        } else {\n            System.out.println(\"(no name): \" + grade);\n        }\n    }\n\n    public static void main(String[] args) {\n        Student s = new Student(\"Alice\", 85);\n        s.printInfo(); // ALICE: 85\n    }\n}",
+      "explanation": "A field of type String (or any object type) that is not initialised defaults to `null`. The constructor `Student(int grade)` sets `grade` but leaves `name` as null.\n\nWhen `printInfo()` calls `name.toUpperCase()`, Java tries to look up the `toUpperCase` method on the object that `name` refers to — but `name` is null, so there is no object. Java throws **NullPointerException** at runtime.\n\nThe fix adds `name` as a constructor parameter and includes a null guard in `printInfo()` for defensive programming. This is a **runtime error** — the code compiles fine but crashes during execution."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 5: Design a Student class with a Method to Compare Grades",
+      "language": "java",
+      "code": "// Design a Student class with:\n//   Fields: name (String), grade (int)\n//   Constructor: Student(String name, int grade)\n//   Method: boolean hasBetterGrade(Student other)\n//     Returns true if THIS student's grade > other's grade\n//   Method: String toString()\n//     Returns \"name (grade)\" e.g. \"Alice (92)\"\n// Then in main:\n//   Create two students, compare them, print the one with the better grade.",
+      "approach": "Define the class with two fields. In hasBetterGrade, use 'this.grade' to compare with 'other.grade'. In toString, concatenate fields. In main, use an if-else on hasBetterGrade to decide which student to print.",
+      "solution": "public class Student {\n    String name;\n    int grade;\n\n    public Student(String name, int grade) {\n        this.name = name;\n        this.grade = grade;\n    }\n\n    public boolean hasBetterGrade(Student other) {\n        return this.grade > other.grade;\n    }\n\n    public String toString() {\n        return name + \" (\" + grade + \")\";\n    }\n\n    public static void main(String[] args) {\n        Student s1 = new Student(\"Alice\", 92);\n        Student s2 = new Student(\"Bob\",   87);\n\n        if (s1.hasBetterGrade(s2)) {\n            System.out.println(s1 + \" has a better grade\");\n        } else if (s2.hasBetterGrade(s1)) {\n            System.out.println(s2 + \" has a better grade\");\n        } else {\n            System.out.println(\"Both students have the same grade\");\n        }\n        // Output: Alice (92) has a better grade\n    }\n}",
+      "explanation": "**toString():** Java automatically calls `toString()` when an object is concatenated with a String or passed to `println`. By overriding it, `System.out.println(s1)` prints `\"Alice (92)\"` instead of a memory address.\n\n**hasBetterGrade(Student other):** the parameter `other` is a reference to another Student object. `this.grade` is the calling object's grade; `other.grade` accesses the other student's field directly (since both are in the same class, field access is permitted — encapsulation rules about `private` haven't been applied yet).\n\n**Design note:** In a real application you would declare fields `private` and provide getters — covered in Chapter 14 (Encapsulation)."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📝 Quick Reference Summary"
+    },
+    {
+      "type": "list",
+      "ordered": false,
+      "items": [
+        "**Class** = blueprint (fields + methods); **Object** = instance created with `new`, lives on the heap.",
+        "**Fields** are initialised to defaults when `new` is called: `0` for numeric types, `false` for boolean, `null` for all object/reference types.",
+        "**`this`** refers to the current object; required to disambiguate when a parameter name shadows a field name (e.g. `this.x = x`).",
+        "**Assignment `a = b`** for object types copies the reference (address), not the object. After this, `a` and `b` alias the same heap object.",
+        "**Pass-by-value with references:** a method can mutate the object a reference points to, but cannot make the caller's variable point to a different object.",
+        "**`NullPointerException`** occurs at runtime when you call a method or access a field on a `null` reference — the most common Java runtime error.",
+        "**`==` on objects** compares references (memory addresses), not contents. Two objects with identical field values are still `!=` unless they are the same object.",
+        "**`toString()`** is called automatically by `println` and string concatenation — override it in your classes for readable output."
+      ]
+    }
+  ]
+}

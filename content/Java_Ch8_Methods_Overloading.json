@@ -1,0 +1,233 @@
+{
+  "id": "Java_Ch8_Methods_Overloading",
+  "track": "java",
+  "chapter": 8,
+  "title": "Methods & Overloading",
+  "description": "Understand Java method mechanics — pass by value, varargs, return types, scope — and master method overloading resolution rules that generate tricky CSE110 exam questions.",
+  "sections": [
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🎯 Why Methods & Overloading Matter on Exams"
+    },
+    {
+      "type": "paragraph",
+      "content": "CSE110 exams love testing two things: (1) **pass-by-value confusion** — students think Java passes objects by reference and are surprised when variables don't change, and (2) **overload resolution** — which version of a method gets called when multiple signatures match. Both concepts require you to understand the JVM's calling rules precisely, not approximately."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🏗️ Method Anatomy"
+    },
+    {
+      "type": "paragraph",
+      "content": "A Java method has six parts: **access modifier**, **static/instance keyword**, **return type**, **method name**, **parameter list**, and **method body**. Every part affects how the method is called and what it can access. The **signature** — name + parameter types (not return type) — is what Java uses to distinguish overloaded methods."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Method Structure Breakdown",
+      "code": "public class MethodAnatomy {\n    //  [modifier] [static] [return type] [name]  ([params])  { body }\n    public  static  int          add      (int a, int b) { return a + b; }\n    private static  void         print    (String s)     { System.out.println(s); }\n    public  static  double       divide   (double x, double y) {\n        if (y == 0) throw new ArithmeticException(\"Division by zero\");\n        return x / y;\n    }\n\n    // void return type: method does not return a value\n    public static void greet(String name) {\n        System.out.println(\"Hello, \" + name);\n        // return;  // optional: empty return statement is valid in void methods\n    }\n\n    public static void main(String[] args) {\n        int result = add(3, 5);         // result = 8\n        print(\"Result: \" + result);     // Result: 8\n        System.out.println(divide(10.0, 4.0));  // 2.5\n        greet(\"Ashik\");                 // Hello, Ashik\n    }\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📬 Pass By Value — Java's Only Calling Convention"
+    },
+    {
+      "type": "paragraph",
+      "content": "Java is **strictly pass-by-value**. When you call a method, Java copies the argument's value into the parameter. For **primitives**, this means changes to the parameter do not affect the original. For **objects/arrays**, the value copied is the **reference** (memory address) — so the method can modify the object's contents, but cannot change what object the caller's variable points to."
+    },
+    {
+      "type": "table",
+      "headers": ["Argument Type", "What Gets Copied", "Can Method Modify Caller's Variable?", "Can Method Modify Contents?"],
+      "rows": [
+        ["Primitive (`int`, `double`, etc.)", "The actual value", "❌ No", "N/A — no contents"],
+        ["Object reference (`String`, array, etc.)", "The reference (address)", "❌ No (reassigning param doesn't affect caller)", "✅ Yes (via the shared reference)"],
+        ["`String` specifically", "The reference", "❌ No", "❌ No — String is immutable; modifications create new String"]
+      ]
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Pass By Value — All Three Cases",
+      "code": "public class PassByValue {\n    // Case 1: Primitive — change is local only\n    static void tryDouble(int x) {\n        x = x * 2;\n        System.out.println(\"Inside: \" + x);  // 20\n    }\n\n    // Case 2: Object (array) — contents can be modified\n    static void fillFirst(int[] arr, int val) {\n        arr[0] = val;  // Modifies the original array's element\n        arr = new int[]{999}; // Only changes local ref — caller unaffected\n    }\n\n    // Case 3: String — immutable, \"modification\" creates new object\n    static void tryAppend(String s) {\n        s = s + \" World\"; // Creates a new String; original unchanged\n        System.out.println(\"Inside: \" + s);  // Inside: Hello World\n    }\n\n    public static void main(String[] args) {\n        // Case 1\n        int n = 10;\n        tryDouble(n);\n        System.out.println(\"After: \" + n);    // After: 10 (unchanged)\n\n        // Case 2\n        int[] arr = {1, 2, 3};\n        fillFirst(arr, 99);\n        System.out.println(arr[0]);  // 99 (element changed)\n        System.out.println(arr.length);  // 3 (still original array, not {999})\n\n        // Case 3\n        String str = \"Hello\";\n        tryAppend(str);\n        System.out.println(str);  // Hello (unchanged)\n    }\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "danger",
+      "label": "🚨 The Object Reference Misconception",
+      "content": "Many students say \"Java passes objects by reference\" — this is **incorrect** and leads to wrong exam answers. Java passes the **value of the reference** (the address). This means: YES, you can call `arr[0] = 5` and the caller sees the change. But NO, `arr = new int[]{5}` does **not** change what the caller's variable points to. The distinction is tested directly on exams."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔁 Method Overloading"
+    },
+    {
+      "type": "paragraph",
+      "content": "Method overloading lets you define **multiple methods with the same name** but different **parameter lists** (number, types, or order of parameters). The compiler selects which version to call at **compile time** based on the argument types — this is **static dispatch**. Overloading is different from **overriding** (which is runtime dispatch in subclasses)."
+    },
+    {
+      "type": "table",
+      "headers": ["Overload Criterion", "Valid?", "Example"],
+      "rows": [
+        ["Different number of parameters", "✅ Yes", "`add(int a)` vs `add(int a, int b)`"],
+        ["Different parameter types", "✅ Yes", "`add(int a, int b)` vs `add(double a, double b)`"],
+        ["Different parameter order", "✅ Yes", "`f(int a, double b)` vs `f(double a, int b)`"],
+        ["Different return type only", "❌ No — compile error", "`int f()` vs `double f()` — ambiguous"],
+        ["Different access modifier only", "❌ No — compile error", "`public void f()` vs `private void f()`"],
+        ["Different parameter names only", "❌ No — compile error", "`add(int x, int y)` vs `add(int a, int b)`"]
+      ]
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Overloading Resolution in Action",
+      "code": "public class Overloading {\n    static String describe(int x) {\n        return \"int: \" + x;\n    }\n    static String describe(double x) {\n        return \"double: \" + x;\n    }\n    static String describe(int x, int y) {\n        return \"two ints: \" + x + \", \" + y;\n    }\n    static String describe(String s) {\n        return \"String: \" + s;\n    }\n    static String describe(Object o) {\n        return \"Object: \" + o;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(describe(5));        // int: 5\n        System.out.println(describe(5.0));      // double: 5.0\n        System.out.println(describe(5L));       // Object: 5  (long→no exact match→Object)\n        System.out.println(describe(3, 4));     // two ints: 3, 4\n        System.out.println(describe(\"hello\")); // String: hello\n        System.out.println(describe(3.0f));     // double: 3.0  (float→widened to double)\n\n        // Widening: byte < short < int < long < float < double\n        byte b = 10;\n        System.out.println(describe(b));  // int: 10  (byte widens to int)\n    }\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "warning",
+      "label": "Overload Resolution Order",
+      "content": "When no exact-type match exists, Java applies: (1) **widening** primitive conversion (byte→short→int→long→float→double), (2) **autoboxing** (int→Integer), (3) **varargs**. Java never narrows automatically. If a `long` is passed and there's only an `int` version, the `long` will **not** auto-narrow — it'll match `Object` or `double` via widening, or cause a compile error if no match exists."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔢 Varargs — Variable Argument Lists"
+    },
+    {
+      "type": "paragraph",
+      "content": "Varargs (`Type... name`) lets a method accept **zero or more** arguments of a given type. Under the hood, Java wraps them into an array. A method can have at most **one** varargs parameter, and it must be the **last** parameter. Varargs match only when no other signature fits more specifically."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Varargs Mechanics",
+      "code": "public class Varargs {\n    // int... nums behaves like int[] nums inside the method\n    static int sum(int... nums) {\n        int total = 0;\n        for (int n : nums) total += n;\n        return total;\n    }\n\n    // Varargs combined with required params\n    static void printAll(String label, int... values) {\n        System.out.print(label + \": \");\n        for (int v : values) System.out.print(v + \" \");\n        System.out.println();\n    }\n\n    // This overload takes priority over varargs for a single int\n    static int sum(int a) {\n        System.out.print(\"(single) \");\n        return a;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(sum());          // (no single-int match) 0\n        System.out.println(sum(5));         // (single) 5  — exact match preferred\n        System.out.println(sum(1, 2, 3));   // 6\n        System.out.println(sum(new int[]{10, 20})); // 30 — can pass array explicitly\n\n        printAll(\"Scores\", 85, 92, 78);    // Scores: 85 92 78\n        printAll(\"Empty\");                  // Empty: (nothing)\n    }\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🌐 Variable Scope in Methods"
+    },
+    {
+      "type": "paragraph",
+      "content": "**Scope** defines where a variable is accessible. In Java: **local variables** (declared inside a method/block) are only accessible within that block and must be explicitly initialized before use. **Parameters** are local to the method. **Static fields** are accessible anywhere in the class. Inner blocks can shadow outer variables, but Java prohibits re-declaring a local variable in a nested scope that already has that name."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Scope Rules and Shadowing",
+      "code": "public class ScopeDemo {\n    static int x = 100;  // static field — class scope\n\n    static void test() {\n        int x = 5;  // local variable shadows static field\n        System.out.println(x);          // 5  (local)\n        System.out.println(ScopeDemo.x); // 100 (static field via class name)\n\n        {\n            // int x = 10; // COMPILE ERROR: x already defined in enclosing scope\n            int y = 20;  // y is new — valid here\n            System.out.println(y);  // 20\n        }\n        // System.out.println(y); // COMPILE ERROR: y out of scope\n    }\n\n    static int countUp(int start, int end) {\n        int count = 0;  // must initialize — no default for locals\n        for (int i = start; i <= end; i++) {\n            count++;  // i is only valid inside the for loop\n        }\n        // System.out.println(i); // ERROR: i is out of scope\n        return count;\n    }\n\n    public static void main(String[] args) {\n        test();\n        System.out.println(countUp(3, 7));  // 5\n    }\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "note",
+      "label": "Local Variable Must Be Initialized",
+      "content": "Unlike class fields (which get default values: 0, false, null), **local variables** have **no default value** in Java. Using an uninitialized local variable is a **compile-time error**: `int x; System.out.println(x);` → *'variable x might not have been initialized'*. This is a common trap in exam code with conditional initialization paths."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔁 Recursive Methods"
+    },
+    {
+      "type": "paragraph",
+      "content": "A method is **recursive** when it calls itself. Every recursive method needs a **base case** (stopping condition) and a **recursive case** that moves toward it. Java allocates a new **stack frame** for each call — too deep recursion causes `StackOverflowError`. For CSE110, be able to trace recursive calls and predict output."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Recursive Method Tracing",
+      "code": "public class Recursion {\n    static int factorial(int n) {\n        if (n <= 1) return 1;        // base case\n        return n * factorial(n - 1); // recursive case\n    }\n\n    static void countdown(int n) {\n        if (n < 0) return;           // base case\n        System.out.print(n + \" \");\n        countdown(n - 1);            // recursive call AFTER print\n    }\n\n    static void countup(int n, int max) {\n        if (n > max) return;\n        countup(n + 1, max);         // recursive call BEFORE print\n        System.out.print(n + \" \");\n    }\n\n    public static void main(String[] args) {\n        System.out.println(factorial(5));    // 120\n        countdown(4);   System.out.println();  // 4 3 2 1 0\n        countup(1, 4);  System.out.println();  // 4 3 2 1  (reversed!)\n    }\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "tip",
+      "label": "Tracing Recursion on Exams",
+      "content": "Draw a **call stack** on paper. For `countdown(4)`: print 4, call countdown(3), print 3, ..., call countdown(0), print 0, call countdown(-1), return. For `countup`, the print happens **after** the recursive call returns, so output appears in reverse. The rule: print **before** recursion → normal order; print **after** recursion → reversed order."
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🏋️ Practice Exercises"
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 1: Overload Resolution Trace",
+      "language": "java",
+      "code": "public class Q1 {\n    static void show(int x)    { System.out.println(\"int: \" + x); }\n    static void show(double x) { System.out.println(\"double: \" + x); }\n    static void show(int x, int y) { System.out.println(\"two ints: \" + (x+y)); }\n\n    public static void main(String[] args) {\n        show(7);\n        show(7.0);\n        show(7, 3);\n        byte b = 4;\n        show(b);\n        show(7.0f);\n    }\n}",
+      "answer": "int: 7\ndouble: 7.0\ntwo ints: 10\nint: 4\ndouble: 7.0",
+      "explanation": "`show(7)` → exact match with `show(int x)` → `int: 7`. `show(7.0)` → exact match with `show(double x)` → `double: 7.0`. `show(7, 3)` → exact match `show(int, int)` → `two ints: 10`. `show(b)` where b is byte → widening: byte widens to int (not double) — Java picks the narrowest fitting type → `int: 4`. `show(7.0f)` where 7.0f is float → no float overload → float widens to double (not int — widening never narrows) → `double: 7.0`."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 2: Pass By Value Trace",
+      "language": "java",
+      "code": "public class Q2 {\n    static void change(int a, int[] b, String c) {\n        a = 99;\n        b[0] = 99;\n        b = new int[]{0, 0, 0};\n        c = \"changed\";\n    }\n\n    public static void main(String[] args) {\n        int x = 1;\n        int[] arr = {1, 2, 3};\n        String s = \"original\";\n        change(x, arr, s);\n        System.out.println(x);\n        System.out.println(arr[0] + \" \" + arr[1] + \" \" + arr.length);\n        System.out.println(s);\n    }\n}",
+      "answer": "1\n99 2 3\noriginal",
+      "explanation": "`a = 99` changes the local copy of x — x in main is still 1. `b[0] = 99` modifies element 0 of the original array through the shared reference — arr[0] becomes 99. `b = new int[]{0,0,0}` rebinds the local parameter b — arr in main still points to the original 3-element array. arr.length is still 3, arr[1] is still 2. `c = \"changed\"` rebinds local c — s in main still points to \"original\". String is also immutable so += would create a new String anyway. Output: 1, then 99 2 3, then original."
+    },
+    {
+      "type": "accordion",
+      "variant": "find-error",
+      "title": "Exercise 3: Overloading Ambiguity Error",
+      "language": "java",
+      "code": "public class Q3 {\n    static double compute(int a, double b) {\n        return a + b;\n    }\n    static double compute(double a, int b) {\n        return a * b;\n    }\n    public static void main(String[] args) {\n        System.out.println(compute(3, 4));\n        System.out.println(compute(3.0, 4.0));\n    }\n}",
+      "error": "Line 10: `compute(3, 4)` — both arguments are int literals. Java could widen either argument: (3 as int, 4 widened to double) → matches first overload, OR (3 widened to double, 4 as int) → matches second overload. Neither is more specific, so the compiler reports: 'reference to compute is ambiguous' — compile-time error. Line 11 also causes an error: `compute(3.0, 4.0)` passes two doubles, and neither overload accepts (double, double), so no match exists — compile-time error.",
+      "fix": "public class Q3 {\n    static double compute(int a, double b) {\n        return a + b;\n    }\n    static double compute(double a, int b) {\n        return a * b;\n    }\n    // Add an explicit (int, int) overload to resolve ambiguity\n    static double compute(int a, int b) {\n        return a + b;  // or whatever behavior is intended\n    }\n    // Add a (double, double) overload to cover that case\n    static double compute(double a, double b) {\n        return a + b;\n    }\n    public static void main(String[] args) {\n        System.out.println(compute(3, 4));      // 7.0  uses (int,int)\n        System.out.println(compute(3.0, 4.0));  // 7.0  uses (double,double)\n    }\n}",
+      "explanation": "This is a **compile-time error** (ambiguity). When `compute(3, 4)` is called with two ints, the compiler finds two equally valid widening paths: widen second arg to double → first overload, or widen first arg to double → second overload. Neither is more specific so the call is ambiguous. Similarly `compute(3.0, 4.0)` has no (double, double) overload to match. Fix: add explicit (int,int) and (double,double) overloads that cover the missing cases."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 4: Recursive Output Trace",
+      "language": "java",
+      "code": "public class Q4 {\n    static void mystery(int n) {\n        if (n == 0) {\n            System.out.print(\"0 \");\n            return;\n        }\n        System.out.print(n + \" \");\n        mystery(n - 1);\n        System.out.print(n + \" \");\n    }\n    public static void main(String[] args) {\n        mystery(3);\n    }\n}",
+      "answer": "3 2 1 0 1 2 3",
+      "explanation": "Trace the call stack: mystery(3) prints '3 ', calls mystery(2). mystery(2) prints '2 ', calls mystery(1). mystery(1) prints '1 ', calls mystery(0). mystery(0) prints '0 ' and returns. Back in mystery(1): prints '1 '. Back in mystery(2): prints '2 '. Back in mystery(3): prints '3 '. Full output: `3 2 1 0 1 2 3 `. The pattern: print going DOWN, then print again coming BACK UP the call stack — like a palindrome. There is a trailing space after the last 3."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 5: Overloaded Calculator Methods",
+      "language": "java",
+      "code": "// Write a class Calculator with overloaded add() methods:\n// 1. add(int a, int b) → returns int sum\n// 2. add(double a, double b) → returns double sum\n// 3. add(int a, int b, int c) → returns int sum of three\n// 4. add(String a, String b) → returns concatenated String\n// 5. add(int... nums) → returns int sum of any number of ints\n// In main, call each version and verify it selects the correct overload.\n// Make sure add(5) uses the varargs version (not a single-int version).",
+      "approach": "Define all five overloads. The tricky part is that `add(5)` could match `add(int a, int b)` if a second arg is provided — but with a single arg, only the varargs version applies (since no single-int signature exists). Be careful that `add(1, 2)` picks `add(int, int)` over varargs because exact match takes priority.",
+      "solution": "public class Calculator {\n    static int add(int a, int b) {\n        System.out.print(\"(int,int) \");\n        return a + b;\n    }\n    static double add(double a, double b) {\n        System.out.print(\"(double,double) \");\n        return a + b;\n    }\n    static int add(int a, int b, int c) {\n        System.out.print(\"(int,int,int) \");\n        return a + b + c;\n    }\n    static String add(String a, String b) {\n        System.out.print(\"(String,String) \");\n        return a + b;\n    }\n    static int add(int... nums) {\n        System.out.print(\"(varargs) \");\n        int total = 0;\n        for (int n : nums) total += n;\n        return total;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(add(3, 4));           // (int,int) 7\n        System.out.println(add(1.5, 2.5));       // (double,double) 4.0\n        System.out.println(add(1, 2, 3));        // (int,int,int) 6\n        System.out.println(add(\"Hi \", \"World\")); // (String,String) Hi World\n        System.out.println(add(5));              // (varargs) 5\n        System.out.println(add(1, 2, 3, 4, 5));  // (varargs) 15 — 3-arg only goes to 3 ints\n    }\n}",
+      "explanation": "Each overload is selected by exact argument type matching first, then widening, then varargs (lowest priority). `add(3,4)` → exact match `(int,int)` → returns 7. `add(1.5,2.5)` → exact `(double,double)` → 4.0. `add(1,2,3)` → exact `(int,int,int)` → 6. `add(\"Hi \",\"World\")` → exact `(String,String)` → concatenation. `add(5)` → no single-int method exists → falls to varargs `(int...)` → 5. `add(1,2,3,4,5)` → 5 args, no 5-int overload, falls to varargs → 15. Note: `add(1,2,3)` goes to the explicit 3-arg version, not varargs — explicit overloads always beat varargs."
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📌 Quick Reference Summary"
+    },
+    {
+      "type": "list",
+      "ordered": false,
+      "items": [
+        "**Method signature** = name + parameter types (in order); return type is NOT part of the signature",
+        "**Overloading** requires different parameter count or types; same name, same params but different return type → compile error",
+        "**Pass by value** (primitives): parameter is a copy; changes inside method do not affect caller",
+        "**Pass by reference value** (objects/arrays): parameter holds a copy of the reference; element/field mutations ARE visible to caller; reassigning the parameter is NOT",
+        "**String is immutable**: even though String is an object, `s = s + \"x\"` inside a method creates a new String and does not affect caller",
+        "**Overload resolution order**: (1) exact match → (2) widening → (3) autoboxing → (4) varargs; Java never auto-narrows",
+        "**Widening order**: byte → short → int → long → float → double; char → int",
+        "**Varargs**: must be last parameter; `int... nums` treated as `int[]` inside method; matched only when no other overload fits",
+        "**Local variable scope**: valid only within the block declared; nested block cannot re-declare a variable already in enclosing block",
+        "**Uninitialized locals**: compile error if used before assignment; class fields get defaults (0, false, null), locals do not",
+        "**Recursion**: every recursive method needs a base case; print before recursion → natural order; print after → reversed order"
+      ]
+    }
+  ]
+}

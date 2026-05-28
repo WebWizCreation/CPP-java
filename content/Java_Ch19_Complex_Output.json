@@ -1,0 +1,276 @@
+{
+  "id": "Java_Ch19_Complex_Output",
+  "track": "java",
+  "chapter": 19,
+  "title": "Complex Output Tracing",
+  "description": "Develop the step-by-step mental execution model needed to predict output from programs involving inheritance chains, constructor sequences, dynamic dispatch, and casting \u2014 the hardest question type in CSE110 exams.",
+  "sections": [
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "\ud83c\udfaf Why This Chapter Is the Hardest in CSE110"
+    },
+    {
+      "type": "paragraph",
+      "content": "Complex output questions combine *every* OOP concept at once: constructor chaining, static vs instance dispatch, method overriding, `super` calls, reference vs object type, and casting. Missing any one rule produces wrong output. This chapter teaches a **systematic trace protocol** that eliminates guesswork and catches the subtle interactions between these rules."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "\ud83d\udccb The 5-Step Trace Protocol"
+    },
+    {
+      "type": "paragraph",
+      "content": "Before predicting any output, apply these steps in order for every statement in `main`:"
+    },
+    {
+      "type": "list",
+      "ordered": true,
+      "items": [
+        "**Identify object type** \u2014 what class was instantiated with `new`? This is the *actual type* and never changes.",
+        "**Identify reference type** \u2014 what type is the variable declared as? This controls which methods are *visible*.",
+        "**Constructor chain** \u2014 when `new` runs, trace upward: every constructor calls `super()` (implicitly or explicitly) before its own body runs.",
+        "**Method dispatch** \u2014 for overridden instance methods, always use the **actual (runtime) type**. For static methods or fields, use the **reference (compile-time) type**.",
+        "**`super` keyword in methods** \u2014 `super.method()` bypasses overriding and calls the *parent*'s version regardless of actual type."
+      ]
+    },
+    {
+      "type": "callout",
+      "variant": "danger",
+      "label": "\ud83d\udea8 The Rule That Breaks Everything If Forgotten",
+      "content": "**Dynamic dispatch applies to instance methods only.** Static methods, instance variables, and static variables are resolved by **reference type** (compile-time), not actual type. So `Animal a = new Dog(); a.sound()` calls Dog's `sound()`, but `a.name` accesses Animal's `name` field if both declare one \u2014 this is **field hiding**, not overriding."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "\ud83d\udd17 Rule 1: Constructor Execution Order"
+    },
+    {
+      "type": "paragraph",
+      "content": "Every constructor's first action is calling `super(...)`. If not written explicitly, the compiler inserts `super()` (no-arg). The parent constructor runs **completely** before the child constructor body continues. This means: in a chain `A \u2192 B \u2192 C` (A is grandparent), creating a `C` object prints A's body first, then B's, then C's."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Constructor Chain \u2014 Trace the Order",
+      "code": "class Animal {\n    Animal() {\n        System.out.println(\"Animal constructor\");\n    }\n}\n\nclass Dog extends Animal {\n    Dog() {\n        // implicit: super() \u2192 runs Animal()\n        System.out.println(\"Dog constructor\");\n    }\n}\n\nclass Labrador extends Dog {\n    Labrador() {\n        // implicit: super() \u2192 runs Dog() which runs Animal()\n        System.out.println(\"Labrador constructor\");\n    }\n}\n\npublic class ConstructorOrder {\n    public static void main(String[] args) {\n        Labrador lab = new Labrador();\n        // Output:\n        // Animal constructor\n        // Dog constructor\n        // Labrador constructor\n    }\n}"
+    },
+    {
+      "type": "paragraph",
+      "content": "**Rule:** Constructors run **outermost parent first, innermost child last**. Think of it as winding up a spring from the top before the child's body can execute."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "\u26a1 Rule 2: Dynamic Dispatch on Overridden Methods"
+    },
+    {
+      "type": "paragraph",
+      "content": "When a method is **overridden** (same name, same parameter list, `@Override`), calling it on a variable always invokes the version belonging to the **actual runtime type**, regardless of the reference type. This is the core of polymorphism."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Dynamic Dispatch \u2014 Reference Type vs Actual Type",
+      "code": "class Shape {\n    String name = \"Shape\";\n    void draw() { System.out.println(\"Drawing Shape\"); }\n    static void info() { System.out.println(\"Shape info\"); }\n}\n\nclass Circle extends Shape {\n    String name = \"Circle\";  // field HIDING (not overriding)\n    @Override\n    void draw() { System.out.println(\"Drawing Circle\"); }  // overriding\n    static void info() { System.out.println(\"Circle info\"); } // hiding\n}\n\npublic class DispatchDemo {\n    public static void main(String[] args) {\n        Shape s = new Circle(); // ref=Shape, actual=Circle\n\n        s.draw();        // Dynamic dispatch \u2192 Circle.draw()  \u2192 \"Drawing Circle\"\n        Shape.info();    // Static: reference type \u2192 \"Shape info\"\n        Circle.info();   // Static: class name used \u2192 \"Circle info\"\n        s.info();        // Static: reference type (Shape) \u2192 \"Shape info\"\n        System.out.println(s.name); // Field: reference type (Shape) \u2192 \"Shape\"\n\n        Circle c = (Circle) s;\n        System.out.println(c.name); // Field: reference type (Circle) \u2192 \"Circle\"\n        c.draw();        // Dynamic dispatch \u2192 Circle.draw() \u2192 \"Drawing Circle\"\n    }\n}"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "What",
+        "Resolved by",
+        "Example"
+      ],
+      "rows": [
+        [
+          "Instance method (overridden)",
+          "**Actual type** (runtime)",
+          "`s.draw()` \u2192 Circle's draw()"
+        ],
+        [
+          "Static method",
+          "**Reference type** (compile-time)",
+          "`s.info()` \u2192 Shape's info()"
+        ],
+        [
+          "Instance field",
+          "**Reference type** (compile-time)",
+          "`s.name` \u2192 Shape's name"
+        ],
+        [
+          "Static field",
+          "**Reference type** (compile-time)",
+          "`s.count` \u2192 Shape's count"
+        ],
+        [
+          "Overloaded method",
+          "**Reference type** (compile-time)",
+          "Parameter types determine which overload"
+        ]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "\ud83d\udcde Rule 3: super() in Constructors vs super. in Methods"
+    },
+    {
+      "type": "paragraph",
+      "content": "`super()` in a constructor calls the parent class constructor \u2014 it **must be the first statement**. `super.method()` in an instance method calls the parent's version of that method, bypassing the child's override. These are two completely different uses of the `super` keyword."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "super() in Constructors and super. in Methods",
+      "code": "class Vehicle {\n    String type;\n    Vehicle(String type) {\n        this.type = type;\n        System.out.println(\"Vehicle: \" + type);\n    }\n    void describe() {\n        System.out.println(\"A vehicle of type: \" + type);\n    }\n}\n\nclass Car extends Vehicle {\n    int doors;\n    Car(int doors) {\n        super(\"Car\");  // must be first statement; calls Vehicle(\"Car\")\n        this.doors = doors;\n        System.out.println(\"Car with \" + doors + \" doors\");\n    }\n    @Override\n    void describe() {\n        super.describe();  // calls Vehicle.describe() explicitly\n        System.out.println(\"Doors: \" + doors);\n    }\n}\n\npublic class SuperDemo {\n    public static void main(String[] args) {\n        Car c = new Car(4);\n        // Prints:\n        // Vehicle: Car\n        // Car with 4 doors\n        c.describe();\n        // Prints:\n        // A vehicle of type: Car\n        // Doors: 4\n    }\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "\ud83c\udfad Rule 4: Calling Overridden Methods from Constructors"
+    },
+    {
+      "type": "paragraph",
+      "content": "This is the most treacherous exam scenario. If a **parent constructor** calls an overridden method, and a **child object** is being constructed, dynamic dispatch means the **child's version** of the method runs \u2014 **even though the child constructor hasn't run yet** (so child fields are still at their default values). This produces deeply unintuitive output."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Overridden Method Called from Parent Constructor",
+      "code": "class Base {\n    int x = 10;\n    Base() {\n        System.out.println(\"Base constructor, x=\" + x);\n        show(); // dynamic dispatch: calls child's show() if overridden!\n    }\n    void show() {\n        System.out.println(\"Base.show(), x=\" + x);\n    }\n}\n\nclass Derived extends Base {\n    int y = 20;\n    Derived() {\n        // implicit super() \u2192 runs Base()\n        System.out.println(\"Derived constructor, y=\" + y);\n    }\n    @Override\n    void show() {\n        // y is NOT yet initialized when called from Base()\n        System.out.println(\"Derived.show(), y=\" + y);\n    }\n}\n\npublic class TrickyConstructor {\n    public static void main(String[] args) {\n        Derived d = new Derived();\n    }\n    // Output:\n    // Base constructor, x=10\n    // Derived.show(), y=0   \u2190 y is 0! Derived constructor hasn't run yet\n    // Derived constructor, y=20\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "warning",
+      "label": "Uninitialized Fields in Overridden Calls",
+      "content": "When `Base()` calls `show()`, the JVM dispatches to `Derived.show()` because the actual object is `Derived`. But `Derived`'s instance initializers and constructor body haven't run yet \u2014 `y` holds its **default value** (0 for int). This is a runtime trap, not a compile error. In exams, whenever you see a constructor calling a non-final method, check whether it's overridden in a subclass."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "\ud83d\udd04 Rule 5: Casting and ClassCastException"
+    },
+    {
+      "type": "paragraph",
+      "content": "**Upcasting** (child \u2192 parent reference) is always safe and implicit. **Downcasting** (parent \u2192 child reference) requires an explicit cast and throws `ClassCastException` at runtime if the actual object isn't of the target type. Use `instanceof` to check before casting."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Casting \u2014 Safe and Unsafe",
+      "code": "class Animal { void speak() { System.out.println(\"...\"); } }\nclass Dog extends Animal {\n    @Override void speak() { System.out.println(\"Woof\"); }\n    void fetch() { System.out.println(\"Fetching!\"); }\n}\nclass Cat extends Animal {\n    @Override void speak() { System.out.println(\"Meow\"); }\n}\n\npublic class CastingDemo {\n    public static void main(String[] args) {\n        Animal a = new Dog();   // upcast: always safe\n        a.speak();              // \"Woof\" (dynamic dispatch)\n        // a.fetch();           // COMPILE ERROR: fetch() not in Animal\n\n        Dog d = (Dog) a;        // downcast: safe because actual type IS Dog\n        d.fetch();              // \"Fetching!\"\n\n        Animal b = new Cat();\n        // Dog bad = (Dog) b;   // COMPILES, but throws ClassCastException at runtime!\n\n        if (b instanceof Dog) { // false\n            Dog safe = (Dog) b;\n        } else {\n            System.out.println(\"b is not a Dog\"); // prints this\n        }\n\n        // Java 16+ pattern matching:\n        if (b instanceof Cat c) {\n            c.speak(); // \"Meow\" \u2014 c is already cast inside the block\n        }\n    }\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "\ud83d\udd24 this() Constructor Chaining"
+    },
+    {
+      "type": "paragraph",
+      "content": "Within the same class, one constructor can call another using `this(...)`. Like `super()`, `this()` must be the **first statement**, which means a constructor can call either `this()` **or** `super()`, never both. The chain always ends with a call to a parent constructor."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "this() Chaining Within a Class",
+      "code": "class Point {\n    int x, y, z;\n    Point() {\n        this(0, 0);           // calls Point(int, int)\n        System.out.println(\"Point()\");\n    }\n    Point(int x, int y) {\n        this(x, y, 0);        // calls Point(int, int, int)\n        System.out.println(\"Point(\" + x + \",\" + y + \")\");\n    }\n    Point(int x, int y, int z) {\n        this.x = x; this.y = y; this.z = z;\n        System.out.println(\"Point(\" + x + \",\" + y + \",\" + z + \")\");\n    }\n}\n\npublic class ThisChainDemo {\n    public static void main(String[] args) {\n        Point p = new Point();\n        // Output:\n        // Point(0,0,0)\n        // Point(0,0)\n        // Point()\n    }\n}"
+    },
+    {
+      "type": "paragraph",
+      "content": "**Trace rule for `this()` chains:** The chain runs *deepest* constructor body first, then unwinds back up \u2014 the same bottom-up order as constructor chains in inheritance."
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "\ud83c\udfcb\ufe0f Practice Exercises"
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 1: Three-Level Inheritance Chain with super() Calls",
+      "language": "java",
+      "code": "class A {\n    A() { System.out.println(\"A\"); }\n    A(int x) { System.out.println(\"A(\" + x + \")\"); }\n}\nclass B extends A {\n    B() { this(10); System.out.println(\"B()\"); }\n    B(int x) { super(x); System.out.println(\"B(\" + x + \")\"); }\n}\nclass C extends B {\n    C() { super(5); System.out.println(\"C\"); }\n}\npublic class Q1 {\n    public static void main(String[] args) {\n        C obj = new C();\n    }\n}",
+      "answer": "A(5)\nB(5)\nC",
+      "explanation": "Trace `new C()`:\n1. `C()` is called. Its first statement is `super(5)` \u2192 calls `B(5)`.\n2. `B(5)` first statement is `super(5)` \u2192 calls `A(5)`.\n3. `A(5)` prints: `A(5)`. Returns to B(5).\n4. `B(5)` continues: prints `B(5)`. Returns to C().\n5. `C()` continues: prints `C`.\n\nNote: `B()` (no-arg) is NEVER called. `C()` explicitly calls `super(5)` which maps to `B(int)`, not `B()`. So `B()`'s body (which calls `this(10)`) never executes."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 2: Dynamic Dispatch with Field Hiding",
+      "language": "java",
+      "code": "class Parent {\n    String name = \"Parent\";\n    void greet() { System.out.println(\"Hello from \" + name); }\n    static void staticGreet() { System.out.println(\"Static Parent\"); }\n}\nclass Child extends Parent {\n    String name = \"Child\";\n    @Override\n    void greet() { System.out.println(\"Hello from \" + name); }\n    static void staticGreet() { System.out.println(\"Static Child\"); }\n}\npublic class Q2 {\n    public static void main(String[] args) {\n        Parent p = new Child();\n        p.greet();\n        p.staticGreet();\n        System.out.println(p.name);\n        Child c = (Child) p;\n        c.greet();\n        c.staticGreet();\n        System.out.println(c.name);\n    }\n}",
+      "answer": "Hello from Child\nStatic Parent\nParent\nHello from Child\nStatic Child\nChild",
+      "explanation": "p has reference type `Parent`, actual type `Child`.\n\n1. `p.greet()`: instance method, overridden \u2192 dynamic dispatch \u2192 `Child.greet()` runs. Inside Child.greet(), `name` refers to `Child.name` = \"Child\". Prints: `Hello from Child`.\n\n2. `p.staticGreet()`: **static method** \u2192 resolved by **reference type** = Parent \u2192 `Parent.staticGreet()`. Prints: `Static Parent`.\n\n3. `p.name`: **field** \u2192 resolved by **reference type** = Parent \u2192 `Parent.name` = \"Parent\". Prints: `Parent`.\n\n4. `c` is the same object cast to `Child`. `c.greet()`: same dynamic dispatch, still prints `Hello from Child`.\n\n5. `c.staticGreet()`: reference type is now `Child` \u2192 `Child.staticGreet()`. Prints: `Static Child`.\n\n6. `c.name`: reference type is `Child` \u2192 `Child.name` = \"Child\". Prints: `Child`."
+    },
+    {
+      "type": "accordion",
+      "variant": "find-error",
+      "title": "Exercise 3: Invalid super() Placement and Wrong Cast",
+      "language": "java",
+      "code": "class Animal {\n    String sound;\n    Animal(String sound) { this.sound = sound; }\n}\nclass Dog extends Animal {\n    String breed;\n    Dog(String breed) {\n        this.breed = breed;\n        super(\"Woof\");\n        System.out.println(breed + \" says \" + sound);\n    }\n}\nclass Cat extends Animal {\n    Cat() { super(\"Meow\"); }\n}\npublic class Q3 {\n    public static void main(String[] args) {\n        Animal a = new Cat();\n        Dog d = (Dog) a;\n        System.out.println(d.sound);\n    }\n}",
+      "error": "Line 8 (Dog constructor): `super(\"Woof\")` must be the **first statement** in the constructor, but `this.breed = breed` appears before it \u2014 this is a **compile-time error**. Line 14 (main): `(Dog) a` \u2014 `a` actually holds a `Cat` object. Casting a `Cat` to `Dog` is a **runtime error** (ClassCastException), because Cat and Dog are sibling classes (neither is a subtype of the other).",
+      "fix": "class Animal {\n    String sound;\n    Animal(String sound) { this.sound = sound; }\n}\nclass Dog extends Animal {\n    String breed;\n    Dog(String breed) {\n        super(\"Woof\");        // FIX 1: super() must be first\n        this.breed = breed;\n        System.out.println(breed + \" says \" + sound);\n    }\n}\nclass Cat extends Animal {\n    Cat() { super(\"Meow\"); }\n}\npublic class Q3 {\n    public static void main(String[] args) {\n        Animal a = new Dog(\"Labrador\"); // FIX 2: use a Dog, not a Cat\n        Dog d = (Dog) a;               // safe downcast now\n        System.out.println(d.sound);\n    }\n}",
+      "explanation": "Two distinct bugs: (1) **Compile-time error** \u2014 `super()` or `this()` must always be the very first statement in any constructor. Placing `this.breed = breed` before `super(\"Woof\")` violates this rule; the compiler rejects it with 'call to super must be first statement in constructor'. (2) **Runtime error** \u2014 `ClassCastException`. Although `Cat` and `Dog` both extend `Animal`, they are siblings in the hierarchy. A `Cat` object reference can only be safely cast to `Animal` or `Cat`, never to `Dog`. The `instanceof` operator would return `false` here. The fix assigns a `Dog` object to `a` so the downcast is valid."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 4: Overridden Method Called from Parent Constructor",
+      "language": "java",
+      "code": "class Alpha {\n    int val = 100;\n    Alpha() {\n        System.out.println(\"Alpha val=\" + val);\n        display();\n    }\n    void display() {\n        System.out.println(\"Alpha.display val=\" + val);\n    }\n}\nclass Beta extends Alpha {\n    int val = 200;\n    Beta() {\n        System.out.println(\"Beta val=\" + val);\n    }\n    @Override\n    void display() {\n        System.out.println(\"Beta.display val=\" + val);\n    }\n}\npublic class Q4 {\n    public static void main(String[] args) {\n        Beta b = new Beta();\n        b.display();\n        System.out.println(b.val);\n    }\n}",
+      "answer": "Alpha val=100\nBeta.display val=0\nBeta val=200\nBeta.display val=200\n200",
+      "explanation": "Trace `new Beta()`:\n1. `Beta()` implicitly calls `super()` \u2192 `Alpha()` runs.\n2. In `Alpha()`: prints `Alpha val=100` (Alpha.val=100 is initialized before the constructor body runs via field initializer).\n3. `Alpha()` calls `display()`. Dynamic dispatch: actual type is `Beta` \u2192 `Beta.display()` runs. But `Beta`'s constructor hasn't executed yet, and `Beta.val`'s field initializer `= 200` hasn't run yet either. `Beta.val` is at its default: **0**. Prints: `Beta.display val=0`.\n4. `Alpha()` finishes. Return to `Beta()` constructor body: `Beta.val` is now initialized to 200. Prints: `Beta val=200`.\n5. Back in main: `b.display()` \u2192 `Beta.display()` with `val=200`. Prints: `Beta.display val=200`.\n6. `b.val`: reference type is `Beta` \u2192 `Beta.val = 200`. Prints: `200`."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 5: Full Inheritance + Polymorphism Exam Challenge",
+      "language": "java",
+      "code": "class X {\n    static int count = 0;\n    int id;\n    X() { count++; id = count; System.out.println(\"X\" + id); }\n    void show() { System.out.println(\"show X\" + id); }\n}\nclass Y extends X {\n    Y() { System.out.println(\"Y\" + id); }\n    @Override\n    void show() { System.out.println(\"show Y\" + id); }\n}\nclass Z extends Y {\n    Z() { System.out.println(\"Z\" + id); }\n    @Override\n    void show() { super.show(); System.out.println(\"show Z\" + id); }\n}\npublic class Q5 {\n    public static void main(String[] args) {\n        X a = new Z();\n        X b = new Y();\n        a.show();\n        b.show();\n        System.out.println(X.count);\n    }\n}",
+      "answer": "X1\nY1\nZ1\nX2\nY2\nshow Y1\nshow Z1\nshow Y2\n2",
+      "explanation": "Trace `new Z()` (a = new Z(), actual type Z):\n1. Z() \u2192 implicit super() \u2192 Y() \u2192 implicit super() \u2192 X().\n2. X(): count++ (count=1), id=1, prints `X1`. Return to Y().\n3. Y(): prints `Y1` (id=1 from X). Return to Z().\n4. Z(): prints `Z1` (id=1). a now references this Z object.\n\nTrace `new Y()` (b = new Y(), actual type Y):\n5. Y() \u2192 super() \u2192 X(): count++ (count=2), id=2, prints `X2`. Return to Y().\n6. Y(): prints `Y2`. b references this Y object.\n\nTrace `a.show()` (actual type Z):\n7. Z.show() calls `super.show()` first \u2192 Y.show(): prints `show Y1` (id=1).\n8. Then Z.show() prints `show Z1`.\n\nTrace `b.show()` (actual type Y):\n9. Y.show(): prints `show Y2` (id=2).\n\n`X.count` = 2 (one increment per X() constructor call; two objects were created)."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "\ud83d\udccb Quick Reference Summary"
+    },
+    {
+      "type": "callout",
+      "variant": "tip",
+      "label": "Exam Trace Shortcut",
+      "content": "Draw a two-column table for each object: **Reference Type** | **Actual Type**. For every method call, ask: is it an overridden instance method? If yes \u2192 use Actual Type column. Static method or field? \u2192 use Reference Type column. This mechanical check eliminates 90% of dynamic dispatch mistakes."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 6: Design a Shape Hierarchy with Polymorphic Area",
+      "language": "java",
+      "code": "// Define an abstract class Shape with an abstract method area().\n// Subclasses: Circle (radius), Rectangle (width, height).\n// Write a method printArea(Shape s) that uses polymorphism.\n// In main, create a Shape[] of mixed objects and call printArea on each.\n// Expected output (for r=5, w=4 h=3):\n// Circle area: 78.54\n// Rectangle area: 12.0",
+      "approach": "1. Declare Shape as abstract with abstract double area().\n2. Circle extends Shape: store radius, override area() = Math.PI * r * r.\n3. Rectangle extends Shape: store width & height, override area() = w * h.\n4. printArea(Shape s) calls s.area() \u2014 dynamic dispatch picks the correct subclass.\n5. Build Shape[] and iterate.",
+      "solution": "public class ShapeHierarchy {\n    abstract static class Shape {\n        abstract double area();\n    }\n    static class Circle extends Shape {\n        double radius;\n        Circle(double r) { this.radius = r; }\n        @Override\n        double area() { return Math.PI * radius * radius; }\n    }\n    static class Rectangle extends Shape {\n        double width, height;\n        Rectangle(double w, double h) { this.width = w; this.height = h; }\n        @Override\n        double area() { return width * height; }\n    }\n    static void printArea(Shape s) {\n        if (s instanceof Circle)\n            System.out.printf(\"Circle area: %.2f%n\", s.area());\n        else if (s instanceof Rectangle)\n            System.out.printf(\"Rectangle area: %.1f%n\", s.area());\n    }\n    public static void main(String[] args) {\n        Shape[] shapes = { new Circle(5), new Rectangle(4, 3) };\n        for (Shape s : shapes) printArea(s);\n    }\n}",
+      "explanation": "Shape is abstract so it cannot be instantiated directly \u2014 only concrete subclasses can. Dynamic dispatch: when printArea calls s.area(), the JVM looks at the actual runtime type (Circle or Rectangle) and calls that class's area() implementation. instanceof checks are used here only for labeling; the area() call itself is purely polymorphic. This pattern is the core of the Open/Closed Principle: add new shapes by adding new subclasses, not by modifying printArea. printf format: %.2f rounds to 2 decimal places; Math.PI*25 \u2248 78.5398 \u2192 78.54."
+    },
+    {
+      "type": "list",
+      "ordered": false,
+      "items": [
+        "**Constructor order**: parent constructor body runs FIRST, child runs AFTER \u2014 always outermost parent to innermost child",
+        "**Implicit super()**: if no `super()` or `this()` is written, compiler inserts `super()` as first line \u2014 parent must have a no-arg constructor or compile error",
+        "**super() must be first**: any code before `super()` or `this()` in a constructor is a compile-time error",
+        "**this() vs super()**: a constructor can call one or the other, never both \u2014 and only as the first statement",
+        "**Dynamic dispatch rule**: overridden **instance methods** use **actual (runtime) type** \u2014 always",
+        "**Static method hiding**: static methods are resolved by **reference (compile-time) type** \u2014 no dynamic dispatch",
+        "**Field hiding**: instance fields are resolved by **reference type** \u2014 fields cannot be polymorphically overridden",
+        "**super.method()**: explicitly calls the PARENT class's version of a method, bypasses child's override",
+        "**Overridden method in constructor**: if a parent constructor calls an overridden method, the CHILD's version runs \u2014 but child fields are uninitialized (default values: 0, null, false)",
+        "**Upcasting**: always safe, implicit (`Animal a = new Dog()`)",
+        "**Downcasting**: requires explicit cast, throws `ClassCastException` at runtime if actual type doesn't match \u2014 always check with `instanceof` first",
+        "**instanceof**: `obj instanceof Type` returns true if obj's actual type IS-A Type (or is Type itself)"
+      ]
+    }
+  ]
+}

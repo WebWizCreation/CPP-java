@@ -1,0 +1,263 @@
+{
+  "id": "Java_Ch18_Generics_Wrappers",
+  "track": "java",
+  "chapter": 18,
+  "title": "Generics & Wrapper Classes",
+  "description": "Decode Java's type parameter syntax, autoboxing traps, and wrapper class utilities — concepts that appear in almost every exam code snippet involving collections and type conversion.",
+  "sections": [
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🧬 Why Generics & Wrappers Are Exam-Critical"
+    },
+    {
+      "type": "paragraph",
+      "content": "CSE110 exams test generics in two ways: **reading** code with type parameters (e.g., `ArrayList<T>`, `Pair<K,V>`) and **writing** generic methods or classes. Wrapper classes are tested through autoboxing/unboxing traps, conversion methods (`Integer.parseInt`, `String.valueOf`), and comparisons (`==` vs `.equals()` on Integer objects). Understanding both is essential for the Collections chapter and for writing flexible, reusable code."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📦 Wrapper Classes — Primitives as Objects"
+    },
+    {
+      "type": "paragraph",
+      "content": "Java's primitive types (`int`, `double`, `char`, etc.) are **not** objects and cannot be used with generics or collections. Each primitive has a corresponding **wrapper class** in `java.lang` that boxes the primitive into an object. Collections like `ArrayList<int>` are illegal — you must use `ArrayList<Integer>`."
+    },
+    {
+      "type": "table",
+      "headers": ["Primitive", "Wrapper Class", "Size", "Default Value (field)"],
+      "rows": [
+        ["`byte`", "`Byte`", "8 bits", "0"],
+        ["`short`", "`Short`", "16 bits", "0"],
+        ["`int`", "`Integer`", "32 bits", "0"],
+        ["`long`", "`Long`", "64 bits", "0L"],
+        ["`float`", "`Float`", "32 bits", "0.0f"],
+        ["`double`", "`Double`", "64 bits", "0.0"],
+        ["`boolean`", "`Boolean`", "1 bit logical", "false"],
+        ["`char`", "`Character`", "16 bits (Unicode)", "'\\u0000'"]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔄 Autoboxing and Unboxing"
+    },
+    {
+      "type": "paragraph",
+      "content": "**Autoboxing** is the automatic conversion of a primitive to its wrapper class. **Unboxing** is the reverse. Java performs these conversions automatically in most contexts, but the process has subtle traps that appear frequently in exam predict-output questions."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Autoboxing and Unboxing in Action",
+      "code": "import java.util.*;\n\npublic class AutoboxDemo {\n    public static void main(String[] args) {\n        // Autoboxing: int -> Integer\n        Integer a = 42;           // same as: Integer a = Integer.valueOf(42);\n        ArrayList<Integer> list = new ArrayList<>();\n        list.add(5);              // autoboxes int 5 to Integer(5)\n        list.add(10);\n\n        // Unboxing: Integer -> int\n        int sum = 0;\n        for (Integer x : list) {\n            sum += x;             // unboxes Integer to int for addition\n        }\n        System.out.println(sum); // 15\n\n        // Unboxing in arithmetic\n        Integer x = 100;\n        Integer y = 200;\n        int result = x + y;      // unboxes both, adds, stores in int\n        System.out.println(result); // 300\n\n        // NullPointerException from unboxing null!\n        Integer n = null;\n        // int bad = n;          // RUNTIME: NullPointerException\n    }\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "danger",
+      "label": "Integer == Comparison Trap — Most Tested Autoboxing Bug",
+      "content": "**Never** compare `Integer` objects with `==` for values outside [-128, 127]. Java caches Integer objects in this range, so `Integer a = 100; Integer b = 100; a == b` is `true`. But `Integer a = 200; Integer b = 200; a == b` is `false` because two different objects are created. **Always use `.equals()`** for Integer comparison. This is the #1 autoboxing mistake in CSE110 exams."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Integer == vs .equals() — The Cache Trap",
+      "code": "public class IntegerTrap {\n    public static void main(String[] args) {\n        Integer a = 127;\n        Integer b = 127;\n        System.out.println(a == b);      // true  (cached range)\n        System.out.println(a.equals(b)); // true\n\n        Integer c = 128;\n        Integer d = 128;\n        System.out.println(c == d);      // FALSE (outside cache: new objects)\n        System.out.println(c.equals(d)); // true  (always use this!)\n\n        // Safe comparison using primitives\n        int x = c;  // unbox\n        int y = d;  // unbox\n        System.out.println(x == y); // true (primitive == is always safe)\n    }\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔧 Wrapper Class Utility Methods"
+    },
+    {
+      "type": "paragraph",
+      "content": "Wrapper classes provide essential static utility methods for parsing, converting, and inspecting values. These appear constantly in exam code — you must recognize what each returns."
+    },
+    {
+      "type": "table",
+      "headers": ["Method", "Returns", "Example", "Output"],
+      "rows": [
+        ["`Integer.parseInt(str)`", "`int`", "`Integer.parseInt(\"42\")`", "`42` (int)"],
+        ["`Integer.valueOf(str)`", "`Integer`", "`Integer.valueOf(\"42\")`", "`42` (Integer obj)"],
+        ["`Integer.valueOf(int)`", "`Integer`", "`Integer.valueOf(5)`", "`5` (Integer obj)"],
+        ["`Integer.toString(int)`", "`String`", "`Integer.toString(42)`", "`\"42\"`"],
+        ["`String.valueOf(int)`", "`String`", "`String.valueOf(42)`", "`\"42\"`"],
+        ["`Integer.MAX_VALUE`", "`int`", "`Integer.MAX_VALUE`", "`2147483647`"],
+        ["`Integer.MIN_VALUE`", "`int`", "`Integer.MIN_VALUE`", "`-2147483648`"],
+        ["`Integer.toBinaryString(n)`", "`String`", "`Integer.toBinaryString(10)`", "`\"1010\"`"],
+        ["`Double.parseDouble(str)`", "`double`", "`Double.parseDouble(\"3.14\")`", "`3.14`"],
+        ["`Character.isDigit(ch)`", "`boolean`", "`Character.isDigit('5')`", "`true`"],
+        ["`Character.isLetter(ch)`", "`boolean`", "`Character.isLetter('A')`", "`true`"],
+        ["`Character.toUpperCase(ch)`", "`char`", "`Character.toUpperCase('a')`", "`'A'`"]
+      ]
+    },
+    {
+      "type": "callout",
+      "variant": "warning",
+      "label": "parseInt vs valueOf — Different Return Types",
+      "content": "`Integer.parseInt(\"5\")` returns a **primitive** `int`. `Integer.valueOf(\"5\")` returns an **Integer object**. Both work in most contexts via autoboxing, but the distinction matters when the return type is explicitly tested, or when you need to avoid potential `NullPointerException` from unboxing."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🧩 Introduction to Generics"
+    },
+    {
+      "type": "paragraph",
+      "content": "**Generics** allow classes, interfaces, and methods to operate on objects of various types while providing **compile-time type safety**. Before generics (pre-Java 5), collections stored `Object` and required explicit casting — leading to runtime `ClassCastException`. Generics eliminate this by checking types at compile time."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Why Generics Exist — Pre-Generics vs Generics",
+      "code": "import java.util.*;\n\npublic class WhyGenerics {\n    public static void main(String[] args) {\n        // PRE-GENERICS (Java 1.4 style) — AVOID\n        ArrayList rawList = new ArrayList();\n        rawList.add(\"hello\");\n        rawList.add(42);  // No compile error, but dangerous!\n        String s = (String) rawList.get(1); // RUNTIME: ClassCastException!\n\n        // WITH GENERICS — type-safe\n        ArrayList<String> typedList = new ArrayList<>();\n        typedList.add(\"hello\");\n        // typedList.add(42); // COMPILE ERROR — caught early!\n        String safe = typedList.get(0);  // No cast needed\n        System.out.println(safe); // hello\n    }\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🏗️ Generic Classes"
+    },
+    {
+      "type": "paragraph",
+      "content": "You can define your own generic class by placing a **type parameter** in angle brackets after the class name: `class Box<T>`. `T` is a convention (Type), but you can use any letter. Common conventions: `T` (Type), `E` (Element), `K` (Key), `V` (Value), `N` (Number)."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Generic Class — Box<T> and Pair<K,V>",
+      "code": "public class GenericsDemo {\n\n    // Single type parameter\n    static class Box<T> {\n        private T value;\n\n        public Box(T value) {\n            this.value = value;\n        }\n\n        public T getValue() {\n            return value;\n        }\n\n        public void setValue(T value) {\n            this.value = value;\n        }\n\n        @Override\n        public String toString() {\n            return \"Box[\" + value + \"]\";\n        }\n    }\n\n    // Two type parameters\n    static class Pair<K, V> {\n        K key;\n        V value;\n\n        Pair(K key, V value) {\n            this.key = key;\n            this.value = value;\n        }\n\n        @Override\n        public String toString() {\n            return key + \"=\" + value;\n        }\n    }\n\n    public static void main(String[] args) {\n        Box<Integer> intBox = new Box<>(42);\n        Box<String> strBox = new Box<>(\"hello\");\n        System.out.println(intBox.getValue()); // 42\n        System.out.println(strBox);            // Box[hello]\n\n        Pair<String, Integer> p = new Pair<>(\"Alice\", 95);\n        System.out.println(p); // Alice=95\n    }\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "⚙️ Generic Methods"
+    },
+    {
+      "type": "paragraph",
+      "content": "A **generic method** declares its own type parameter, independent of the class's type parameter. The type parameter appears before the return type: `public static <T> T method(T arg)`. Generic methods can be in non-generic classes."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Generic Methods — Swap and Print",
+      "code": "import java.util.*;\n\npublic class GenericMethods {\n\n    // Generic method to swap two elements in a list\n    public static <T> void swap(List<T> list, int i, int j) {\n        T temp = list.get(i);\n        list.set(i, list.get(j));\n        list.set(j, temp);\n    }\n\n    // Generic method to print an array\n    public static <T> void printArray(T[] arr) {\n        for (T item : arr) {\n            System.out.print(item + \" \");\n        }\n        System.out.println();\n    }\n\n    // Generic method to find maximum\n    public static <T extends Comparable<T>> T findMax(T a, T b) {\n        return a.compareTo(b) >= 0 ? a : b;\n    }\n\n    public static void main(String[] args) {\n        ArrayList<Integer> list = new ArrayList<>(Arrays.asList(1, 2, 3, 4));\n        swap(list, 0, 3);\n        System.out.println(list); // [4, 2, 3, 1]\n\n        Integer[] nums = {5, 10, 3};\n        printArray(nums); // 5 10 3\n\n        System.out.println(findMax(\"apple\", \"banana\")); // banana\n        System.out.println(findMax(42, 17));             // 42\n    }\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🚧 Bounded Type Parameters"
+    },
+    {
+      "type": "paragraph",
+      "content": "Use `<T extends SomeClass>` to restrict what types can be passed as `T`. This lets you call methods of `SomeClass` on `T` objects inside the generic code. `extends` here means **extends or implements** (works for both classes and interfaces). The most common bound in exams is `<T extends Comparable<T>>`."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Bounded Generics and Wildcards",
+      "code": "import java.util.*;\n\npublic class BoundedGenerics {\n\n    // T must implement Comparable — lets us use compareTo()\n    public static <T extends Comparable<T>> T min(T a, T b) {\n        return a.compareTo(b) <= 0 ? a : b;\n    }\n\n    // Wildcard: accepts List of any type\n    public static void printList(List<?> list) {\n        for (Object o : list) System.out.print(o + \" \");\n        System.out.println();\n    }\n\n    // Upper bounded wildcard: List of Number or subclass\n    public static double sumList(List<? extends Number> list) {\n        double total = 0;\n        for (Number n : list) total += n.doubleValue();\n        return total;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(min(3, 7));         // 3\n        System.out.println(min(\"cat\", \"bat\")); // bat\n\n        List<Integer> ints = Arrays.asList(1, 2, 3);\n        List<Double> dbls = Arrays.asList(1.5, 2.5);\n        printList(ints);           // 1 2 3\n        System.out.println(sumList(ints)); // 6.0\n        System.out.println(sumList(dbls)); // 4.0\n    }\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "⚠️ Generics Limitations — What You CANNOT Do"
+    },
+    {
+      "type": "paragraph",
+      "content": "Generics have restrictions due to **type erasure** — Java removes generic type information at runtime, replacing all `T` with `Object` (or the bound type). This causes several limitations that exams love to test."
+    },
+    {
+      "type": "table",
+      "headers": ["Illegal Operation", "Why Illegal", "Workaround"],
+      "rows": [
+        ["`new T()`", "Type erased at runtime", "Pass `Class<T>` and use reflection"],
+        ["`new T[10]`", "Cannot create generic arrays", "Use `(T[]) new Object[10]` with cast"],
+        ["`instanceof T`", "T unknown at runtime", "Pass `Class<T>` and use `clazz.isInstance(obj)`"],
+        ["`ArrayList<int>`", "Generics need reference types", "Use `ArrayList<Integer>` (wrapper)"],
+        ["Static generic fields", "Shared across instances", "Avoid; use generic methods instead"]
+      ]
+    },
+    {
+      "type": "callout",
+      "variant": "warning",
+      "label": "Type Erasure in Exam Questions",
+      "content": "When exam code shows `List list = new ArrayList()` (no type parameter), this is a **raw type**. Raw types suppress all generic type checking. The compiler will show an **unchecked warning** (not an error). Operations on raw types may cause runtime `ClassCastException`. In exams, always identify raw types as a code quality issue even if the code compiles."
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🏋️ Interactive Exercises"
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 1: Autoboxing and Integer Cache",
+      "language": "java",
+      "code": "public class Q1 {\n    public static void main(String[] args) {\n        Integer a = 100;\n        Integer b = 100;\n        Integer c = 200;\n        Integer d = 200;\n\n        System.out.println(a == b);\n        System.out.println(a.equals(b));\n        System.out.println(c == d);\n        System.out.println(c.equals(d));\n        System.out.println(a + c);\n    }\n}",
+      "answer": "true\ntrue\nfalse\ntrue\n300",
+      "explanation": "Line 1: `a == b` → true because 100 is within [-128, 127] cache range; same object reference. Line 2: `a.equals(b)` → true always (compares values). Line 3: `c == d` → false because 200 is outside the cache range; two distinct Integer objects are created by autoboxing. Line 4: `c.equals(d)` → true (value comparison). Line 5: `a + c` triggers unboxing of both to int (100 + 200 = 300); result is an int printed as 300."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 2: Generic Box Class Trace",
+      "language": "java",
+      "code": "public class Q2 {\n    static class Box<T> {\n        T val;\n        Box(T val) { this.val = val; }\n        T get() { return val; }\n        void set(T val) { this.val = val; }\n    }\n    public static void main(String[] args) {\n        Box<String> sb = new Box<>(\"hello\");\n        Box<Integer> ib = new Box<>(10);\n        System.out.println(sb.get().toUpperCase());\n        ib.set(ib.get() * 2);\n        System.out.println(ib.get());\n        Box<Double> db = new Box<>(3.14);\n        System.out.println(db.get() > 3.0);\n    }\n}",
+      "answer": "HELLO\n20\ntrue",
+      "explanation": "Line 1: `sb.get()` returns `\"hello\"` (a String), `.toUpperCase()` returns `\"HELLO\"`. Line 2: `ib.get()` returns `10` (Integer, unboxed to int), `* 2 = 20`, autoboxed back to Integer, stored via `set`. `ib.get()` now returns 20. Line 3: `db.get()` returns `3.14` (Double, unboxed), `3.14 > 3.0` → `true`."
+    },
+    {
+      "type": "accordion",
+      "variant": "find-error",
+      "title": "Exercise 3: NullPointerException from Unboxing null",
+      "language": "java",
+      "code": "import java.util.*;\npublic class Q3 {\n    public static void main(String[] args) {\n        HashMap<String, Integer> map = new HashMap<>();\n        map.put(\"a\", 1);\n        map.put(\"b\", 2);\n        int val = map.get(\"c\");  // BUG HERE\n        System.out.println(val);\n    }\n}",
+      "error": "Line 7 (`int val = map.get(\"c\")`): Runtime NullPointerException. `map.get(\"c\")` returns `null` because the key \"c\" does not exist. Java then attempts to **unbox** `null` into an `int`, which throws a NullPointerException at runtime.",
+      "fix": "import java.util.*;\npublic class Q3 {\n    public static void main(String[] args) {\n        HashMap<String, Integer> map = new HashMap<>();\n        map.put(\"a\", 1);\n        map.put(\"b\", 2);\n        // FIX: use getOrDefault to avoid null unboxing\n        int val = map.getOrDefault(\"c\", 0);\n        System.out.println(val); // 0\n    }\n}",
+      "explanation": "When `HashMap.get()` returns `null` for a missing key, and you assign it to a primitive `int`, Java tries to call `null.intValue()` — which crashes. The fix: use `getOrDefault(key, defaultValue)` which returns the default instead of null. Alternatively, assign to `Integer` (not `int`) and null-check before use. This pattern is extremely common in exam code analysis questions."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 4: Wrapper Utility Methods",
+      "language": "java",
+      "code": "public class Q4 {\n    public static void main(String[] args) {\n        String s = \"255\";\n        int n = Integer.parseInt(s);\n        System.out.println(n + 1);\n        System.out.println(Integer.toBinaryString(n));\n        System.out.println(Integer.MAX_VALUE == 2147483647);\n        System.out.println(Character.isDigit('7'));\n        System.out.println(Character.toUpperCase('m'));\n        System.out.println(String.valueOf(3.14));\n    }\n}",
+      "answer": "256\n11111111\ntrue\ntrue\nM\n3.14",
+      "explanation": "`parseInt(\"255\")` → int 255; `255+1=256`. `toBinaryString(255)` → \"11111111\" (8 ones = 255 in binary). `Integer.MAX_VALUE == 2147483647` → true (this is the maximum int value). `Character.isDigit('7')` → true. `Character.toUpperCase('m')` → 'M' (printed as M). `String.valueOf(3.14)` → \"3.14\" (double to String)."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 5: Generic Stack Implementation",
+      "language": "java",
+      "code": "// Implement a generic Stack<T> class using an ArrayList.\n// Must support: push(T item), pop() -> T, peek() -> T,\n// isEmpty() -> boolean, size() -> int\n// Stack should throw RuntimeException if pop/peek on empty stack.\n// Test with Integer and String stacks.",
+      "approach": "Use `ArrayList<T>` as backing storage. The top of the stack is the last element of the ArrayList (index size-1). push = add to end (O(1)), pop = remove from end (O(1)), peek = get from end without removing (O(1)). Generic class declaration allows reuse with any type.",
+      "solution": "import java.util.*;\n\npublic class GenericStack {\n\n    static class Stack<T> {\n        private ArrayList<T> data = new ArrayList<>();\n\n        public void push(T item) {\n            data.add(item);\n        }\n\n        public T pop() {\n            if (isEmpty()) throw new RuntimeException(\"Stack is empty\");\n            return data.remove(data.size() - 1);\n        }\n\n        public T peek() {\n            if (isEmpty()) throw new RuntimeException(\"Stack is empty\");\n            return data.get(data.size() - 1);\n        }\n\n        public boolean isEmpty() {\n            return data.isEmpty();\n        }\n\n        public int size() {\n            return data.size();\n        }\n\n        @Override\n        public String toString() {\n            return data.toString();\n        }\n    }\n\n    public static void main(String[] args) {\n        Stack<Integer> intStack = new Stack<>();\n        intStack.push(1);\n        intStack.push(2);\n        intStack.push(3);\n        System.out.println(intStack.peek()); // 3\n        System.out.println(intStack.pop());  // 3\n        System.out.println(intStack.size()); // 2\n\n        Stack<String> strStack = new Stack<>();\n        strStack.push(\"hello\");\n        strStack.push(\"world\");\n        System.out.println(strStack.pop());  // world\n        System.out.println(strStack.peek()); // hello\n    }\n}",
+      "explanation": "The generic parameter `<T>` lets the same Stack class work for Integer, String, or any reference type. `ArrayList<T>` as backing store gives O(1) amortized push and pop (from the end). The `remove(data.size()-1)` idiom removes and returns the last element, which is the stack top. The check for empty before pop/peek prevents ArrayIndexOutOfBoundsException by throwing a more descriptive RuntimeException. Notice how `push(1)` autoboxes int 1 to Integer automatically."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📝 Quick Reference Summary"
+    },
+    {
+      "type": "list",
+      "ordered": false,
+      "items": [
+        "**Wrapper classes**: `int`→`Integer`, `double`→`Double`, `char`→`Character`, `boolean`→`Boolean` — required for generics and collections",
+        "**Autoboxing**: automatic primitive→wrapper conversion (`Integer x = 5`); **unboxing**: wrapper→primitive (`int n = integerObj`)",
+        "**Null unboxing = NullPointerException**: `int n = map.get(\"missing\")` crashes if get returns null — use `getOrDefault` or assign to wrapper type",
+        "**Integer cache trap**: `Integer` objects are cached for values -128 to 127; `==` returns `true` in range but `false` outside — always use `.equals()` for Integer comparison",
+        "**Generic class**: `class Box<T> { T val; }` — T replaced by actual type at compile time",
+        "**Generic method**: `public static <T> T method(T arg)` — type parameter before return type",
+        "**Bounded type**: `<T extends Comparable<T>>` — restricts T to types that implement Comparable",
+        "**Wildcard**: `List<?>` accepts any List type; `List<? extends Number>` accepts List of Number or subclasses",
+        "**Type erasure**: generic types are removed at runtime — cannot do `new T()`, `new T[]`, or `instanceof T`",
+        "**Key parsing methods**: `Integer.parseInt(str)` → int, `Double.parseDouble(str)` → double, `String.valueOf(val)` → String, `Integer.toBinaryString(n)` → binary string"
+      ]
+    }
+  ]
+}

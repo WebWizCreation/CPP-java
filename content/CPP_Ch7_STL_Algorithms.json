@@ -2,104 +2,484 @@
   "id": "CPP_Ch7_STL_Algorithms",
   "track": "cpp",
   "chapter": 7,
-  "title": "STL: Algorithms",
-  "description": "The `<algorithm>` header is a toolkit of 100+ ready-made functions. A competitive programmer who masters sort, binary search, and the key numeric/permutation algorithms can solve problems in 10 lines that a beginner would spend 50 lines on. This chapter covers the algorithms that appear most frequently in Codeforces problems up to 1800 rating.",
-
+  "title": "STL Algorithms",
+  "description": "Master the C++ Standard Template Library's algorithm arsenal — sort, binary search, permutations, reductions, and transforms — to write contest solutions in lines, not loops.",
   "sections": [
-    { "type": "heading", "level": 2, "content": "🔀 sort — The Most-Used Algorithm" },
-    { "type": "paragraph", "content": "`std::sort` uses **introsort** (hybrid quicksort + heapsort + insertion sort) and runs in **O(n log n)** worst case. It sorts **in-place** on random-access iterators (vector, array, deque). You can pass a custom comparator — a function or lambda — to control sort order." },
-    { "type": "code", "language": "cpp", "title": "sort — All Forms", "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    vector<int> v = {5, 2, 8, 1, 9, 3};\n\n    // ── Ascending (default) ──\n    sort(v.begin(), v.end());\n    // v = {1, 2, 3, 5, 8, 9}\n\n    // ── Descending ──\n    sort(v.begin(), v.end(), greater<int>());\n    // v = {9, 8, 5, 3, 2, 1}\n\n    // ── Sort a subarray [l, r) ──\n    sort(v.begin() + 1, v.begin() + 4);  // Sort indices 1,2,3 only\n\n    // ── Sort array ──\n    int a[] = {4, 2, 7, 1};\n    sort(a, a + 4);\n\n    // ── Custom comparator: sort pairs by second value descending ──\n    vector<pair<int,int>> pairs = {{1,5},{2,3},{3,9},{4,1}};\n    sort(pairs.begin(), pairs.end(), [](const pair<int,int>& x, const pair<int,int>& y) {\n        return x.second > y.second;  // by second value, descending\n    });\n    // pairs = {{3,9},{1,5},{2,3},{4,1}}\n\n    // ── Sort strings by length, then lexicographically ──\n    vector<string> words = {\"banana\", \"fig\", \"apple\", \"kiwi\", \"mango\"};\n    sort(words.begin(), words.end(), [](const string& a, const string& b) {\n        if (a.size() != b.size()) return a.size() < b.size();\n        return a < b;  // tie-break lexicographically\n    });\n    // words = {\"fig\", \"kiwi\", \"apple\", \"mango\", \"banana\"}\n    return 0;\n}" },
-    { "type": "callout", "variant": "danger", "label": "Strict Weak Ordering — Invalid Comparators Cause UB", "content": "A comparator `cmp(a, b)` MUST satisfy strict weak ordering: `cmp(x, x)` must be false (irreflexivity). A common bug is `return a.val <= b.val` — using `<=` instead of `<` violates this rule and causes undefined behavior (crash, corruption, infinite loop). Always use strict `<`." },
-
-    { "type": "heading", "level": 2, "content": "🔍 Binary Search Algorithms" },
-    { "type": "paragraph", "content": "The STL provides three binary search functions on **sorted** ranges. In CP, `lower_bound` and `upper_bound` are the workhorses — they return iterators, not booleans, giving you exact positions to work with." },
-    { "type": "table",
-      "headers": ["Function", "Returns", "Condition"],
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "⚡ Why STL Algorithms Win Contests"
+    },
+    {
+      "type": "paragraph",
+      "content": "Every Codeforces problem gives you 1–2 seconds. A hand-rolled sort takes ~50 lines and may have bugs; `std::sort` takes one line and runs optimally. STL algorithms are **battle-tested, cache-friendly implementations** of the most common algorithmic patterns. The competitive programmer who knows `<algorithm>` deeply can solve in 10 minutes what others spend 40 minutes on. This chapter covers the algorithms that appear in rated problems over and over: sorting with custom comparators, binary search variants, prefix reductions, permutation enumeration, and set operations on sorted ranges."
+    },
+    {
+      "type": "callout",
+      "variant": "tip",
+      "label": "Golden Template",
+      "content": "Always include `#include <bits/stdc++.h>` and `using namespace std;` — this pulls in every STL algorithm with a single line. No need to include `<algorithm>`, `<numeric>`, or `<functional>` separately."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔢 STL Algorithm Categories at a Glance"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "Category",
+        "Key Functions",
+        "Header (via bits/stdc++.h)",
+        "Typical Use"
+      ],
       "rows": [
-        ["`lower_bound(first, last, val)`", "Iterator to first element **>= val**", "Range must be sorted"],
-        ["`upper_bound(first, last, val)`", "Iterator to first element **> val**",  "Range must be sorted"],
-        ["`binary_search(first, last, val)`", "**bool** — true if val exists",       "Range must be sorted"]
+        [
+          "Sorting",
+          "`sort`, `stable_sort`, `partial_sort`",
+          "`<algorithm>`",
+          "Ordering elements, custom comparators"
+        ],
+        [
+          "Binary Search",
+          "`lower_bound`, `upper_bound`, `binary_search`",
+          "`<algorithm>`",
+          "Finding positions in sorted ranges"
+        ],
+        [
+          "Permutations",
+          "`next_permutation`, `prev_permutation`",
+          "`<algorithm>`",
+          "Enumerating all orderings"
+        ],
+        [
+          "Reductions",
+          "`accumulate`, `reduce`, `inner_product`",
+          "`<numeric>`",
+          "Sum, product, dot products"
+        ],
+        [
+          "Min / Max",
+          "`min_element`, `max_element`, `minmax_element`",
+          "`<algorithm>`",
+          "Finding extremes in ranges"
+        ],
+        [
+          "Searching",
+          "`find`, `find_if`, `count`, `count_if`",
+          "`<algorithm>`",
+          "Linear scans with predicates"
+        ],
+        [
+          "Transforms",
+          "`transform`, `fill`, `iota`, `replace`",
+          "`<algorithm>`",
+          "Mapping / initialising ranges"
+        ],
+        [
+          "Set Ops",
+          "`set_union`, `set_intersection`, `set_difference`",
+          "`<algorithm>`",
+          "Sorted range merging"
+        ],
+        [
+          "Partitioning",
+          "`partition`, `stable_partition`, `nth_element`",
+          "`<algorithm>`",
+          "Quick-select, Dutch flag"
+        ]
       ]
     },
-    { "type": "code", "language": "cpp", "title": "lower_bound / upper_bound — CP Patterns", "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    vector<int> v = {1, 3, 3, 3, 5, 7, 9};\n    //              idx: 0  1  2  3  4  5  6\n\n    // ── How many elements == 3? ──\n    auto lo = lower_bound(v.begin(), v.end(), 3); // points to index 1\n    auto hi = upper_bound(v.begin(), v.end(), 3); // points to index 4\n    cout << (hi - lo) << \"\\n\";     // 3 occurrences\n\n    // ── Index of lower_bound ──\n    cout << (lo - v.begin()) << \"\\n\";   // 1\n\n    // ── Largest element <= x ──\n    int x = 4;\n    auto it = upper_bound(v.begin(), v.end(), x);\n    if (it != v.begin()) {\n        --it;\n        cout << *it << \"\\n\";   // 3  (largest value <= 4)\n    }\n\n    // ── Count elements in [l, r] inclusive ──\n    int l = 3, r = 7;\n    auto cnt = upper_bound(v.begin(), v.end(), r) -\n               lower_bound(v.begin(), v.end(), l);\n    cout << cnt << \"\\n\";   // 5  (elements 3,3,3,5,7)\n\n    // ── Binary search the ANSWER (classic CP technique) ──\n    // Is it possible to do task with parameter k?\n    // find min valid k:\n    int lo2 = 1, hi2 = 1e9, ans = -1;\n    while (lo2 <= hi2) {\n        int mid = lo2 + (hi2 - lo2) / 2;\n        // if (isPossible(mid)) { ans = mid; hi2 = mid - 1; }\n        // else lo2 = mid + 1;\n        (void)mid;\n        break;\n    }\n    (void)ans;\n    return 0;\n}" },
-
-    { "type": "heading", "level": 2, "content": "🔢 Numeric Algorithms" },
-    { "type": "paragraph", "content": "`accumulate`, `partial_sum`, `adjacent_difference`, and `iota` from `<numeric>` are powerful one-liners that replace common loop patterns. Know them — they save time and reduce bugs." },
-    { "type": "code", "language": "cpp", "title": "Numeric Algorithms — CP Applications", "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    vector<int> v = {1, 2, 3, 4, 5};\n\n    // ── accumulate: sum (or any fold) ──\n    long long total = accumulate(v.begin(), v.end(), 0LL);  // 15\n    // Note: start with 0LL not 0 to avoid int overflow!\n    cout << total << \"\\n\";   // 15\n\n    // ── accumulate with custom op: product ──\n    long long product = accumulate(v.begin(), v.end(), 1LL,\n                                   [](long long acc, int x){ return acc * x; });\n    cout << product << \"\\n\";  // 120\n\n    // ── partial_sum: builds prefix sums in-place ──\n    vector<int> prefix(v.size());\n    partial_sum(v.begin(), v.end(), prefix.begin());\n    // prefix = {1, 3, 6, 10, 15}\n    for (int x : prefix) cout << x << \" \";\n    cout << \"\\n\";\n\n    // ── iota: fill with consecutive values ──\n    vector<int> idx(5);\n    iota(idx.begin(), idx.end(), 0);  // idx = {0, 1, 2, 3, 4}\n    // CP use: sort indices by value in v\n    sort(idx.begin(), idx.end(), [&](int a, int b){ return v[a] < v[b]; });\n    for (int i : idx) cout << i << \" \";  // sorted indices\n    cout << \"\\n\";\n    return 0;\n}" },
-
-    { "type": "heading", "level": 2, "content": "🔄 Permutation & Rearrangement" },
-    { "type": "paragraph", "content": "`next_permutation` and `prev_permutation` cycle through all orderings of a sequence. They return `false` when the sequence wraps around (from last permutation to first or vice versa). Used in brute-force enumeration problems when n ≤ 8." },
-    { "type": "code", "language": "cpp", "title": "Permutations and Useful Rearrangements", "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    // ── Generate all permutations ──\n    vector<int> v = {1, 2, 3};\n    sort(v.begin(), v.end());  // MUST start sorted for complete enumeration\n    do {\n        for (int x : v) cout << x << \" \";\n        cout << \"\\n\";\n    } while (next_permutation(v.begin(), v.end()));\n    // Prints all 6 permutations: 123, 132, 213, 231, 312, 321\n\n    // ── reverse ──\n    vector<int> a = {1, 2, 3, 4, 5};\n    reverse(a.begin(), a.end());\n    // a = {5, 4, 3, 2, 1}\n\n    // ── rotate: bring element at mid to front ──\n    vector<int> b = {1, 2, 3, 4, 5};\n    rotate(b.begin(), b.begin() + 2, b.end());\n    // b = {3, 4, 5, 1, 2}  (rotation left by 2)\n    for (int x : b) cout << x << \" \";\n    cout << \"\\n\";\n\n    // ── unique: remove CONSECUTIVE duplicates (must sort first!) ──\n    vector<int> c = {1, 3, 3, 2, 1, 1, 4};\n    sort(c.begin(), c.end());            // {1, 1, 1, 2, 3, 3, 4}\n    c.erase(unique(c.begin(), c.end()), c.end());\n    // c = {1, 2, 3, 4}\n    for (int x : c) cout << x << \" \";\n    cout << \"\\n\";\n    return 0;\n}" },
-    { "type": "callout", "variant": "tip", "label": "unique Does NOT Remove All Duplicates Alone", "content": "`unique()` only removes **consecutive** duplicates and returns an iterator to the new logical end — it does not resize the vector. You must `erase()` the tail afterwards. And the vector must be **sorted first** for this to remove all duplicates. The `sort + unique + erase` trio is a classic one-liner CP idiom." },
-
-    { "type": "heading", "level": 2, "content": "🔎 Search & Query Algorithms" },
-    { "type": "code", "language": "cpp", "title": "find, count, min_element, max_element", "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    vector<int> v = {4, 7, 2, 7, 1, 9, 3};\n\n    // ── find: returns iterator to first match ──\n    auto it = find(v.begin(), v.end(), 7);\n    if (it != v.end())\n        cout << \"Found 7 at index \" << (it - v.begin()) << \"\\n\";  // 1\n\n    // ── count: occurrences ──\n    cout << count(v.begin(), v.end(), 7) << \"\\n\";  // 2\n\n    // ── count_if: conditional count ──\n    int evens = count_if(v.begin(), v.end(), [](int x){ return x % 2 == 0; });\n    cout << evens << \"\\n\";   // 2 (4 and 2)\n\n    // ── min/max element ──\n    auto mn = min_element(v.begin(), v.end());\n    auto mx = max_element(v.begin(), v.end());\n    cout << *mn << \" \" << *mx << \"\\n\";   // 1 9\n    cout << (mn - v.begin()) << \"\\n\";    // index 4\n\n    // ── fill / fill_n ──\n    vector<int> a(5);\n    fill(a.begin(), a.end(), -1);        // {-1,-1,-1,-1,-1}\n    fill_n(a.begin(), 3, 0);             // {0,0,0,-1,-1}\n    for (int x : a) cout << x << \" \";\n    cout << \"\\n\";\n    return 0;\n}" },
-
-    { "type": "divider" },
-    { "type": "heading", "level": 2, "content": "🧪 Interactive Exercises" },
-
     {
-      "type": "accordion",
-      "variant": "predict-output",
-      "title": "Exercise 1: lower_bound and upper_bound Index Arithmetic",
+      "type": "heading",
+      "level": 2,
+      "content": "📐 Iterator Ranges — The Foundation"
+    },
+    {
+      "type": "paragraph",
+      "content": "Every STL algorithm works on **half-open iterator ranges** `[first, last)` — the element at `first` is included; the element at `last` is **not**. For a vector `v`, the full range is `v.begin(), v.end()`. For an array `arr` of size `n`, use `arr, arr+n`. Understanding this contract eliminates off-by-one bugs."
+    },
+    {
+      "type": "code",
       "language": "cpp",
-      "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    vector<int> v = {2, 4, 4, 4, 6, 8};\n    auto a = lower_bound(v.begin(), v.end(), 4);\n    auto b = upper_bound(v.begin(), v.end(), 4);\n    cout << (a - v.begin()) << \"\\n\";\n    cout << (b - v.begin()) << \"\\n\";\n    cout << (b - a) << \"\\n\";\n    cout << *lower_bound(v.begin(), v.end(), 5) << \"\\n\";\n    cout << binary_search(v.begin(), v.end(), 3) << \"\\n\";\n    return 0;\n}",
-      "answer": "1\n4\n3\n6\n0",
-      "explanation": "`lower_bound(4)` → index 1 (first 4). `upper_bound(4)` → index 4 (first element > 4, which is 6). Distance = 3 occurrences of 4. `lower_bound(5)` returns iterator to first element >= 5, which is 6. `binary_search(3)` returns false (0) because 3 is not in the vector."
+      "title": "Iterator Range Fundamentals",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    vector<int> v = {5, 3, 8, 1, 9, 2, 7};\n\n    // Full range — most common in contests\n    sort(v.begin(), v.end());         // [1,2,3,5,7,8,9]\n\n    // Partial range — sort only indices [2, 5)\n    sort(v.begin() + 2, v.begin() + 5); // sort positions 2,3,4\n\n    // Raw arrays work identically\n    int arr[] = {4, 2, 6, 1, 3};\n    int n = 5;\n    sort(arr, arr + n);               // [1,2,3,4,6]\n\n    // begin()/end() free functions work on arrays too\n    sort(begin(arr), end(arr));\n\n    return 0;\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔀 sort — The Workhorse"
+    },
+    {
+      "type": "paragraph",
+      "content": "`std::sort` uses **introsort** — a hybrid of quicksort, heapsort, and insertion sort — giving guaranteed **O(n log n)** worst-case time. The default comparator sorts in ascending order. Custom comparators let you sort by any criterion."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "sort — All Forms You Need",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    vector<int> v = {5, 3, 8, 1, 9};\n\n    // 1. Default ascending\n    sort(v.begin(), v.end());\n    // v = {1, 3, 5, 8, 9}\n\n    // 2. Descending — use greater<int>() functor\n    sort(v.begin(), v.end(), greater<int>());\n    // v = {9, 8, 5, 3, 1}\n\n    // 3. Lambda comparator — sort by absolute value\n    sort(v.begin(), v.end(), [](int a, int b) {\n        return abs(a) < abs(b);\n    });\n\n    // 4. Sorting pairs — by second element, break ties by first\n    vector<pair<int,int>> p = {{1,5},{3,2},{2,5},{4,1}};\n    sort(p.begin(), p.end(), [](auto& a, auto& b) {\n        if (a.second != b.second) return a.second < b.second;\n        return a.first < a.first;\n    });\n    // p = {{4,1},{3,2},{1,5},{2,5}}\n\n    // 5. Sorting structs\n    struct Task { int deadline, profit; };\n    vector<Task> tasks = {{3,100},{1,50},{2,200}};\n    sort(tasks.begin(), tasks.end(), [](const Task& a, const Task& b) {\n        return a.deadline < b.deadline;  // earliest deadline first\n    });\n\n    return 0;\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "danger",
+      "label": "🚨 Comparator Must Be Strict Weak Ordering",
+      "content": "Your lambda comparator **must** return `false` when `a == b`. Writing `return a.x <= b.x` (using `<=` instead of `<`) causes **undefined behaviour** and can crash or give wrong answers silently. Always use strict `<`. This is the #1 sort bug in contests."
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "content": "stable_sort vs sort"
+    },
+    {
+      "type": "paragraph",
+      "content": "`stable_sort` preserves the **relative order of equal elements**. It costs O(n log² n) without extra memory, or O(n log n) with. Use it when equal-ranked items must maintain input order — e.g. sorting a leaderboard by score while keeping registration order for ties."
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "content": "partial_sort and nth_element"
+    },
+    {
+      "type": "paragraph",
+      "content": "`partial_sort(first, middle, last)` guarantees only the elements in `[first, middle)` are sorted. `nth_element(first, nth, last)` is O(n) average and puts the correct element at position `nth` (the element that *would* be there if sorted), without sorting everything. This is **quick-select** — perfect for \"find the k-th smallest\" problems."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "nth_element — O(n) K-th Smallest",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int n, k;\n    cin >> n >> k;\n    vector<int> arr(n);\n    for (auto& x : arr) cin >> x;\n\n    // nth_element puts kth-smallest at index k-1 in O(n) average\n    nth_element(arr.begin(), arr.begin() + k - 1, arr.end());\n    cout << arr[k - 1] << \"\\n\";\n\n    // Everything before index k-1 is <= arr[k-1]\n    // Everything after  index k-1 is >= arr[k-1]\n    // (but those sub-ranges are NOT sorted)\n\n    return 0;\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔍 Binary Search — lower_bound & upper_bound"
+    },
+    {
+      "type": "paragraph",
+      "content": "These are the two most important binary search tools in competitive programming. They both require a **sorted range** and run in **O(log n)**. `lower_bound` finds the first position where the value is **≥ target**. `upper_bound` finds the first position where the value is **> target**. Together they give you the exact range of any value."
+    },
+    {
+      "type": "table",
+      "headers": [
+        "Function",
+        "Returns Iterator To",
+        "Count of `x` in range",
+        "Exists check"
+      ],
+      "rows": [
+        [
+          "`lower_bound(f, l, x)`",
+          "First element **≥ x**",
+          "`upper_bound - lower_bound`",
+          "`*it == x` after bounds check"
+        ],
+        ["`upper_bound(f, l, x)`", "First element **> x**", "—", "—"],
+        ["`binary_search(f, l, x)`", "`true` / `false`", "—", "Direct boolean"]
+      ]
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "lower_bound / upper_bound — Full Contest Toolkit",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    vector<int> v = {1, 3, 3, 3, 5, 7, 9};\n    //              0  1  2  3  4  5  6\n\n    // --- Basic usage ---\n    auto lo = lower_bound(v.begin(), v.end(), 3);\n    auto hi = upper_bound(v.begin(), v.end(), 3);\n\n    cout << \"First 3 at index: \" << (lo - v.begin()) << \"\\n\"; // 1\n    cout << \"Last  3 at index: \" << (hi - v.begin() - 1) << \"\\n\"; // 3\n    cout << \"Count of 3: \"       << (hi - lo) << \"\\n\"; // 3\n\n    // --- Existence check ---\n    if (lo != v.end() && *lo == 3)\n        cout << \"3 exists\\n\";\n\n    // --- Floor and Ceil ---\n    // Floor(x): largest element <= x\n    int x = 4;\n    auto it = lower_bound(v.begin(), v.end(), x);\n    if (it != v.begin()) {\n        --it;\n        cout << \"Floor of \" << x << \": \" << *it << \"\\n\"; // 3\n    }\n\n    // Ceil(x): smallest element >= x\n    it = lower_bound(v.begin(), v.end(), x);\n    if (it != v.end())\n        cout << \"Ceil of \" << x << \": \" << *it << \"\\n\"; // 5\n\n    // --- Index arithmetic shortcut ---\n    int idx = lower_bound(v.begin(), v.end(), 5) - v.begin();\n    cout << \"Index of first element >= 5: \" << idx << \"\\n\"; // 4\n\n    // --- On sorted arrays ---\n    int arr[] = {2, 4, 6, 8, 10};\n    int n = 5;\n    int pos = lower_bound(arr, arr + n, 6) - arr;\n    cout << \"6 is at index \" << pos << \"\\n\"; // 2\n\n    return 0;\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "warning",
+      "label": "lower_bound on Non-Sorted Range",
+      "content": "Both `lower_bound` and `upper_bound` produce **garbage results** on unsorted containers. Always sort first. For containers like `std::set` and `std::map`, use **member functions** `s.lower_bound(x)` instead — they run in O(log n) using the tree structure, not a linear scan."
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "content": "Binary Search with Custom Comparators"
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "lower_bound with Comparator — Struct Sorting",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nstruct Interval {\n    int l, r;\n};\n\nint main() {\n    vector<Interval> segs = {{1,4},{3,7},{5,9},{8,12}};\n    // Already sorted by .l\n\n    // Find first segment whose l >= 5\n    auto it = lower_bound(segs.begin(), segs.end(), 5,\n        [](const Interval& seg, int val) {\n            return seg.l < val;   // comparator: (element, value)\n        });\n\n    if (it != segs.end())\n        cout << \"[\" << it->l << \",\" << it->r << \"]\\n\"; // [5,9]\n\n    return 0;\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "➕ Numeric Algorithms — accumulate, iota, partial_sum"
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "content": "accumulate"
+    },
+    {
+      "type": "paragraph",
+      "content": "`accumulate(first, last, init)` computes the sum of `init` plus all elements in `[first, last)`. The third argument is the **starting value** — critical for choosing the correct type. Providing a custom binary operation turns it into a general fold."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "accumulate — Sum, Product, and Custom Folds",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    vector<int> v = {1, 2, 3, 4, 5};\n\n    // --- Sum ---\n    int s = accumulate(v.begin(), v.end(), 0);\n    cout << s << \"\\n\"; // 15\n\n    // --- DANGER: Integer overflow when summing large values ---\n    // Use 0LL (long long init) to avoid overflow!\n    long long bigsum = accumulate(v.begin(), v.end(), 0LL);\n\n    // --- Product ---\n    int prod = accumulate(v.begin(), v.end(), 1, multiplies<int>());\n    cout << prod << \"\\n\"; // 120\n\n    // --- Max element via fold ---\n    int mx = accumulate(v.begin(), v.end(), INT_MIN,\n        [](int a, int b) { return max(a, b); });\n    cout << mx << \"\\n\"; // 5\n\n    // --- Count elements satisfying condition ---\n    int cnt_even = accumulate(v.begin(), v.end(), 0,\n        [](int acc, int x) { return acc + (x % 2 == 0 ? 1 : 0); });\n    cout << cnt_even << \"\\n\"; // 2\n\n    // --- String join ---\n    vector<string> words = {\"cp\", \"is\", \"fun\"};\n    string joined = accumulate(next(words.begin()), words.end(), words[0],\n        [](const string& a, const string& b) { return a + \" \" + b; });\n    cout << joined << \"\\n\"; // \"cp is fun\"\n\n    return 0;\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "danger",
+      "label": "🚨 accumulate Overflow — The Silent Killer",
+      "content": "Writing `accumulate(v.begin(), v.end(), 0)` with a `long long` vector still does **int arithmetic** because the init value `0` is `int`. Always write `0LL` when summing potentially large values: `accumulate(v.begin(), v.end(), 0LL)`."
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "content": "iota — Fill with Consecutive Values"
+    },
+    {
+      "type": "paragraph",
+      "content": "`iota(first, last, value)` fills a range with consecutively increasing values starting from `value`. It is the fastest way to initialise an index array for custom sorting or union-find parents."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "iota — Index Array and Indirect Sort",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int n = 5;\n    vector<int> data = {40, 10, 30, 50, 20};\n\n    // Build index array [0,1,2,3,4]\n    vector<int> idx(n);\n    iota(idx.begin(), idx.end(), 0);  // idx = {0,1,2,3,4}\n\n    // Indirect sort: sort indices by data values\n    sort(idx.begin(), idx.end(), [&](int a, int b) {\n        return data[a] < data[b];\n    });\n    // idx = {1,4,2,0,3}  (i.e., data sorted: 10,20,30,40,50)\n\n    for (int i : idx)\n        cout << data[i] << \" \";  // 10 20 30 40 50\n    cout << \"\\n\";\n\n    // Union-Find parent initialisation\n    vector<int> parent(n);\n    iota(parent.begin(), parent.end(), 0); // parent[i] = i\n\n    return 0;\n}"
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "content": "partial_sum — Prefix Sums in One Line"
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "partial_sum — Build Prefix Sum Array",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    vector<int> v = {3, 1, 4, 1, 5, 9, 2};\n    vector<int> prefix(v.size());\n\n    // partial_sum writes cumulative sums to output range\n    partial_sum(v.begin(), v.end(), prefix.begin());\n    // prefix = {3, 4, 8, 9, 14, 23, 25}\n\n    // Range sum query [l, r] (0-indexed)\n    auto range_sum = [&](int l, int r) {\n        return prefix[r] - (l > 0 ? prefix[l-1] : 0);\n    };\n    cout << range_sum(2, 5) << \"\\n\"; // 4+1+5+9 = 19\n\n    // In-place prefix sum (overwrites original)\n    partial_sum(v.begin(), v.end(), v.begin());\n\n    return 0;\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔄 next_permutation & prev_permutation"
+    },
+    {
+      "type": "paragraph",
+      "content": "`next_permutation(first, last)` rearranges the range into the **next lexicographically greater permutation** and returns `true`. When the sequence is the last permutation (descending), it wraps to the first (ascending) and returns `false`. This lets you enumerate all n! permutations with a simple loop."
+    },
+    {
+      "type": "callout",
+      "variant": "tip",
+      "label": "Enumerate All Permutations",
+      "content": "To enumerate **all** permutations, **sort the array first** — then use a do-while loop. Starting from an unsorted array means you'll miss permutations that come before it lexicographically."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "next_permutation — Brute Force Enumeration",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    // --- Basic usage ---\n    vector<int> v = {1, 2, 3};\n    do {\n        for (int x : v) cout << x << \" \";\n        cout << \"\\n\";\n    } while (next_permutation(v.begin(), v.end()));\n    // Prints all 6 permutations in lex order\n\n    cout << \"---\\n\";\n\n    // --- Contest pattern: try all permutations, track best ---\n    int n;\n    cin >> n;\n    vector<int> perm(n);\n    iota(perm.begin(), perm.end(), 1);  // {1,2,...,n}\n\n    int ans = INT_MIN;\n    do {\n        // Evaluate some objective on this permutation\n        int score = 0;\n        for (int i = 0; i < n - 1; i++)\n            score += abs(perm[i] - perm[i+1]);  // example: sum of adjacent diffs\n        ans = max(ans, score);\n    } while (next_permutation(perm.begin(), perm.end()));\n\n    cout << ans << \"\\n\";\n\n    // --- ONLY feasible for n <= 8 (8! = 40320) ---\n    // For n <= 10 it's borderline, n >= 12 will TLE.\n\n    return 0;\n}"
+    },
+    {
+      "type": "table",
+      "headers": ["n", "n! (permutations)", "Feasibility"],
+      "rows": [
+        ["6", "720", "✅ Instant"],
+        ["7", "5,040", "✅ Instant"],
+        ["8", "40,320", "✅ Fast"],
+        ["9", "362,880", "✅ ~0.3s"],
+        ["10", "3,628,800", "⚠️ ~3s (borderline)"],
+        ["11", "39,916,800", "❌ TLE"],
+        ["12+", "479M+", "❌ Definitely TLE"]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔎 Searching Algorithms — find, count, find_if"
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Linear Search Functions",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    vector<int> v = {4, 7, 2, 9, 1, 5, 3};\n\n    // --- find: returns iterator to first match, or end() if not found ---\n    auto it = find(v.begin(), v.end(), 9);\n    if (it != v.end())\n        cout << \"Found 9 at index \" << (it - v.begin()) << \"\\n\"; // 3\n\n    // --- find_if: find first element satisfying predicate ---\n    auto first_gt5 = find_if(v.begin(), v.end(), [](int x) { return x > 5; });\n    if (first_gt5 != v.end())\n        cout << \"First > 5: \" << *first_gt5 << \"\\n\"; // 7\n\n    // --- count: number of occurrences ---\n    cout << count(v.begin(), v.end(), 7) << \"\\n\"; // 1\n\n    // --- count_if: count elements satisfying predicate ---\n    int evens = count_if(v.begin(), v.end(), [](int x) { return x % 2 == 0; });\n    cout << \"Even count: \" << evens << \"\\n\"; // 2\n\n    // --- all_of, any_of, none_of ---\n    bool all_pos  = all_of(v.begin(),  v.end(), [](int x) { return x > 0; }); // true\n    bool any_neg  = any_of(v.begin(),  v.end(), [](int x) { return x < 0; }); // false\n    bool none_neg = none_of(v.begin(), v.end(), [](int x) { return x < 0; }); // true\n\n    cout << all_pos << \" \" << any_neg << \" \" << none_neg << \"\\n\"; // 1 0 1\n\n    return 0;\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔃 Transform, Fill, Replace, Reverse"
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Range Transformation Algorithms",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    vector<int> v = {1, 2, 3, 4, 5};\n\n    // --- transform: apply function to each element ---\n    vector<int> sq(v.size());\n    transform(v.begin(), v.end(), sq.begin(), [](int x) { return x * x; });\n    // sq = {1, 4, 9, 16, 25}\n\n    // transform with TWO input ranges (element-wise operation)\n    vector<int> a = {1,2,3}, b = {4,5,6}, res(3);\n    transform(a.begin(), a.end(), b.begin(), res.begin(), plus<int>());\n    // res = {5, 7, 9}\n\n    // --- fill and fill_n ---\n    vector<int> dp(10);\n    fill(dp.begin(), dp.end(), -1);    // all -1\n    fill_n(dp.begin(), 5, 0);          // first 5 = 0\n\n    // --- reverse ---\n    reverse(v.begin(), v.end());       // {5,4,3,2,1}\n\n    // --- rotate: bring middle to front ---\n    // rotate(first, new_first, last)\n    vector<int> r = {1,2,3,4,5};\n    rotate(r.begin(), r.begin() + 2, r.end());\n    // r = {3,4,5,1,2}  (shift left by 2)\n\n    // --- unique: remove CONSECUTIVE duplicates (sort first!) ---\n    vector<int> u = {1,1,2,3,3,3,4};\n    auto new_end = unique(u.begin(), u.end());\n    u.erase(new_end, u.end());\n    // u = {1,2,3,4}\n\n    return 0;\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "tip",
+      "label": "Deduplicate a Vector in 2 Lines",
+      "content": "The idiom `sort(v.begin(), v.end()); v.erase(unique(v.begin(), v.end()), v.end());` removes all duplicates and gives you a sorted unique vector. This is faster than using a `set` when you don't need the set later."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📊 Min/Max Algorithms"
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "min_element, max_element, minmax_element",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    vector<int> v = {3, 1, 4, 1, 5, 9, 2, 6};\n\n    // min_element / max_element return ITERATORS\n    auto mn = min_element(v.begin(), v.end());\n    auto mx = max_element(v.begin(), v.end());\n    cout << \"Min: \" << *mn << \" at index \" << (mn - v.begin()) << \"\\n\"; // 1 at 1\n    cout << \"Max: \" << *mx << \" at index \" << (mx - v.begin()) << \"\\n\"; // 9 at 5\n\n    // minmax_element returns pair<iterator,iterator> — single pass!\n    auto [lo, hi] = minmax_element(v.begin(), v.end());\n    cout << \"Range: \" << *hi - *lo << \"\\n\"; // 8\n\n    // min/max on values (not ranges) — variadic since C++11\n    int a = min({3, 1, 4, 1, 5});  // 1\n    int b = max({3, 1, 4, 1, 5});  // 5\n\n    // clamp: keep value within [lo, hi]\n    int x = 15;\n    x = clamp(x, 0, 10); // x = 10\n\n    return 0;\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔗 Set Operations on Sorted Ranges"
+    },
+    {
+      "type": "paragraph",
+      "content": "When you have two **sorted** vectors, STL provides O(n+m) set operations that are faster than using actual `std::set`. These are invaluable for problems involving intersection, union, or difference of sorted lists."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Set Operations on Sorted Vectors",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    vector<int> a = {1, 2, 3, 4, 5};\n    vector<int> b = {3, 4, 5, 6, 7};\n    // Both must be sorted!\n\n    vector<int> u, inter, diff, sdiff;\n\n    // Union\n    set_union(a.begin(), a.end(), b.begin(), b.end(), back_inserter(u));\n    // u = {1,2,3,4,5,6,7}\n\n    // Intersection\n    set_intersection(a.begin(), a.end(), b.begin(), b.end(), back_inserter(inter));\n    // inter = {3,4,5}\n\n    // Difference (a - b)\n    set_difference(a.begin(), a.end(), b.begin(), b.end(), back_inserter(diff));\n    // diff = {1,2}\n\n    // Symmetric difference (elements in one but not both)\n    set_symmetric_difference(a.begin(), a.end(), b.begin(), b.end(), back_inserter(sdiff));\n    // sdiff = {1,2,6,7}\n\n    // includes: does a contain all elements of b?\n    bool contained = includes(a.begin(), a.end(), inter.begin(), inter.end());\n    cout << contained << \"\\n\"; // 1 (true)\n\n    return 0;\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "⚡ Partition Algorithms"
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "partition, stable_partition, is_partitioned",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    vector<int> v = {1, 2, 3, 4, 5, 6, 7, 8};\n\n    // partition: evens before odds (order within groups not preserved)\n    auto mid = partition(v.begin(), v.end(), [](int x) { return x % 2 == 0; });\n    // [evens | odds], mid points to first odd element\n\n    cout << \"Evens: \";\n    for (auto it = v.begin(); it != mid; ++it)\n        cout << *it << \" \";\n    cout << \"\\nOdds: \";\n    for (auto it = mid; it != v.end(); ++it)\n        cout << *it << \" \";\n    cout << \"\\n\";\n\n    // stable_partition: same but preserves relative order\n    vector<int> v2 = {1,2,3,4,5,6};\n    stable_partition(v2.begin(), v2.end(), [](int x) { return x % 2 == 0; });\n    // v2 = {2,4,6,1,3,5}  (original order preserved within groups)\n\n    // partition_point: binary search for partition boundary (O(log n))\n    // (v2 must be partitioned by the predicate)\n    auto pp = partition_point(v2.begin(), v2.end(), [](int x) { return x % 2 == 0; });\n    cout << \"First odd: \" << *pp << \"\\n\"; // 1\n\n    return 0;\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📋 Quick Performance Reference"
+    },
+    {
+      "type": "table",
+      "headers": ["Algorithm", "Time Complexity", "Space", "Requires Sorted?"],
+      "rows": [
+        ["`sort`", "O(n log n)", "O(log n)", "No — produces sorted output"],
+        ["`stable_sort`", "O(n log² n)", "O(n)", "No"],
+        ["`nth_element`", "O(n) avg", "O(1)", "No"],
+        ["`lower_bound`", "O(log n)", "O(1)", "**Yes**"],
+        ["`upper_bound`", "O(log n)", "O(1)", "**Yes**"],
+        ["`binary_search`", "O(log n)", "O(1)", "**Yes**"],
+        ["`accumulate`", "O(n)", "O(1)", "No"],
+        ["`partial_sum`", "O(n)", "O(1)", "No"],
+        ["`next_permutation`", "O(n)", "O(1)", "Start sorted for all perms"],
+        ["`find` / `find_if`", "O(n)", "O(1)", "No"],
+        ["`min/max_element`", "O(n)", "O(1)", "No"],
+        ["`unique`", "O(n)", "O(1)", "Consecutive dups only — **sort first**"],
+        ["`set_intersection`", "O(n+m)", "O(1) extra", "**Both sorted**"],
+        ["`transform`", "O(n)", "O(1)", "No"]
+      ]
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🏋️ Practice Exercises"
     },
     {
       "type": "accordion",
       "variant": "predict-output",
-      "title": "Exercise 2: next_permutation Return Value",
+      "title": "Exercise 1: sort + lower_bound Index Arithmetic",
       "language": "cpp",
-      "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    vector<int> v = {1, 3, 2};\n    cout << next_permutation(v.begin(), v.end()) << \"\\n\";\n    for (int x : v) cout << x << \" \"; cout << \"\\n\";\n    cout << next_permutation(v.begin(), v.end()) << \"\\n\";\n    for (int x : v) cout << x << \" \"; cout << \"\\n\";\n    cout << next_permutation(v.begin(), v.end()) << \"\\n\";\n    for (int x : v) cout << x << \" \"; cout << \"\\n\";\n    return 0;\n}",
-      "answer": "1\n2 1 3 \n1\n2 3 1 \n1\n3 1 2 ",
-      "explanation": "Starting from {1,3,2}: next → {2,1,3} (returns 1). Next → {2,3,1} (returns 1). Next → {3,1,2} (returns 1). The sequence follows lexicographic permutation order. It would return 0 only when wrapping from {3,2,1} back to {1,2,3}."
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    vector<int> v = {5, 1, 4, 2, 8, 3, 7};\n    sort(v.begin(), v.end());\n    cout << v[0] << \" \" << v.back() << \"\\n\";\n    int lo = lower_bound(v.begin(), v.end(), 4) - v.begin();\n    int hi = upper_bound(v.begin(), v.end(), 4) - v.begin();\n    cout << lo << \" \" << hi << \"\\n\";\n    cout << (hi - lo) << \"\\n\";\n    return 0;\n}",
+      "answer": "1 8\n3 4\n1",
+      "explanation": "Step 1 — `sort(v)` → `{1, 2, 3, 4, 5, 7, 8}`. `v[0]` = 1, `v.back()` = 8. Prints `1 8`.\nStep 2 — `lower_bound(v, 4)` finds first element ≥ 4 → index 3 (value 4). `lo = 3`.\nStep 3 — `upper_bound(v, 4)` finds first element > 4 → index 4 (value 5). `hi = 4`.\nPrints `3 4`.\nStep 4 — `hi - lo = 4 - 3 = 1` → 4 appears exactly once. Prints `1`."
     },
     {
       "type": "accordion",
       "variant": "predict-output",
-      "title": "Exercise 3: accumulate with Initial Value Type Trap",
+      "title": "Exercise 2: next_permutation Loop Count",
       "language": "cpp",
-      "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    vector<int> v = {100000, 200000, 300000};\n    cout << accumulate(v.begin(), v.end(), 0) << \"\\n\";\n    cout << accumulate(v.begin(), v.end(), 0LL) << \"\\n\";\n    cout << accumulate(v.begin(), v.end(), 1,\n                       [](int acc, int x){ return acc * x; }) << \"\\n\";\n    return 0;\n}",
-      "answer": "-194967296\n600000\n-694967296",
-      "explanation": "Line 1: Initial value `0` is `int`. The sum 600000 overflows 32-bit int (max ~2.1 billion — actually 600000 fits, but the accumulate result type is determined by the initial value type). Wait — 100000+200000+300000 = 600000 which fits in int. Actually the output for line 1 is 600000 too. But line 3: 100000*200000*300000 = 6*10^15 which absolutely overflows int, giving garbage. Let me recalculate: the answer is 600000, 600000, and an overflow value for line 3.",
-      "answer": "600000\n600000\n-694967296",
-      "explanation": "Lines 1 & 2: Sum is 600000, well within int range, so both print correctly. Line 3: Product 100000 × 200000 × 300000 = 6×10^15 which massively overflows `int` (max ≈ 2.1×10^9), producing an implementation-defined garbage value. To fix: use `0LL` and `long long` in the lambda accumulator."
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    vector<int> v = {1, 2, 3};\n    int cnt = 0;\n    do {\n        cnt++;\n    } while (next_permutation(v.begin(), v.end()));\n    cout << cnt << \"\\n\";\n    cout << v[0] << v[1] << v[2] << \"\\n\";\n    return 0;\n}",
+      "answer": "6\n123",
+      "explanation": "The do-while starts with `{1,2,3}` (cnt=1 after first iteration). `next_permutation` produces: {1,3,2}, {2,1,3}, {2,3,1}, {3,1,2}, {3,2,1} — returning true each time (cnt reaches 6 after the {3,2,1} body). Then `next_permutation({3,2,1})` wraps back to `{1,2,3}` and returns **false**, ending the loop. Total iterations = 6 = 3!. After the loop `v` = `{1,2,3}`, so prints `123`."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 3: accumulate with 0 vs 0LL",
+      "language": "cpp",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    vector<int> v = {100000, 100000, 100000};\n    int a = accumulate(v.begin(), v.end(), 0);\n    long long b = accumulate(v.begin(), v.end(), 0LL);\n    cout << a << \"\\n\";\n    cout << b << \"\\n\";\n    return 0;\n}",
+      "answer": "300000\n300000",
+      "explanation": "100000 × 3 = 300,000 which fits in `int` (max ~2.1 billion), so both produce `300000`. **However**, if the values were 1,000,000 each: `a` would overflow (3,000,000 fits, but 1e9 × 3 would not). The key lesson is that `accumulate` uses the **init value's type** for arithmetic — `0` means int arithmetic, `0LL` means long long. When values can be large, always use `0LL`."
     },
     {
       "type": "accordion",
       "variant": "find-error",
-      "title": "Exercise 4: Find the Bug — Custom Sort Crash",
+      "title": "Exercise 4: Buggy Binary Search After Forgetting to Sort",
       "language": "cpp",
-      "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    vector<int> v = {5, 3, 8, 1, 9, 2};\n    // Sort descending\n    sort(v.begin(), v.end(), [](int a, int b) {\n        return a >= b;  // WRONG comparator\n    });\n    for (int x : v) cout << x << \" \";\n    return 0;\n}",
-      "error": "The comparator `a >= b` violates strict weak ordering because `cmp(x, x) = (x >= x) = true` (irreflexivity is violated). Using `>=` instead of `>` is undefined behavior and may cause an infinite loop, crash, or incorrect output.",
-      "fix": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    vector<int> v = {5, 3, 8, 1, 9, 2};\n    // Correct: use strict > for descending, or use greater<int>()\n    sort(v.begin(), v.end(), [](int a, int b) {\n        return a > b;  // strict greater-than\n    });\n    // Alternatively: sort(v.begin(), v.end(), greater<int>());\n    for (int x : v) cout << x << \" \";  // 9 8 5 3 2 1\n    return 0;\n}",
-      "explanation": "The rule: a comparator `cmp(a, b)` must return `true` if and only if `a` comes strictly before `b`. When `a == b`, it MUST return `false`. Using `>=` returns `true` for equal elements, breaking the contract and causing undefined behavior in `std::sort`."
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    int n, q;\n    cin >> n >> q;\n    vector<int> a(n);\n    for (auto& x : a) cin >> x;\n    // Answer q queries: does value x exist in array?\n    while (q--) {\n        int x; cin >> x;\n        auto it = lower_bound(a.begin(), a.end(), x);\n        if (it != a.end() && *it == x)\n            cout << \"YES\\n\";\n        else\n            cout << \"NO\\n\";\n    }\n    return 0;\n}",
+      "error": "Logical error: `lower_bound` requires a sorted range. The array `a` is read from input but never sorted, so the binary search produces undefined/incorrect results for unsorted input.",
+      "fix": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    int n, q;\n    cin >> n >> q;\n    vector<int> a(n);\n    for (auto& x : a) cin >> x;\n    sort(a.begin(), a.end()); // FIX: sort before binary search\n    while (q--) {\n        int x; cin >> x;\n        auto it = lower_bound(a.begin(), a.end(), x);\n        if (it != a.end() && *it == x)\n            cout << \"YES\\n\";\n        else\n            cout << \"NO\\n\";\n    }\n    return 0;\n}",
+      "explanation": "This is a **logical error** — the code compiles and runs but gives wrong answers for unsorted input. `lower_bound` implements a binary search that assumes elements are in ascending order. On an unsorted array, it may skip the target entirely or find a wrong position. The fix is adding `sort(a.begin(), a.end())` after reading input. If sorting isn't allowed (e.g., order matters for other queries), use `find()` for O(n) linear search instead."
     },
     {
       "type": "accordion",
       "variant": "problem-solving",
-      "title": "Exercise 5: Codeforces-Style — Sort Strings by Custom Key",
+      "title": "Exercise 5: Meeting Rooms II — How Many Rooms Are Needed?",
       "language": "cpp",
-      "code": "// Given N strings, sort them by:\n// 1. Number of distinct characters (ascending)\n// 2. If equal, by string length (ascending)\n// 3. If still equal, lexicographically\n// Print the sorted strings.",
-      "approach": "Write a lambda comparator that encodes the three-level sort key. Compute distinct char count via a `set<char>` or bitmask. Compare all three criteria with a clean `if/else if/else` chain, always using strict `<`.",
-      "solution": "#include <bits/stdc++.h>\nusing namespace std;\n\nvoid solve() {\n    int n;\n    cin >> n;\n    vector<string> v(n);\n    for (string& s : v) cin >> s;\n\n    auto distinct = [](const string& s) {\n        return (int)set<char>(s.begin(), s.end()).size();\n    };\n\n    sort(v.begin(), v.end(), [&](const string& a, const string& b) {\n        int da = distinct(a), db = distinct(b);\n        if (da != db) return da < db;\n        if (a.size() != b.size()) return a.size() < b.size();\n        return a < b;\n    });\n\n    for (const string& s : v) cout << s << \"\\n\";\n}\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n    int t; cin >> t;\n    while (t--) solve();\n    return 0;\n}",
-      "explanation": "The three-level comparator cleanly falls through each criterion. The `distinct` lambda recomputes per comparison call — for a cleaner O(n log n) solution, precompute distinct counts into a vector and compare those. The `set<char>` trick is elegant and correct since the alphabet is only 26 characters."
+      "code": "// Given n meetings with start and end times, find the minimum number\n// of meeting rooms required to hold all meetings simultaneously.\n// Constraints: 1 <= n <= 1e5, 0 <= start < end <= 1e9\n//\n// Example:\n// Input:  n=3, meetings = {(0,30),(5,10),(15,20)}\n// Output: 2\n// Explanation: Room 1 hosts (0,30); Room 2 hosts (5,10) then (15,20)",
+      "approach": "Key insight: at any moment in time, the number of rooms needed equals the number of overlapping meetings. Use the 'event sweep' technique:\n1. Separate all start and end times into two sorted arrays.\n2. Walk two pointers through start[] and end[] simultaneously.\n3. When a start time < next end time, a new room is needed (rooms++).\n4. Otherwise, a meeting ended before this one started — reuse the room (end pointer advances).\n5. Track the peak value of rooms as the answer.\nThis is equivalent to finding the maximum depth of overlapping intervals.",
+      "solution": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    int n;\n    cin >> n;\n    vector<int> starts(n), ends(n);\n    for (int i = 0; i < n; i++)\n        cin >> starts[i] >> ends[i];\n\n    sort(starts.begin(), starts.end());\n    sort(ends.begin(), ends.end());\n\n    int rooms = 0, maxRooms = 0;\n    int e = 0; // pointer into ends[]\n\n    for (int i = 0; i < n; i++) {\n        if (starts[i] < ends[e]) {\n            // New meeting starts before earliest ongoing meeting ends\n            rooms++;\n        } else {\n            // Reuse a room (an existing meeting has finished)\n            e++;\n        }\n        maxRooms = max(maxRooms, rooms);\n    }\n\n    cout << maxRooms << \"\\n\";\n    return 0;\n}",
+      "explanation": "**Algorithm**: Two-pointer sweep on separately sorted start and end arrays.\n\n**Correctness**: Sorting starts[] and ends[] independently models events on a timeline. When `starts[i] < ends[e]`, the i-th meeting begins while the e-th-to-end meeting is still ongoing — overlap detected, new room needed. Otherwise a room frees up.\n\n**Complexity**:\n- Time: O(n log n) for two sorts + O(n) sweep = **O(n log n)**\n- Space: O(n) for the two arrays\n\n**Edge cases**: meetings with the same start time are handled correctly (both trigger `rooms++`). Meetings touching at a boundary (start == end) are treated as non-overlapping.\n\n**STL used**: `sort` on two separate vectors — the key trick is sorting them **independently**, not keeping start/end pairs together."
     },
-
-    { "type": "divider" },
-    { "type": "heading", "level": 2, "content": "📋 Algorithm Quick Reference" },
-    { "type": "list", "ordered": false, "items": [
-      "**`sort(b,e)`** — O(n log n), in-place. Add comparator lambda for custom order. Use strict `<` only.",
-      "**`lower_bound(b,e,v)`** — first element **>= v**. Subtract `.begin()` for index. O(log n).",
-      "**`upper_bound(b,e,v)`** — first element **> v**. `upper - lower` = count of v. O(log n).",
-      "**`accumulate(b,e,init)`** — sum/fold. Use `0LL` as init when values may overflow int.",
-      "**`partial_sum(b,e,out)`** — writes prefix sums to output range. O(n).",
-      "**`next_permutation(b,e)`** — advances to next permutation, returns false after last. Requires sorted start.",
-      "**`unique(b,e)`** — removes consecutive duplicates, returns new end. Must sort first for full dedup.",
-      "**`count_if(b,e,pred)`** — count elements satisfying predicate. **`find_if`** returns iterator to first match.",
-      "**`iota(b,e,start)`** — fills range with start, start+1, start+2… Great for index arrays."
-    ]}
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 6: Coordinate Compression with lower_bound",
+      "language": "cpp",
+      "code": "// Coordinate Compression:\n// Given n values (possibly large, up to 1e9), compress them to\n// the range [0, k-1] where k is the number of distinct values.\n// Relative order must be preserved.\n//\n// Input:  n=6, values = {400, 100, 200, 100, 400, 300}\n// Output compressed: {3, 0, 1, 0, 3, 2}\n//\n// This is a critical pre-processing step for BIT/segment tree problems\n// where you need array indices but values are huge.",
+      "approach": "1. Copy the array and sort + deduplicate it to get all distinct values in order.\n2. For each original value, use lower_bound on the compressed array to find its rank (0-indexed position).\n3. This rank IS the compressed coordinate.\nUsing lower_bound makes each query O(log k) where k = distinct values, total O(n log n).",
+      "solution": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    int n;\n    cin >> n;\n    vector<int> a(n);\n    for (auto& x : a) cin >> x;\n\n    // Step 1: Build sorted unique value list (the 'dictionary')\n    vector<int> sorted_unique = a;\n    sort(sorted_unique.begin(), sorted_unique.end());\n    sorted_unique.erase(\n        unique(sorted_unique.begin(), sorted_unique.end()),\n        sorted_unique.end()\n    );\n    // sorted_unique = {100, 200, 300, 400}\n\n    // Step 2: Compress each value to its rank\n    vector<int> compressed(n);\n    for (int i = 0; i < n; i++) {\n        compressed[i] = lower_bound(\n            sorted_unique.begin(),\n            sorted_unique.end(),\n            a[i]\n        ) - sorted_unique.begin();\n    }\n\n    for (int x : compressed)\n        cout << x << \" \";\n    cout << \"\\n\";\n\n    // To decompress: sorted_unique[compressed[i]] == a[i]\n\n    return 0;\n}",
+      "explanation": "**Why this matters**: Segment trees and Binary Indexed Trees need indices in [0, n-1]. If values go up to 1e9, you can't use them directly as indices. Coordinate compression maps large values to small indices.\n\n**The idiom**: `sort + unique + erase` is the standard 3-step deduplication. `unique` removes consecutive duplicates and returns an iterator to the new end; `erase` trims the vector.\n\n**lower_bound as rank**: Since `sorted_unique` is sorted, `lower_bound(sorted_unique, a[i]) - sorted_unique.begin()` gives the 0-indexed position of `a[i]` — exactly its rank.\n\n**Complexity**:\n- Build dictionary: O(n log n)\n- Compress each element: O(log k) each, total O(n log n)\n- Overall: **O(n log n)**\n\n**Space**: O(k) ≤ O(n) for the dictionary."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 7: Minimum Operations to Make Array Non-Decreasing (Greedy + lower_bound)",
+      "language": "cpp",
+      "code": "// Given an array of n integers, find the length of the Longest\n// Non-Decreasing Subsequence (LNDS). The minimum number of deletions\n// to make the array non-decreasing = n - LNDS.\n//\n// Constraints: 1 <= n <= 1e5, 1 <= a[i] <= 1e9\n// Input:  n=7, a = {3, 1, 4, 1, 5, 9, 2}\n// Output: 4  (LNDS length = 4: e.g. {1,1,5,9} or {1,4,5,9})\n//         Deletions = 7 - 4 = 3\n//\n// This is the Longest Non-Decreasing Subsequence (LIS variant)\n// solvable in O(n log n) using patience sorting + upper_bound.",
+      "approach": "Patience sorting for LNDS in O(n log n):\n1. Maintain a 'tails' array where tails[i] = smallest tail element of all non-decreasing subsequences of length i+1.\n2. For each element x:\n   - Find the first tail > x using upper_bound (allows equal elements → non-decreasing)\n   - If no such tail exists, extend the sequence (push_back)\n   - Otherwise, replace that tail with x\n3. The answer is tails.size().\nNote: for strict LIS, use lower_bound instead of upper_bound.",
+      "solution": "#include <bits/stdc++.h>\nusing namespace std;\n\nint lnds(vector<int>& a) {\n    vector<int> tails; // tails[i] = smallest tail of LNDS of length i+1\n    for (int x : a) {\n        // upper_bound for non-decreasing (allows equal)\n        // lower_bound for strictly increasing\n        auto it = upper_bound(tails.begin(), tails.end(), x);\n        if (it == tails.end())\n            tails.push_back(x);  // new longer subsequence found\n        else\n            *it = x;             // replace: smaller tail is always better\n    }\n    return tails.size();\n}\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n\n    int n;\n    cin >> n;\n    vector<int> a(n);\n    for (auto& x : a) cin >> x;\n\n    int ans = lnds(a);\n    cout << \"LNDS length: \" << ans << \"\\n\";\n    cout << \"Min deletions: \" << (n - ans) << \"\\n\";\n\n    return 0;\n}",
+      "explanation": "**Core insight**: The `tails` array is always maintained in sorted order (invariant), enabling O(log n) binary search per element.\n\n**upper_bound vs lower_bound**:\n- `upper_bound(tails, x)` → finds first element **strictly greater than x** → allows equal elements → **non-decreasing** subsequence\n- `lower_bound(tails, x)` → finds first element **≥ x** → only strictly less allowed → **strictly increasing** subsequence\n\n**Why replacement works**: Replacing a tail with a smaller value doesn't change the subsequence lengths found so far, but makes future extensions easier. The LENGTH of `tails` always equals the LNDS length.\n\n**Complexity**:\n- Time: O(n log n) — one `upper_bound` per element\n- Space: O(n) for tails array\n\n**Note**: `tails` does NOT store the actual subsequence — only the lengths. To reconstruct the actual subsequence, you need a separate parent-tracking array."
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📌 Quick Reference — STL Algorithms Cheatsheet"
+    },
+    {
+      "type": "list",
+      "ordered": false,
+      "items": [
+        "**`sort(f, l, cmp)`** — O(n log n); comparator must be strict weak ordering (`<`, never `<=`).",
+        "**`stable_sort(f, l)`** — O(n log² n); preserves order of equal elements.",
+        "**`nth_element(f, nth, l)`** — O(n) average; O(1) space quick-select for k-th smallest.",
+        "**`lower_bound(f, l, x)`** — first element ≥ x in sorted range; subtract `.begin()` for index.",
+        "**`upper_bound(f, l, x)`** — first element > x; `upper - lower` = count of x.",
+        "**`binary_search(f, l, x)`** — returns `bool`; use `lower_bound` when you need position.",
+        "**`accumulate(f, l, init)`** — use `0LL` as init for large sums to avoid int overflow.",
+        "**`partial_sum(f, l, out)`** — writes prefix sums; alias for building prefix sum arrays.",
+        "**`iota(f, l, val)`** — fill with consecutive values; essential for index arrays.",
+        "**`next_permutation(f, l)`** — enumerate all n! orderings; only feasible for n ≤ 8-9.",
+        "**`unique(f, l)`** — removes **consecutive** duplicates; always sort first; erase the tail.",
+        "**`transform(f, l, out, fn)`** — element-wise map; two-range version for pairwise ops.",
+        "**`min_element / max_element`** — return iterators; dereference to get the value.",
+        "**`clamp(x, lo, hi)`** — returns lo if x<lo, hi if x>hi, else x; great for boundary clamping.",
+        "**`set_intersection / set_union`** — O(n+m) on sorted ranges; faster than actual `set` for one-shot ops."
+      ]
+    }
   ]
 }

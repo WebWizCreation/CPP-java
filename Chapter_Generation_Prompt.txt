@@ -1,0 +1,238 @@
+ROLE: You are an elite Computer Science Professor and Senior Software Engineer. I am expanding
+"The C++ & Java Compendium" — a single-page interactive textbook that fetches
+JSON chapter files and renders them dynamically.
+
+================================================================================
+① PROJECT CONTEXT (memorize this)
+================================================================================
+
+Live site:    https://cpp-java.netlify.app/
+File location: All JSONs go in a content/ folder and are fetched as content/{id}.json
+Tracks:       20 C++ chapters + 20 Java chapters = 40 total
+C++ goal:     Codeforces 1400+ competitive programming mastery
+Java goal:    CSE110 (East West University) academic OOP exam excellence
+
+
+================================================================================
+② COMPLETE TABLE OF CONTENTS (for chapter numbering reference)
+================================================================================
+
+C++ Track:
+Ch1  CPP_Ch1_Foundations            — Variables, data types, cin/cout
+Ch2  CPP_Ch2_Control_Flow           — if/else, switch, for, while loops
+Ch3  CPP_Ch3_Functions_Recursion    — Scope, pass-by-ref, recursion patterns
+Ch4  CPP_Ch4_Arrays_Strings         — 1D/2D arrays, string class, C-strings
+Ch5  CPP_Ch5_STL_Vectors_Pairs      — push_back, emplace, pair, tuple
+Ch6  CPP_Ch6_STL_Maps_Sets          — map, set, unordered variants, multimap
+Ch7  CPP_Ch7_STL_Algorithms         — sort, lower_bound, accumulate, next_permut
+Ch8  CPP_Ch8_Sorting_Techniques     — Merge sort, counting sort, comparators
+Ch9  CPP_Ch9_Binary_Search          — Template, answer search, monotonic functions
+Ch10 CPP_Ch10_Complexity_Analysis   — Big-O, time/space, loop analysis
+Ch11 CPP_Ch11_Two_Pointers          — Classic patterns, subarrays, strings
+Ch12 CPP_Ch12_Stack_Queue_Deque     — Monotone stack, BFS queues, deque tricks
+Ch13 CPP_Ch13_Recursion_Backtrack   — Permutations, subsets, N-Queens
+Ch14 CPP_Ch14_Greedy_Algorithms     — Interval scheduling, exchange argument
+Ch15 CPP_Ch15_DP_Introduction       — Memoization, tabulation, DP mindset
+Ch16 CPP_Ch16_DP_Classical          — LCS, LIS, Knapsack, Coin Change
+Ch17 CPP_Ch17_Graph_BFS_DFS         — Adjacency list, traversal, connectivity
+Ch18 CPP_Ch18_Graph_Advanced        — Dijkstra, Bellman-Ford, Topological Sort
+Ch19 CPP_Ch19_Trees_BST             — DFS on trees, BST operations, LCA
+Ch20 CPP_Ch20_Number_Theory         — GCD, primes, sieve, modular arithmetic
+
+Java Track:
+Ch1  Java_Ch1_OutputPrediction      — print/println/printf, expressions
+Ch2  Java_Ch2_ErrorIdentification   — Compile-time, runtime & logical errors
+Ch3  Java_Ch3_DataTypes_TypeCast    — Primitives, wrappers, implicit/explicit cast
+Ch4  Java_Ch4_Operators_Expr        — Arithmetic, bitwise, ternary, precedence
+Ch5  Java_Ch5_Control_Flow          — if/else, switch, for, while, do-while
+Ch6  Java_Ch6_Loops_Nested          — Pattern printing, loop tracing, output pred
+Ch7  Java_Ch7_Arrays_2D             — Initialization, iteration, array tricks
+Ch8  Java_Ch8_Methods_Overloading   — Pass by value, varargs, method overloading
+Ch9  Java_Ch9_OOP_Classes           — Fields, methods, object creation, heap
+Ch10 Java_Ch10_Constructors_Static  — Constructor chaining, static members
+Ch11 Java_Ch11_Inheritance          — extends, super(), method hiding, is-a
+Ch12 Java_Ch12_Polymorphism         — Dynamic dispatch, @Override, casting
+Ch13 Java_Ch13_Abstract_Interface   — abstract, interface, default methods
+Ch14 Java_Ch14_Encapsulation        — private/protected/public, getters, setters
+Ch15 Java_Ch15_Exception_Handling   — try/catch/finally, throws, custom exceptions
+Ch16 Java_Ch16_Strings_Builder      — Immutability, String methods, StringBuilder
+Ch17 Java_Ch17_Collections          — ArrayList, LinkedList, HashMap, HashSet
+Ch18 Java_Ch18_Generics_Wrappers    — Type parameters, autoboxing, unboxing
+Ch19 Java_Ch19_Complex_Output       — Inheritance chains, polymorphism tracing
+Ch20 Java_Ch20_Mixed_OOP_Problems   — Full-program analysis, exam-style questions
+
+Look at the attached screenshot to see which files already exist in the content/ folder.
+Use that to determine which chapter numbers have NOT been created yet — those are the ones
+you must generate.
+
+
+================================================================================
+③ EXACT JSON SCHEMA — REPLICATE THIS PRECISELY
+================================================================================
+
+Every JSON file has this top-level shape:
+
+{
+  "id": "CPP_Ch3_Functions_Recursion",
+  "track": "cpp",
+  "chapter": 3,
+  "title": "Functions & Recursion",
+  "description": "One compelling sentence describing this chapter's purpose and value.",
+  "sections": [ ...array of section nodes... ]
+}
+
+------------------------------------------------------------
+ALL VALID SECTION NODE TYPES:
+------------------------------------------------------------
+
+1. HEADING — Creates an h2/h3/h4 with right-sidebar TOC entry
+   { "type": "heading", "level": 2, "content": "🔢 Section Title Here" }
+
+   level 2 = major section header (use most often)
+   level 3 = sub-section header
+   level 4 = minor sub-section header
+
+
+2. PARAGRAPH — Body text. Supports **bold**, *italic*, and `backtick inline code`
+   { "type": "paragraph", "content": "Text with **bold** and `inline code` supported." }
+
+
+3. CODE — Syntax-highlighted code block with copy button
+   { "type": "code", "language": "cpp", "title": "Descriptive Title", "code": "// actual code here\nint x = 5;" }
+
+   IMPORTANT: language must be exactly "cpp" or "java" (not "c++" or "Java").
+   Use \n for newlines and \" for quotes inside the code string.
+
+
+4. CALLOUT — Highlighted notice box
+   { "type": "callout", "variant": "tip", "label": "Pro Tip Label", "content": "Body text with **bold** and `code` supported." }
+
+   variant must be one of: "note" | "tip" | "warning" | "danger"
+   Icons assigned automatically: note=📌  tip=💡  warning=⚠️  danger=🚨
+
+
+5. TABLE — Data table
+   {
+     "type": "table",
+     "headers": ["Col A", "Col B", "Col C"],
+     "rows": [
+       ["row1a", "row1b", "row1c"],
+       ["`code in cell`", "**bold in cell**", "plain text"]
+     ]
+   }
+
+
+6. LIST — Bullet or numbered list. Items support inline markdown.
+   { "type": "list", "ordered": false, "items": ["**Item one** with detail", "`code item` explanation", "Plain item"] }
+   Set "ordered": true for a numbered list.
+
+
+7. DIVIDER — Horizontal rule separator (use sparingly, only before exercise sections)
+   { "type": "divider" }
+
+
+8. ACCORDION — Interactive exercise. Three variants:
+
+   VARIANT A — "predict-output" (Guess what the program prints):
+   {
+     "type": "accordion",
+     "variant": "predict-output",
+     "title": "Exercise N: Description of what makes this tricky",
+     "language": "java",
+     "code": "public class Q1 {\n    public static void main(String[] args) {\n        // code here\n    }\n}",
+     "answer": "exact\noutput\nhere",
+     "explanation": "Line-by-line trace explaining exactly why each line prints what it does."
+   }
+
+   VARIANT B — "find-error" (Spot and fix the bug):
+   {
+     "type": "accordion",
+     "variant": "find-error",
+     "title": "Exercise N: Description of the buggy code",
+     "language": "java",
+     "code": "// buggy code here",
+     "error": "Line X: Description of the exact error and its type (compile-time/runtime/logical)",
+     "fix": "// corrected version of the code",
+     "explanation": "Why this was wrong, what rule was violated, and how the fix resolves it."
+   }
+
+   VARIANT C — "problem-solving" (Implement a solution):
+   {
+     "type": "accordion",
+     "variant": "problem-solving",
+     "title": "Exercise N: Problem statement title",
+     "language": "cpp",
+     "code": "// Problem spec as comments — constraints, examples",
+     "approach": "Step-by-step reasoning: what algorithm/pattern to use and why.",
+     "solution": "// full working solution code",
+     "explanation": "Why this approach is correct, complexity analysis, edge cases handled."
+   }
+
+
+================================================================================
+④ CONTENT QUALITY STANDARDS
+================================================================================
+
+C++ CHAPTERS MUST INCLUDE:
+- Open with the competitive programming mindset for this topic
+- All major patterns used in actual Codeforces problems (not textbook toy examples)
+- At least one complexity reference table or pattern comparison table
+- At least one callout with variant "danger" for the #1 bug/mistake in contests
+- At least one callout with variant "tip" for a CP-specific optimization trick
+- Minimum 4 interactive exercises: mix of predict-output and problem-solving
+- Code uses #include <bits/stdc++.h> and using namespace std; template
+- Variable names like n, m, arr, ans, lo, hi, mid — contest style
+- Every problem-solving exercise must include a complexity analysis in the explanation
+
+JAVA CHAPTERS MUST INCLUDE:
+- Open with "why this matters in CSE110 exams" framing
+- Reference tables for every rule/pattern (e.g. operator precedence, exception types)
+- At least one callout with variant "danger" for the most common exam mistake
+- At least one callout with variant "warning" for a subtle edge case
+- Minimum 5 interactive exercises: must include ALL THREE accordion variants across the chapter
+- find-error exercises must specify error type (compile-time / runtime / logical) in the error field
+- predict-output exercises must have multi-step traces in the explanation (not just the answer)
+- Code follows standard class structure: public class ClassName { public static void main(...) }
+- The final section must be a "type": "list" Quick Reference Summary of all key rules
+
+
+================================================================================
+⑤ YOUR TASK
+================================================================================
+
+Look at the screenshot I have attached. Count which chapter files already exist in the
+content/ folder for each track. Then generate exactly the chapters I specify in my message.
+
+OUTPUT RULES — follow these strictly:
+- Output ONLY raw JSON code blocks — no prose, no commentary, no HTML
+- Each file is one complete, valid JSON object
+- Use \n for newlines inside "code" strings, and \" for quotes inside strings
+- Every "code" field must be real, working, compilable code — no pseudocode placeholders
+- Sections array should have 15–25 nodes per chapter for appropriate depth
+- Do not invent chapter IDs or numbers — use only what is listed in the TOC above
+- File naming: CPP_Ch{N}_{Topic}.json and Java_Ch{N}_{Topic}.json exactly as in the TOC
+
+
+
+
+ 
+
+
+================================================================================
+HOW TO USE THIS PROMPT
+================================================================================
+
+1. Start a new chat with Claude.
+2. Paste this entire prompt.
+3. Attach a screenshot of your content/ folder directory listing.
+4. Add ONE short line specifying what to generate. Examples:
+
+   ***  Create the next 4 chapters (2 C++, 2 Java) based on the screenshot.
+
+   "Create the next 2 C++ chapters (Ch3 and Ch4) and 2 Java chapters (Ch3 and Ch4)."
+   "Create the next 4 chapters — 2 C++ and 2 Java — based on the screenshot."
+   "Create CPP_Ch5 and Java_Ch5 only."
+   "Create the next 3 Java chapters (Ch3, Ch4, Ch5)."
+
+That's it. Claude will identify the correct chapter numbers from the screenshot,
+match them to the TOC above, and output perfectly compatible JSON files.

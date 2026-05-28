@@ -1,0 +1,232 @@
+{
+  "id": "CPP_Ch19_Trees_BST",
+  "track": "cpp",
+  "chapter": 19,
+  "title": "Trees & BST",
+  "description": "Build the intuition and code patterns for DFS-based tree problems, BST operations, and Lowest Common Ancestor — the toolkit behind dozens of Codeforces tree problems.",
+  "sections": [
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🌳 Trees in Competitive Programming"
+    },
+    {
+      "type": "paragraph",
+      "content": "A tree with `n` nodes has exactly `n-1` edges, is connected, and contains no cycles. In contests, trees are almost always given as an **undirected adjacency list** with a designated root (often node 1). The primary tool is **DFS**, which reveals properties like depths, subtree sizes, heights, and paths. BSTs add an ordering constraint that enables binary-search-style queries."
+    },
+    {
+      "type": "callout",
+      "variant": "tip",
+      "label": "Rooted vs Unrooted",
+      "content": "Always root the tree at node 1 (or whatever the problem says) before DFS. Pass `parent` to avoid revisiting the edge you came from — this is simpler than a visited array for trees. `dfs(node, parent)` is the standard template."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📐 Core DFS Tree Template"
+    },
+    {
+      "type": "paragraph",
+      "content": "Most tree DFS problems are solved by computing something for each node using its children's results (post-order), or propagating something down from parent to children (pre-order). Learn to identify which direction the information flows."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Tree DFS Template — Depth, Size, Height",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nconst int MAXN = 100005;\nvector<int> adj[MAXN];\nint depth[MAXN], sz[MAXN], height[MAXN];\n\n// Pre-order: depth flows DOWN from parent\nvoid dfs_depth(int u, int par, int d) {\n    depth[u] = d;\n    for (int v : adj[u])\n        if (v != par)\n            dfs_depth(v, u, d + 1);\n}\n\n// Post-order: size and height computed BOTTOM-UP from leaves\nvoid dfs_size_height(int u, int par) {\n    sz[u] = 1;\n    height[u] = 0;\n    for (int v : adj[u]) {\n        if (v != par) {\n            dfs_size_height(v, u);\n            sz[u] += sz[v];\n            height[u] = max(height[u], height[v] + 1);\n        }\n    }\n}\n\nint main() {\n    int n; cin >> n;\n    for (int i = 0; i < n - 1; i++) {\n        int u, v; cin >> u >> v;\n        adj[u].push_back(v);\n        adj[v].push_back(u);\n    }\n    dfs_depth(1, 0, 0);\n    dfs_size_height(1, 0);\n    // depth[v] = distance from root to v\n    // sz[v]    = number of nodes in subtree rooted at v\n    // height[v]= length of longest path from v down to a leaf\n    return 0;\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔍 Key Tree DFS Patterns"
+    },
+    {
+      "type": "table",
+      "headers": ["Pattern", "DFS Order", "What to Track", "Typical Problem"],
+      "rows": [
+        ["Subtree sum", "Post-order", "`val[u] += val[v]` for children", "Sum of weights in subtree"],
+        ["Path max/min", "Pre-order", "Pass running max down", "Max edge on root-to-node path"],
+        ["Tree diameter", "Post-order", "Two longest child heights", "Longest path in tree"],
+        ["Counting paths through u", "Post-order", "Height combinations", "Paths of length k"],
+        ["Euler tour / DFS in/out", "Pre+Post", "`tin[u]`, `tout[u]` timestamps", "Subtree queries, LCA"],
+        ["Centroid decomposition", "Post-order", "Subtree sizes", "Distance-based queries"]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📏 Tree Diameter"
+    },
+    {
+      "type": "paragraph",
+      "content": "The **diameter** of a tree is the length of the longest path between any two nodes. Two approaches: (1) Two-BFS: run BFS from any node, find the farthest node `u`, run BFS again from `u`, the farthest distance is the diameter. (2) DFS post-order: at each node, the diameter candidate is `height[left] + 1 + height[right] + 1` (the two longest branches combined)."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Tree Diameter — DFS and Two-BFS",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nconst int MAXN = 100005;\nvector<int> adj[MAXN];\nint ans_diam = 0;\n\n// DFS approach: O(n)\nint dfs_diam(int u, int par) {\n    int best1 = 0, best2 = 0; // two longest depths among children\n    for (int v : adj[u]) {\n        if (v == par) continue;\n        int h = dfs_diam(v, u) + 1;\n        if (h > best1) { best2 = best1; best1 = h; }\n        else if (h > best2) best2 = h;\n    }\n    ans_diam = max(ans_diam, best1 + best2);\n    return best1;\n}\n\n// Two-BFS approach: O(n)\npair<int,int> bfs_farthest(int src, int n) {\n    vector<int> dist(n + 1, -1);\n    queue<int> q;\n    q.push(src); dist[src] = 0;\n    int farthest = src;\n    while (!q.empty()) {\n        int u = q.front(); q.pop();\n        if (dist[u] > dist[farthest]) farthest = u;\n        for (int v : adj[u])\n            if (dist[v] == -1) { dist[v] = dist[u] + 1; q.push(v); }\n    }\n    return {farthest, dist[farthest]};\n}\n\nint diameter_bfs(int n) {\n    auto [u, d1] = bfs_farthest(1, n);\n    auto [v, d2] = bfs_farthest(u, n);\n    return d2;\n}\n\nint main() {\n    int n; cin >> n;\n    for (int i = 0; i < n - 1; i++) {\n        int u, v; cin >> u >> v;\n        adj[u].push_back(v);\n        adj[v].push_back(u);\n    }\n    dfs_diam(1, 0);\n    cout << ans_diam << \"\\n\";       // DFS diameter\n    cout << diameter_bfs(n) << \"\\n\"; // BFS diameter\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔢 Euler Tour (DFS In/Out Times)"
+    },
+    {
+      "type": "paragraph",
+      "content": "Assign each node an **entry time** `tin[u]` and **exit time** `tout[u]` during DFS. This powerful technique lets you: (1) check if `v` is in the subtree of `u` with `tin[u] <= tin[v] && tout[v] <= tout[u]`, and (2) flatten subtree queries onto a linear array for range queries with Fenwick/Segment trees."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Euler Tour — Subtree Flattening",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nconst int MAXN = 100005;\nvector<int> adj[MAXN];\nint tin[MAXN], tout[MAXN], order[MAXN];\nint timer_val = 0;\n\nvoid dfs_euler(int u, int par) {\n    tin[u] = timer_val;\n    order[timer_val] = u; // flattened array position\n    timer_val++;\n    for (int v : adj[u])\n        if (v != par) dfs_euler(v, u);\n    tout[u] = timer_val - 1; // inclusive end\n}\n\nbool isAncestor(int u, int v) {\n    return tin[u] <= tin[v] && tout[v] <= tout[u];\n}\n\n// After euler tour, subtree of u = order[tin[u]..tout[u]]\n// Range query on subtree of u → query range [tin[u], tout[u]] on order[]\n\nint main() {\n    int n; cin >> n;\n    for (int i = 0; i < n - 1; i++) {\n        int u, v; cin >> u >> v;\n        adj[u].push_back(v);\n        adj[v].push_back(u);\n    }\n    dfs_euler(1, 0);\n    // Example: is node 3 in subtree of node 1?\n    cout << isAncestor(1, 3) << \"\\n\";\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "👴 Lowest Common Ancestor (LCA)"
+    },
+    {
+      "type": "paragraph",
+      "content": "The **LCA** of nodes `u` and `v` is the deepest node that is an ancestor of both. LCA is used in path queries (`dist(u,v) = depth[u] + depth[v] - 2*depth[LCA(u,v)]`), tree DP, and many advanced problems. The **Binary Lifting** approach preprocesses in O(n log n) and answers each query in O(log n)."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "LCA via Binary Lifting — O(n log n) preprocess, O(log n) query",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nconst int MAXN = 100005;\nconst int LOG = 17; // 2^17 > 10^5\nvector<int> adj[MAXN];\nint up[MAXN][LOG]; // up[v][j] = 2^j-th ancestor of v\nint depth[MAXN];\n\nvoid dfs(int u, int par, int d) {\n    depth[u] = d;\n    up[u][0] = par;\n    for (int j = 1; j < LOG; j++)\n        up[u][j] = up[up[u][j-1]][j-1];\n    for (int v : adj[u])\n        if (v != par) dfs(v, u, d + 1);\n}\n\nint lca(int u, int v) {\n    if (depth[u] < depth[v]) swap(u, v);\n    int diff = depth[u] - depth[v];\n    // Bring u up to same depth as v\n    for (int j = 0; j < LOG; j++)\n        if ((diff >> j) & 1) u = up[u][j];\n    if (u == v) return u;\n    // Lift both until their parents are the same\n    for (int j = LOG - 1; j >= 0; j--)\n        if (up[u][j] != up[v][j]) {\n            u = up[u][j];\n            v = up[v][j];\n        }\n    return up[u][0];\n}\n\nint dist(int u, int v) {\n    return depth[u] + depth[v] - 2 * depth[lca(u, v)];\n}\n\nint main() {\n    int n, q; cin >> n >> q;\n    for (int i = 0; i < n - 1; i++) {\n        int u, v; cin >> u >> v;\n        adj[u].push_back(v);\n        adj[v].push_back(u);\n    }\n    dfs(1, 1, 0); // root=1, parent[root]=root avoids out-of-bounds\n    while (q--) {\n        int u, v; cin >> u >> v;\n        cout << lca(u, v) << \" \" << dist(u, v) << \"\\n\";\n    }\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "warning",
+      "label": "LCA Root Initialization",
+      "content": "Set `up[root][0] = root` (pointing to itself), NOT 0 or -1. This prevents index-out-of-bounds when lifting beyond the root, because `up[root][j]` will always resolve to `root` for all `j`. A parent of 0 causes `up[up[v][j-1]][j-1]` to access `up[0][...]` — undefined behavior."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🌲 Binary Search Tree (BST) Operations"
+    },
+    {
+      "type": "paragraph",
+      "content": "A BST satisfies: all nodes in the left subtree of `u` have keys **less than** `u`, and all nodes in the right subtree have keys **greater than** `u`. This invariant enables O(log n) search, insert, and delete on balanced BSTs. In contests, **`std::set` and `std::map`** are balanced BSTs (Red-Black Trees) — prefer them over coding your own."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "BST: Manual Implementation with Insert, Search, Inorder",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nstruct Node {\n    int val;\n    Node *left, *right;\n    Node(int v) : val(v), left(nullptr), right(nullptr) {}\n};\n\nNode* insert(Node* root, int val) {\n    if (!root) return new Node(val);\n    if (val < root->val) root->left  = insert(root->left,  val);\n    else if (val > root->val) root->right = insert(root->right, val);\n    // duplicate: do nothing\n    return root;\n}\n\nbool search(Node* root, int val) {\n    if (!root) return false;\n    if (val == root->val) return true;\n    if (val < root->val) return search(root->left,  val);\n    else                 return search(root->right, val);\n}\n\n// In-order traversal → sorted order\nvoid inorder(Node* root, vector<int>& out) {\n    if (!root) return;\n    inorder(root->left,  out);\n    out.push_back(root->val);\n    inorder(root->right, out);\n}\n\n// Find min node in a subtree (leftmost)\nNode* findMin(Node* root) {\n    while (root->left) root = root->left;\n    return root;\n}\n\n// Delete a node\nNode* deleteNode(Node* root, int val) {\n    if (!root) return nullptr;\n    if (val < root->val)      root->left  = deleteNode(root->left,  val);\n    else if (val > root->val) root->right = deleteNode(root->right, val);\n    else { // found it\n        if (!root->left)  return root->right;\n        if (!root->right) return root->left;\n        // Two children: replace with in-order successor\n        Node* succ = findMin(root->right);\n        root->val = succ->val;\n        root->right = deleteNode(root->right, succ->val);\n    }\n    return root;\n}\n\nint main() {\n    Node* root = nullptr;\n    for (int x : {5, 3, 7, 1, 4, 6, 8})\n        root = insert(root, x);\n    vector<int> sorted;\n    inorder(root, sorted);\n    for (int x : sorted) cout << x << \" \"; cout << \"\\n\"; // 1 2 3 4 5 6 7 8\n    cout << search(root, 4) << \"\\n\"; // 1\n    root = deleteNode(root, 5);\n    sorted.clear(); inorder(root, sorted);\n    for (int x : sorted) cout << x << \" \"; cout << \"\\n\"; // 1 3 4 6 7 8\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔧 BST Properties & Validation"
+    },
+    {
+      "type": "paragraph",
+      "content": "A common exam/contest question: **validate whether a binary tree is a valid BST**. The naive approach (left < root < right at each node) fails for deeper ancestors. The correct approach passes a valid range `[lo, hi]` down during DFS."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "BST Validation — Range-Propagation DFS",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nstruct Node {\n    int val; Node *left, *right;\n    Node(int v) : val(v), left(nullptr), right(nullptr) {}\n};\n\nbool isValidBST(Node* root, long long lo, long long hi) {\n    if (!root) return true;\n    if (root->val <= lo || root->val >= hi) return false;\n    return isValidBST(root->left,  lo,       root->val)\n        && isValidBST(root->right, root->val, hi);\n}\n\n// Also: k-th smallest in BST via inorder (O(k) time)\nint kthSmallest(Node* root, int& k) {\n    if (!root) return -1;\n    int left = kthSmallest(root->left, k);\n    if (k == 0) return left;\n    if (--k == 0) return root->val;\n    return kthSmallest(root->right, k);\n}\n\nint main() {\n    //      5\n    //     / \\\n    //    3   7\n    //   / \\\n    //  1   4\n    Node* root = new Node(5);\n    root->left = new Node(3); root->right = new Node(7);\n    root->left->left = new Node(1); root->left->right = new Node(4);\n    cout << isValidBST(root, LLONG_MIN, LLONG_MAX) << \"\\n\"; // 1 (valid)\n\n    // Invalid: right child of 3 is 6 (> 5, violates subtree constraint)\n    root->left->right->val = 6;\n    cout << isValidBST(root, LLONG_MIN, LLONG_MAX) << \"\\n\"; // 0 (invalid)\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "danger",
+      "label": "🚨 The #1 BST Validation Mistake",
+      "content": "Do NOT just check `node->left->val < node->val < node->right->val` locally. This misses cases like a node in the left subtree being greater than the root's ancestor. **Always propagate bounds**: pass `(lo, hi)` where every value in the subtree must satisfy `lo < val < hi`. Use `long long` bounds (LLONG_MIN / LLONG_MAX) to handle integer boundary values."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📊 Tree Problem Classification"
+    },
+    {
+      "type": "table",
+      "headers": ["Problem Type", "Algorithm", "Complexity", "Key Data Structure"],
+      "rows": [
+        ["Subtree sum / count", "Post-order DFS", "O(n)", "Recursion stack"],
+        ["Path max / sum root-to-node", "Pre-order DFS", "O(n)", "Running variable"],
+        ["Tree diameter", "DFS or 2×BFS", "O(n)", "Two-max tracking"],
+        ["LCA (multiple queries)", "Binary lifting", "O(n log n + q log n)", "up[v][j] table"],
+        ["Subtree range query", "Euler tour + BIT/Seg", "O(n log n)", "tin/tout + BIT"],
+        ["Kth smallest (BST)", "Inorder DFS", "O(k)", "—"],
+        ["BST predecessor/successor", "BST traversal", "O(log n)", "std::set"],
+        ["Centroid decomposition", "Recursive halving", "O(n log n)", "sz array"]
+      ]
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🏋️ Practice Exercises"
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 1: Trace DFS Subtree Sizes on a Small Tree",
+      "language": "cpp",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\nvector<int> adj[7];\nint sz[7];\nvoid dfs(int u, int par) {\n    sz[u] = 1;\n    for (int v : adj[u])\n        if (v != par) { dfs(v, u); sz[u] += sz[v]; }\n}\nint main() {\n    // Tree edges: 1-2, 1-3, 2-4, 2-5, 3-6 (root=1)\n    int edges[][2] = {{1,2},{1,3},{2,4},{2,5},{3,6}};\n    for (auto& e : edges) {\n        adj[e[0]].push_back(e[1]);\n        adj[e[1]].push_back(e[0]);\n    }\n    dfs(1, 0);\n    for (int i = 1; i <= 6; i++) cout << \"sz[\" << i << \"]=\" << sz[i] << \"\\n\";\n}",
+      "answer": "sz[1]=6\nsz[2]=3\nsz[3]=2\nsz[4]=1\nsz[5]=1\nsz[6]=1",
+      "explanation": "Tree structure: 1 is root with children 2,3. Node 2 has children 4,5. Node 3 has child 6.\nDFS visits (post-order to compute sizes):\n  sz[4]=1 (leaf), sz[5]=1 (leaf) → sz[2]=1+1+1=3\n  sz[6]=1 (leaf) → sz[3]=1+1=2\n  sz[1]=1+3+2=6\nNote that post-order means each node's size = 1 + sum of children's sizes, computed bottom-up."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 2: Binary Lifting — Trace Ancestor Table",
+      "language": "cpp",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\nconst int LOG = 3;\nvector<int> adj[6];\nint up[6][LOG], dep[6];\nvoid dfs(int u, int p, int d) {\n    dep[u] = d; up[u][0] = p;\n    for (int j = 1; j < LOG; j++) up[u][j] = up[up[u][j-1]][j-1];\n    for (int v : adj[u]) if (v != p) dfs(v, u, d+1);\n}\nint main() {\n    // Chain: 1-2-3-4-5 (root=1)\n    for (int i = 1; i < 5; i++) {\n        adj[i].push_back(i+1); adj[i+1].push_back(i);\n    }\n    dfs(1, 1, 0);\n    cout << \"dep[5]=\" << dep[5] << \"\\n\";\n    cout << \"up[5][0]=\" << up[5][0] << \"\\n\";\n    cout << \"up[5][1]=\" << up[5][1] << \"\\n\";\n    cout << \"up[5][2]=\" << up[5][2] << \"\\n\";\n}",
+      "answer": "dep[5]=4\nup[5][0]=4\nup[5][1]=3\nup[5][2]=1",
+      "explanation": "Chain is 1→2→3→4→5 from root to leaf. Depths: dep[1]=0, dep[2]=1, dep[3]=2, dep[4]=3, dep[5]=4.\nFor node 5:\n  up[5][0] = parent = 4 (2^0=1 step up)\n  up[5][1] = up[up[5][0]][0] = up[4][0] = 3 (2^1=2 steps up)\n  up[5][2] = up[up[5][1]][1] = up[3][1] = up[up[3][0]][0] = up[2][0] = 1 (2^2=4 steps up)\nSo 4 steps up from node 5 reaches root node 1, correct since dep[5]=4."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 3: Find the Diameter of a Weighted Tree",
+      "language": "cpp",
+      "code": "// Given a tree with n nodes and weighted edges, find the diameter\n// (maximum sum of edge weights on any path between two nodes).\n// Constraints: n <= 10^5, weight <= 10^4\n// Input: n=5, edges: (1,2,3),(1,3,2),(2,4,5),(2,5,1)\n// Output: 11  (path 3→1→2→4 with weights 2+3+5=10... wait, let me re-check)\n//         Actually path 4→2→1→3 = 5+3+2=10, path 4→2→5 = 5+1=6\n//         Diameter = 10",
+      "approach": "Use DFS post-order. At each node, track the two longest weighted paths going down into children. The diameter candidate at this node = best1 + best2. Return best1 (the longest single branch) to the parent. Update a global answer at each node.",
+      "solution": "#include <bits/stdc++.h>\nusing namespace std;\n\nconst int MAXN = 100005;\nvector<pair<int,int>> adj[MAXN]; // {neighbor, weight}\nlong long ans = 0;\n\nlong long dfs(int u, int par) {\n    long long best1 = 0, best2 = 0;\n    for (auto [v, w] : adj[u]) {\n        if (v == par) continue;\n        long long depth = dfs(v, u) + w;\n        if (depth > best1)       { best2 = best1; best1 = depth; }\n        else if (depth > best2)    best2 = depth;\n    }\n    ans = max(ans, best1 + best2);\n    return best1;\n}\n\nint main() {\n    int n; cin >> n;\n    for (int i = 0; i < n - 1; i++) {\n        int u, v, w; cin >> u >> v >> w;\n        adj[u].push_back({v, w});\n        adj[v].push_back({u, w});\n    }\n    dfs(1, 0);\n    cout << ans << \"\\n\";\n}",
+      "explanation": "At each node we track the two deepest (heaviest) branches going into children. A path through node `u` uses the best + second-best branch = best1+best2. We update the global answer at every node and return best1 to the parent so it can extend the path further. Time: O(n). Space: O(n) recursion stack. This handles the diameter correctly even when it doesn't pass through the root. Edge case: n=1 → diameter=0 (no edges, ans stays 0)."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 4: Count Nodes in Subtree with Value in Range [L, R]",
+      "language": "cpp",
+      "code": "// Given a tree of n nodes (rooted at 1) where each node has a value,\n// and q queries each asking how many nodes in the subtree of u\n// have values in the range [L, R].\n// Constraints: n, q <= 10^5, values <= 10^9\n// Hint: Euler tour + offline sorting or merge sort tree.\n// For this exercise, implement the Euler tour flattening step\n// and answer queries assuming a sorted subarray is available.",
+      "approach": "1. Run Euler tour DFS to get tin[u] and tout[u] for each node.\n2. Build array `flat[]` where `flat[tin[u]] = value[u]`.\n3. For query (u, L, R): count values in flat[tin[u]..tout[u]] that are in [L,R].\n4. For this solution, we use an offline approach: sort flat positions, answer queries using binary search on a sorted version of each range (merge sort tree / fractional cascading). For simplicity here, we demonstrate the Euler tour + per-query brute force (O(n) per query), noting the optimization.",
+      "solution": "#include <bits/stdc++.h>\nusing namespace std;\n\nconst int MAXN = 100005;\nvector<int> adj[MAXN];\nint val[MAXN], tin[MAXN], tout[MAXN];\nint flat[MAXN]; // flat[tin[u]] = val[u]\nint timer_cnt = 0;\n\nvoid dfs(int u, int par) {\n    tin[u] = timer_cnt;\n    flat[timer_cnt++] = val[u];\n    for (int v : adj[u]) if (v != par) dfs(v, u);\n    tout[u] = timer_cnt - 1;\n}\n\n// Brute force per query: O(n) — replace with persistent seg tree for O(log^2 n)\nint query(int u, int L, int R) {\n    int cnt = 0;\n    for (int i = tin[u]; i <= tout[u]; i++)\n        if (flat[i] >= L && flat[i] <= R) cnt++;\n    return cnt;\n}\n\nint main() {\n    int n, q; cin >> n >> q;\n    for (int i = 1; i <= n; i++) cin >> val[i];\n    for (int i = 0; i < n - 1; i++) {\n        int u, v; cin >> u >> v;\n        adj[u].push_back(v); adj[v].push_back(u);\n    }\n    dfs(1, 0);\n    while (q--) {\n        int u, L, R; cin >> u >> L >> R;\n        cout << query(u, L, R) << \"\\n\";\n    }\n}",
+      "explanation": "The Euler tour flattens the tree so that subtree(u) = contiguous range [tin[u], tout[u]] in the flat array. This transforms 'subtree queries' into 'range queries on a linear array'. The brute force query is O(n) per call, giving O(nq) total — too slow for full constraints. Optimization: use a **Merge Sort Tree** (vector of sorted arrays at each segment tree node) to answer range-count queries in O(log²n), giving O((n+q)log²n) total. For contests, **persistent segment tree on values** gives O(log n) per query after O(n log n) build."
+    },
+    {
+      "type": "callout",
+      "variant": "tip",
+      "label": "Iterative DFS for Deep Trees",
+      "content": "Recursive DFS hits stack overflow for n=10⁵ on a chain (linear tree). Always test your tree code on a bamboo (chain) input. If needed, convert to iterative DFS using an explicit stack, or increase stack size with `ulimit -s unlimited` (Linux only — not available in online judges). Iterative DFS is the safe default for trees with up to 10⁵ nodes."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "⚡ Contest Checklist for Tree Problems"
+    },
+    {
+      "type": "list",
+      "ordered": true,
+      "items": [
+        "**Root the tree** before DFS — pass `(node, parent)` instead of using a visited array",
+        "**Watch for n=1** edge case — single node trees have no edges, diameter=0, LCA(1,1)=1",
+        "**Chain trees** cause O(n) recursion depth — test for stack overflow, use iterative DFS if needed",
+        "**LCA initialization**: set `up[root][0] = root` to avoid out-of-bounds in binary lifting",
+        "**Euler tour timer**: use a global `timer` variable, not a local one, so it increments across all DFS calls",
+        "**Weighted edges**: store as `vector<pair<int,int>> adj[]` (neighbor, weight), not plain `vector<int>`",
+        "**BST bounds**: use `long long` for validation bounds (LLONG_MIN/LLONG_MAX) to handle INT_MIN/INT_MAX node values"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,209 @@
+{
+  "id": "CPP_Ch8_Sorting_Techniques",
+  "track": "cpp",
+  "chapter": 8,
+  "title": "Sorting Techniques",
+  "description": "Master merge sort, counting sort, and custom comparators — the sorting arsenal that unlocks faster solutions and cleaner code on Codeforces.",
+  "sections": [
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "⚔️ Why Sorting Mastery Wins Contests"
+    },
+    {
+      "type": "paragraph",
+      "content": "On Codeforces, sorting is never just `std::sort` and done. Problems at the 1200–1600 range constantly require **custom comparators**, **indirect sorting** (sorting indices by values), **counting sort** when values are bounded, and **merge sort** when you need to count inversions as a sub-problem. Understanding *why* different sorts work — and their exact complexity — is what separates AC from TLE."
+    },
+    {
+      "type": "callout",
+      "variant": "tip",
+      "label": "Contest Default",
+      "content": "Always start with `sort(arr.begin(), arr.end())` — it runs in **O(n log n)** and beats most brute-force approaches instantly. Only switch to a specialized sort when the problem demands it (bounded values → counting sort, inversion count → merge sort)."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📊 Sorting Algorithm Complexity Reference"
+    },
+    {
+      "type": "table",
+      "headers": ["Algorithm", "Best", "Average", "Worst", "Space", "Stable?", "Use When"],
+      "rows": [
+        ["`std::sort`", "O(n log n)", "O(n log n)", "O(n log n)", "O(log n)", "No", "General purpose — almost always"],
+        ["`std::stable_sort`", "O(n log n)", "O(n log n)", "O(n log n)", "O(n)", "Yes", "Need to preserve equal-element order"],
+        ["Merge Sort (manual)", "O(n log n)", "O(n log n)", "O(n log n)", "O(n)", "Yes", "Inversion counting, external sort"],
+        ["Counting Sort", "O(n+k)", "O(n+k)", "O(n+k)", "O(k)", "Yes", "Values bounded by small k (≤ 10^6)"],
+        ["Radix Sort", "O(d·n)", "O(d·n)", "O(d·n)", "O(n+k)", "Yes", "Large n with fixed-digit integers"],
+        ["Bubble/Insertion", "O(n)", "O(n²)", "O(n²)", "O(1)", "Yes", "Almost-sorted tiny arrays only"]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔀 Merge Sort — Implementation & Inversion Counting"
+    },
+    {
+      "type": "paragraph",
+      "content": "Merge sort is a **divide-and-conquer** algorithm: split the array in half, recursively sort each half, then **merge** them back in sorted order. Its consistent O(n log n) worst case and stability make it ideal when you need to **count inversions** — a classic problem where you count pairs (i, j) such that i < j but arr[i] > arr[j]."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Merge Sort + Inversion Count",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nlong long merge_count(vector<int>& arr, int l, int r) {\n    if (r - l <= 1) return 0;\n    int mid = (l + r) / 2;\n    long long inv = 0;\n    inv += merge_count(arr, l, mid);\n    inv += merge_count(arr, mid, r);\n\n    // Merge step: count cross-inversions\n    vector<int> tmp;\n    int i = l, j = mid;\n    while (i < mid && j < r) {\n        if (arr[i] <= arr[j]) {\n            tmp.push_back(arr[i++]);\n        } else {\n            // arr[i..mid-1] are all > arr[j] (since left is sorted)\n            inv += (mid - i);\n            tmp.push_back(arr[j++]);\n        }\n    }\n    while (i < mid) tmp.push_back(arr[i++]);\n    while (j < r)   tmp.push_back(arr[j++]);\n    for (int k = l; k < r; k++) arr[k] = tmp[k - l];\n    return inv;\n}\n\nint main() {\n    int n;\n    cin >> n;\n    vector<int> arr(n);\n    for (auto& x : arr) cin >> x;\n\n    long long ans = merge_count(arr, 0, n);\n    cout << \"Inversions: \" << ans << \"\\n\";\n    cout << \"Sorted: \";\n    for (int x : arr) cout << x << \" \";\n    return 0;\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "note",
+      "label": "Why long long for inversions?",
+      "content": "With n = 10^5 elements, the maximum number of inversions is n*(n-1)/2 ≈ 5×10^9, which **overflows int**. Always use `long long` for inversion count."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔢 Counting Sort — O(n+k) for Bounded Values"
+    },
+    {
+      "type": "paragraph",
+      "content": "When array values fall in a known range [0, k], counting sort beats comparison-based sorts with **O(n + k)** time. Create a frequency array of size k+1, accumulate prefix sums to get positions, then place elements into the output. It's **stable** — equal elements maintain their relative order — which matters when sorting objects by a key."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Counting Sort (stable, general objects)",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\n// Sort pairs by first element (key in range [0, maxVal])\nvoid counting_sort(vector<pair<int,int>>& arr, int maxVal) {\n    int n = arr.size();\n    vector<int> cnt(maxVal + 1, 0);\n\n    // Step 1: frequency count\n    for (auto& p : arr) cnt[p.first]++;\n\n    // Step 2: prefix sum → starting positions\n    for (int i = 1; i <= maxVal; i++) cnt[i] += cnt[i-1];\n\n    // Step 3: place in output (traverse BACKWARDS for stability)\n    vector<pair<int,int>> out(n);\n    for (int i = n - 1; i >= 0; i--) {\n        out[--cnt[arr[i].first]] = arr[i];\n    }\n    arr = out;\n}\n\nint main() {\n    int n;\n    cin >> n;\n    vector<pair<int,int>> arr(n);\n    for (int i = 0; i < n; i++) {\n        cin >> arr[i].first;\n        arr[i].second = i; // remember original index\n    }\n\n    counting_sort(arr, 1000000);\n\n    for (auto& [val, idx] : arr)\n        cout << val << \" (orig idx \" << idx << \")\\n\";\n    return 0;\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "warning",
+      "label": "Counting Sort Memory Trap",
+      "content": "If k = 10^9, you **cannot** allocate a frequency array of that size — it would need 4 GB of memory. Counting sort only works when k is small enough (≤ ~10^7). For large-value arrays, use `std::sort` or **coordinate compression** first."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🎛️ Custom Comparators"
+    },
+    {
+      "type": "paragraph",
+      "content": "The most contest-relevant sorting skill is writing **custom comparators** — lambda functions or structs passed to `sort()` that define a non-default ordering. This is used for sorting by multiple keys, sorting structs, or implementing problem-specific orderings."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Custom Comparators — All Patterns",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nstruct Event {\n    int time, type; // type: 0=end, 1=start\n    int id;\n};\n\nint main() {\n    // Pattern 1: Sort pairs — by second desc, then first asc\n    vector<pair<int,int>> vp = {{3,5},{1,5},{2,3},{4,1}};\n    sort(vp.begin(), vp.end(), [](auto& a, auto& b) {\n        if (a.second != b.second) return a.second > b.second; // desc by second\n        return a.first < b.first;  // asc by first as tiebreak\n    });\n    // Result: {1,5},{3,5},{2,3},{4,1}\n\n    // Pattern 2: Sort structs (interval scheduling: end time asc)\n    vector<Event> events = {{5,1,0},{3,0,1},{5,0,2},{1,1,3}};\n    sort(events.begin(), events.end(), [](const Event& a, const Event& b) {\n        if (a.time != b.time) return a.time < b.time;\n        return a.type < b.type; // ends (0) before starts (1) at same time\n    });\n\n    // Pattern 3: Indirect sort — sort indices by arr values\n    vector<int> arr = {40, 10, 30, 20};\n    vector<int> idx(arr.size());\n    iota(idx.begin(), idx.end(), 0); // idx = {0,1,2,3}\n    sort(idx.begin(), idx.end(), [&](int a, int b) {\n        return arr[a] < arr[b];\n    });\n    // idx = {1,3,2,0} — sorted order of positions\n\n    // Pattern 4: Sort strings by length, then lexicographically\n    vector<string> words = {\"banana\", \"apple\", \"kiwi\", \"fig\"};\n    sort(words.begin(), words.end(), [](const string& a, const string& b) {\n        if (a.size() != b.size()) return a.size() < b.size();\n        return a < b;\n    });\n    // Result: fig, kiwi, apple, banana\n\n    for (auto& w : words) cout << w << \" \";\n    return 0;\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "danger",
+      "label": "🚨 Comparator Must Be a Strict Weak Order",
+      "content": "Your comparator **must** satisfy: (1) irreflexivity — `cmp(a,a)` is false, (2) asymmetry — if `cmp(a,b)` then not `cmp(b,a)`, (3) transitivity. The most common contest crash is `return a.x <= b.x` instead of `return a.x < b.x`. The `<=` version makes equal elements compare as true in both directions — **undefined behavior**, causing random crashes or wrong answers. Always use strict `<`, never `<=`."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📐 Coordinate Compression"
+    },
+    {
+      "type": "paragraph",
+      "content": "Coordinate compression maps large values (up to 10^9) to a small range [0, n-1] while **preserving relative order**. This lets you use counting sort, BIT/segment tree (which need small indices), or simply reduce the problem size. The standard pattern: sort, deduplicate, then binary search for each original value."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Coordinate Compression Template",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    vector<int> arr(n);\n    for (auto& x : arr) cin >> x;\n\n    // Build compressed mapping\n    vector<int> sorted_unique = arr;\n    sort(sorted_unique.begin(), sorted_unique.end());\n    sorted_unique.erase(unique(sorted_unique.begin(), sorted_unique.end()),\n                        sorted_unique.end());\n\n    // Compress: map each value to its rank in [0, m-1]\n    auto compress = [&](int val) {\n        return (int)(lower_bound(sorted_unique.begin(), sorted_unique.end(), val)\n                     - sorted_unique.begin());\n    };\n\n    vector<int> comp(n);\n    for (int i = 0; i < n; i++) comp[i] = compress(arr[i]);\n\n    // Now values in comp are in [0, m-1] where m = sorted_unique.size()\n    int m = sorted_unique.size();\n    cout << \"Compressed size: \" << m << \"\\n\";\n    for (int x : comp) cout << x << \" \";\n    return 0;\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🧩 Sorting Patterns Cheat Sheet"
+    },
+    {
+      "type": "table",
+      "headers": ["Problem Pattern", "Sort Strategy", "Example"],
+      "rows": [
+        ["Interval scheduling (max non-overlap)", "Sort by end time ascending", "Greedy: always pick earliest-ending"],
+        ["Meeting rooms (min rooms needed)", "Sort starts and ends separately", "Two-pointer sweep"],
+        ["Majority element / frequency", "Sort then scan, or count map", "arr[n/2] after sort = majority"],
+        ["Kth largest element", "`nth_element` O(n) avg", "Partial sort, not full sort"],
+        ["Count inversions", "Merge sort with counter", "Classic divide-and-conquer"],
+        ["Sort by multiple keys", "Custom lambda comparator", "Tiebreak chains"],
+        ["Values ≤ 10^6", "Counting sort O(n+k)", "Frequency array approach"],
+        ["Sort then binary search", "`sort` + `lower_bound`", "Pair searching, offline queries"]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "⚡ STL Partial Sorts & nth_element"
+    },
+    {
+      "type": "paragraph",
+      "content": "`std::nth_element` runs in **O(n) average** and guarantees that the element at position k is the same as it would be if the array were fully sorted — elements before it are ≤ it and elements after are ≥ it. Use this when you only need the **k-th largest/smallest**, not a full sorted order."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "nth_element and partial_sort",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    vector<int> arr = {7, 2, 9, 1, 5, 8, 3, 6, 4};\n    int k = 3; // want the 3rd smallest (0-indexed: position 2)\n\n    // nth_element: O(n) average — only guarantees position k is correct\n    vector<int> a = arr;\n    nth_element(a.begin(), a.begin() + k, a.end());\n    cout << \"3rd smallest: \" << a[k] << \"\\n\"; // = 3\n    // Elements before a[k] are <= a[k], after are >= a[k] (unordered)\n\n    // partial_sort: O(n log k) — fully sorts first k elements\n    vector<int> b = arr;\n    partial_sort(b.begin(), b.begin() + k + 1, b.end());\n    cout << \"Sorted top \" << k+1 << \": \";\n    for (int i = 0; i <= k; i++) cout << b[i] << \" \"; // 1 2 3\n    cout << \"\\n\";\n\n    // Kth largest using nth_element (reverse)\n    vector<int> c = arr;\n    nth_element(c.begin(), c.begin() + k, c.end(), greater<int>());\n    cout << \"3rd largest: \" << c[k] << \"\\n\"; // = 7\n\n    return 0;\n}"
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🏋️ Practice Exercises"
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 1: Custom Comparator Trace",
+      "language": "cpp",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    vector<pair<int,int>> v = {{2,3},{1,4},{2,1},{1,2}};\n    sort(v.begin(), v.end(), [](auto& a, auto& b) {\n        if (a.first != b.first) return a.first < b.first;\n        return a.second > b.second;\n    });\n    for (auto [x, y] : v)\n        cout << x << \" \" << y << \"\\n\";\n    return 0;\n}",
+      "answer": "1 4\n1 2\n2 3\n2 1",
+      "explanation": "The comparator sorts by first element ascending, breaking ties by second element descending. Pairs with first=1: {1,4} and {1,2} — sorted by second desc → {1,4} then {1,2}. Pairs with first=2: {2,3} and {2,1} — sorted by second desc → {2,3} then {2,1}. Final order: {1,4}, {1,2}, {2,3}, {2,1}."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 2: Counting Sort Frequency Trace",
+      "language": "cpp",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    vector<int> arr = {3, 1, 4, 1, 5, 9, 2, 6, 5};\n    int maxVal = 9;\n    vector<int> cnt(maxVal + 1, 0);\n    for (int x : arr) cnt[x]++;\n    for (int i = 1; i <= maxVal; i++) cnt[i] += cnt[i-1];\n    vector<int> out(arr.size());\n    for (int i = arr.size()-1; i >= 0; i--)\n        out[--cnt[arr[i]]] = arr[i];\n    for (int x : out) cout << x << \" \";\n    return 0;\n}",
+      "answer": "1 1 2 3 4 5 5 6 9",
+      "explanation": "Counting sort: frequency array counts occurrences of each value 0–9. Prefix sum converts to ending positions. Backward traversal places elements stably. arr = {3,1,4,1,5,9,2,6,5}. Frequency: cnt[1]=2, cnt[2]=1, cnt[3]=1, cnt[4]=1, cnt[5]=2, cnt[6]=1, cnt[9]=1. After prefix sum, elements are placed at their correct sorted positions. Final array: 1 1 2 3 4 5 5 6 9."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 3: Count Inversions in Array",
+      "language": "cpp",
+      "code": "// Given an array of n integers, count the number of inversions.\n// An inversion is a pair (i, j) where i < j but arr[i] > arr[j].\n// Input: n, then n integers\n// Output: inversion count\n// Constraints: n <= 10^5, |arr[i]| <= 10^9\n// Example: arr = {3, 1, 2} -> 2 inversions: (3,1) and (3,2)",
+      "approach": "Brute force O(n^2) checks all pairs — TLE for n=10^5. Use merge sort: during the merge step, whenever an element from the right half is placed before elements remaining in the left half, all those remaining left elements form inversions with it. Count them as (mid - i) where i is the current left pointer. Use long long since max inversions ≈ n*(n-1)/2 ≈ 5*10^9.",
+      "solution": "#include <bits/stdc++.h>\nusing namespace std;\n\nlong long merge_count(vector<int>& a, int l, int r) {\n    if (r - l <= 1) return 0;\n    int mid = (l + r) / 2;\n    long long inv = merge_count(a, l, mid) + merge_count(a, mid, r);\n    vector<int> tmp;\n    int i = l, j = mid;\n    while (i < mid && j < r) {\n        if (a[i] <= a[j]) {\n            tmp.push_back(a[i++]);\n        } else {\n            inv += (mid - i); // all of a[i..mid-1] > a[j]\n            tmp.push_back(a[j++]);\n        }\n    }\n    while (i < mid) tmp.push_back(a[i++]);\n    while (j < r)   tmp.push_back(a[j++]);\n    for (int k = l; k < r; k++) a[k] = tmp[k - l];\n    return inv;\n}\n\nint main() {\n    int n; cin >> n;\n    vector<int> a(n);\n    for (auto& x : a) cin >> x;\n    cout << merge_count(a, 0, n) << \"\\n\";\n    return 0;\n}",
+      "explanation": "The key insight: during the merge of two sorted halves, if a[j] (right) < a[i] (left), then a[j] < a[i], a[i+1], ..., a[mid-1] — all (mid-i) elements form inversions with a[j]. We collect this count in O(1) per right element. Total time: O(n log n) — same as merge sort. Space: O(n) for the temporary merge buffer. Long long is required to avoid overflow since max count is ~5×10^9."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 4: Minimum Platforms / Meeting Rooms",
+      "language": "cpp",
+      "code": "// Given n train arrival and departure times, find the minimum number\n// of platforms required so no train waits.\n// Input: n, then n arrival times, then n departure times (all integers)\n// Output: minimum platforms needed\n// Constraints: n <= 10^5, 1 <= arrival[i] <= departure[i] <= 10^4\n// Example: arrivals={900,940,950,1100,1500,1800}\n//          departures={910,1200,1120,1130,1900,2000} -> 3",
+      "approach": "Sort arrivals and departures separately. Use two pointers: process events in time order. When a train arrives, increment platform count. When one departs, decrement. Track the maximum count seen — that's the answer. This is the sweep line technique, O(n log n) from sorting.",
+      "solution": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int n; cin >> n;\n    vector<int> arr(n), dep(n);\n    for (auto& x : arr) cin >> x;\n    for (auto& x : dep) cin >> x;\n\n    sort(arr.begin(), arr.end());\n    sort(dep.begin(), dep.end());\n\n    int platforms = 1, maxPlat = 1;\n    int i = 1, j = 0;\n    while (i < n && j < n) {\n        if (arr[i] <= dep[j]) {\n            platforms++;\n            i++;\n        } else {\n            platforms--;\n            j++;\n        }\n        maxPlat = max(maxPlat, platforms);\n    }\n    cout << maxPlat << \"\\n\";\n    return 0;\n}",
+      "explanation": "After sorting both arrays, we simulate a timeline sweep. Two pointers i (next arrival) and j (next departure) advance based on which event is earlier. If a train arrives before the earliest pending departure, we need a new platform. Otherwise, a platform is freed. The maximum platforms in use at any instant is the answer. Time: O(n log n) for sorting, O(n) sweep. Space: O(n). Edge case: if arr[i] == dep[j], process departure first (train leaves, freeing a platform before new one arrives)."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 5: Indirect Sort — Restore Sorted Order",
+      "language": "cpp",
+      "code": "// You are given n elements and told that after sorting them,\n// position p[i] in the sorted array came from position i in the original.\n// Given the original array, output: for each original index, its rank (1-indexed).\n// Input: n integers\n// Output: their ranks after sorting (1-based, handle duplicates by original index)\n// Example: input 40 10 30 20 -> output 4 1 3 2",
+      "approach": "Create an index array {0,1,...,n-1}. Sort it using arr[i] as the comparator (indirect sort). The position of each original index in the sorted-indices array is its rank. For stable ranking with duplicates, use stable_sort to preserve original order among equals.",
+      "solution": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int n; cin >> n;\n    vector<int> arr(n);\n    for (auto& x : arr) cin >> x;\n\n    vector<int> idx(n);\n    iota(idx.begin(), idx.end(), 0);\n    // Stable sort: ties broken by original position (ascending idx)\n    stable_sort(idx.begin(), idx.end(), [&](int a, int b) {\n        return arr[a] < arr[b];\n    });\n\n    // rank[original_position] = rank (1-indexed)\n    vector<int> rank_(n);\n    for (int i = 0; i < n; i++) rank_[idx[i]] = i + 1;\n\n    for (int r : rank_) cout << r << \" \";\n    cout << \"\\n\";\n    return 0;\n}",
+      "explanation": "Indirect sorting (sorting indices by values) is a fundamental pattern. After stable_sort, idx[0] holds the original index of the smallest element, idx[1] the second smallest, etc. We invert this: rank_[idx[i]] = i+1 gives each original position its rank. stable_sort ensures equal elements get ranks in their original order (no arbitrary ties). Time: O(n log n). Space: O(n). This pattern appears in problems where you need to process elements in sorted order but also track where they came from."
+    }
+  ]
+}

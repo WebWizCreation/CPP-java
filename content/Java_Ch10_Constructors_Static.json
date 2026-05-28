@@ -1,0 +1,239 @@
+{
+  "id": "Java_Ch10_Constructors_Static",
+  "track": "java",
+  "chapter": 10,
+  "title": "Constructors & Static Members",
+  "description": "Master constructor overloading, chaining with this() and super(), and the static keyword — the trio of concepts that appear in virtually every CSE110 OOP exam question involving object initialisation and shared class-level state.",
+  "sections": [
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🎓 Why Constructors & Static Matter in CSE110 Exams"
+    },
+    {
+      "type": "paragraph",
+      "content": "Two of the most reliably tested OOP concepts in CSE110 are: **what order do constructors execute?** (especially when chaining with `this()` or involving inheritance with `super()`) and **what does a static field's value change to after a sequence of object creations?** If you can trace constructor execution order and distinguish static from instance state, you will handle every predict-output and find-error question in this domain correctly."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🏗️ Constructors: Rules and Types"
+    },
+    {
+      "type": "paragraph",
+      "content": "A **constructor** is a special method that runs automatically when an object is created with `new`. It initialises the object's fields. Constructors have no return type (not even `void`) and must have the **exact same name as the class**. A class may have multiple constructors as long as they differ in parameter lists — this is **constructor overloading**. If you write no constructor at all, Java silently provides a **default no-argument constructor** that initialises all fields to their defaults. The moment you write **any** constructor, Java no longer provides the default one."
+    },
+    {
+      "type": "table",
+      "headers": ["Constructor Type", "Description", "When Provided"],
+      "rows": [
+        ["Default (no-arg)", "Empty body; initialises fields to defaults (0, false, null)", "Only if NO constructor is written by programmer"],
+        ["No-arg (explicit)", "Programmer writes `ClassName() { ... }` — can set custom defaults", "Programmer defined; must be explicit if any overloaded constructor exists"],
+        ["Parameterised", "`ClassName(T param1, ...)` — caller provides initial values", "Programmer defined"],
+        ["Copy-style", "`ClassName(ClassName other)` — initialises from another object", "Programmer defined (Java has no automatic copy constructor)"]
+      ]
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Constructor Overloading — Car Example",
+      "code": "public class Car {\n    String make;\n    String model;\n    int year;\n    double price;\n\n    // Constructor 1: fully parameterised\n    public Car(String make, String model, int year, double price) {\n        this.make  = make;\n        this.model = model;\n        this.year  = year;\n        this.price = price;\n    }\n\n    // Constructor 2: no price (defaults to 0.0)\n    public Car(String make, String model, int year) {\n        this.make  = make;\n        this.model = model;\n        this.year  = year;\n        this.price = 0.0;  // default\n    }\n\n    // Constructor 3: only make and model (year defaults to current year)\n    public Car(String make, String model) {\n        this.make  = make;\n        this.model = model;\n        this.year  = 2024;\n        this.price = 0.0;\n    }\n\n    public String toString() {\n        return year + \" \" + make + \" \" + model + \" $\" + price;\n    }\n\n    public static void main(String[] args) {\n        Car c1 = new Car(\"Toyota\", \"Corolla\", 2022, 25000.0);\n        Car c2 = new Car(\"Honda\",  \"Civic\",   2021);\n        Car c3 = new Car(\"Ford\",   \"Focus\");\n\n        System.out.println(c1); // 2022 Toyota Corolla $25000.0\n        System.out.println(c2); // 2021 Honda Civic $0.0\n        System.out.println(c3); // 2024 Ford Focus $0.0\n    }\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "danger",
+      "label": "Exam Trap: The Disappearing Default Constructor",
+      "content": "If you write **any** constructor in your class, Java removes the implicit no-argument constructor. Code that previously compiled — `new Car()` — will fail with a **compile-time error**: `\"constructor Car() is undefined.\"` This surprises many students when they add their first parameterised constructor. Fix: explicitly write a no-arg constructor if you need one alongside your parameterised constructors."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔗 Constructor Chaining with this()"
+    },
+    {
+      "type": "paragraph",
+      "content": "Instead of duplicating initialisation code across multiple overloaded constructors, one constructor can call another using `this(arguments)`. This is called **constructor chaining**. The `this()` call must be the **very first statement** in the constructor body — no other code may appear before it. The call delegates to whichever constructor in the same class matches the argument types."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Constructor Chaining with this() — DRY Initialisation",
+      "code": "public class Car {\n    String make;\n    String model;\n    int year;\n    double price;\n\n    // Master constructor: does all the real work\n    public Car(String make, String model, int year, double price) {\n        this.make  = make;\n        this.model = model;\n        this.year  = year;\n        this.price = price;\n        System.out.println(\"Master constructor called\");\n    }\n\n    // Delegates to master, supplying default price\n    public Car(String make, String model, int year) {\n        this(make, model, year, 0.0); // MUST be first statement\n        System.out.println(\"3-param constructor called\");\n    }\n\n    // Delegates to 3-param constructor\n    public Car(String make, String model) {\n        this(make, model, 2024); // MUST be first statement\n        System.out.println(\"2-param constructor called\");\n    }\n\n    public static void main(String[] args) {\n        System.out.println(\"--- Creating c1 ---\");\n        Car c1 = new Car(\"Ford\", \"Focus\");\n        // Output order:\n        //   Master constructor called\n        //   3-param constructor called\n        //   2-param constructor called\n        // The chain runs deepest-first, prints on the way back up!\n    }\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "warning",
+      "label": "Constructor Chaining Execution Order Is Bottom-Up",
+      "content": "When you chain `A → B → C` (A calls this() to B, B calls this() to C), the execution order of constructor **bodies** is C, then B, then A — deepest first. The `this()` call transfers control immediately, so any `System.out.println` you put **after** the `this()` call runs only after the entire chain below has completed. This is a classic predict-output trap."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔢 Static Fields"
+    },
+    {
+      "type": "paragraph",
+      "content": "A **static field** (also called a class variable) belongs to the **class itself**, not to any individual object. There is exactly one copy of a static field in memory, shared by all instances of the class. Common uses: object counters (how many instances have been created), shared constants, and caches. Static fields are initialised once when the class is first loaded — before any object is created."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Static Field — Object Instance Counter",
+      "code": "public class Robot {\n    // Static field: ONE copy shared by ALL Robot objects\n    static int instanceCount = 0;\n\n    // Instance fields: each Robot has its own copy\n    String name;\n    int id;\n\n    public Robot(String name) {\n        instanceCount++;          // increments the shared counter\n        this.id   = instanceCount; // records THIS robot's ID\n        this.name = name;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(Robot.instanceCount); // 0 — no objects yet\n\n        Robot r1 = new Robot(\"Alpha\");\n        System.out.println(Robot.instanceCount); // 1\n        System.out.println(r1.id);               // 1\n\n        Robot r2 = new Robot(\"Beta\");\n        Robot r3 = new Robot(\"Gamma\");\n        System.out.println(Robot.instanceCount); // 3\n        System.out.println(r2.id + \" \" + r3.id); // 2 3\n\n        // All three references to instanceCount are identical:\n        System.out.println(r1.instanceCount); // 3 (same shared field!)\n        System.out.println(r2.instanceCount); // 3\n        System.out.println(Robot.instanceCount); // 3\n    }\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "⚙️ Static Methods"
+    },
+    {
+      "type": "paragraph",
+      "content": "A **static method** belongs to the class, not to any object. It has no implicit `this` parameter. Static methods can only directly access **other static members** — they cannot refer to instance fields or call instance methods without first having an object reference. The classic use case: utility methods (`Math.sqrt`, `Integer.parseInt`) and factory methods that create objects."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Static Methods — Rules and Patterns",
+      "code": "public class MathUtils {\n    // Static constant\n    static final double PI = 3.14159265358979;\n\n    // Static field\n    static int callCount = 0;\n\n    // Instance field\n    double value;\n\n    public MathUtils(double v) { this.value = v; }\n\n    // Static method: no 'this'; can only use static members directly\n    public static double circleArea(double radius) {\n        callCount++;          // OK: static field\n        return PI * radius * radius; // OK: static field\n        // return value * 2; // COMPILE ERROR: 'value' is an instance field\n    }\n\n    // Instance method: has 'this'; can use both instance AND static members\n    public double doubled() {\n        callCount++;          // OK: static field accessible from instance method\n        return this.value * 2; // OK: instance field\n    }\n\n    // Static factory method: creates and returns an object\n    public static MathUtils fromString(String s) {\n        double d = Double.parseDouble(s);\n        return new MathUtils(d); // static method CAN create objects\n    }\n\n    public static void main(String[] args) {\n        // Calling static methods: use ClassName (preferred)\n        double area = MathUtils.circleArea(5.0);\n        System.out.println(area);              // ~78.539...\n        System.out.println(MathUtils.callCount); // 1\n\n        MathUtils mu = MathUtils.fromString(\"3.5\");\n        System.out.println(mu.doubled());      // 7.0\n        System.out.println(MathUtils.callCount); // 2\n    }\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "danger",
+      "label": "Exam Trap: Accessing Instance Members from static main()",
+      "content": "`public static void main(String[] args)` is itself a static method. You **cannot** directly call instance methods or access instance fields from `main` without first creating an object. `System.out.println(name)` inside `main` will give a compile-time error: `\"non-static variable name cannot be referenced from a static context.\"` This is the single most common compile-time error in CSE110. Fix: `MyClass obj = new MyClass(); System.out.println(obj.name);`"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📊 Static vs Instance: Complete Comparison"
+    },
+    {
+      "type": "table",
+      "headers": ["Feature", "Instance Member", "Static Member"],
+      "rows": [
+        ["Keyword", "None (default)", "`static`"],
+        ["Memory", "One copy per object", "One copy per class (shared)"],
+        ["Created when", "Each `new` call", "Class is first loaded by JVM"],
+        ["Access syntax", "`objectRef.member`", "`ClassName.member` (preferred) or `objectRef.member`"],
+        ["Can access instance fields?", "Yes", "No (no `this`)"],
+        ["Can access static fields?", "Yes", "Yes"],
+        ["Can use `this`?", "Yes", "No — compile error"],
+        ["Typical use", "Per-object state: name, balance, score", "Counters, constants, utility methods, factories"]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔄 Static Initialisation and Constants"
+    },
+    {
+      "type": "paragraph",
+      "content": "Static fields can be initialised at declaration, in a **static initialisation block** `static { ... }`, or in a static method. The `static { }` block runs once when the class is first loaded — before `main`, before any constructor. Combine `static final` to declare **named constants** — values that are shared across all instances and cannot be reassigned."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Static Initialisation Block and Constants",
+      "code": "public class Config {\n    // static final: class-level constant (UPPER_SNAKE_CASE by convention)\n    static final int MAX_USERS = 100;\n    static final String APP_NAME;\n    static int loadOrder;\n\n    // Static initialisation block: runs once when class is loaded\n    static {\n        APP_NAME  = \"MyApp v1.0\"; // can assign static final HERE\n        loadOrder = 1;\n        System.out.println(\"Class loaded: \" + APP_NAME);\n    }\n\n    String username;\n\n    public Config(String username) {\n        this.username = username;\n        System.out.println(\"Object created for: \" + username);\n    }\n\n    public static void main(String[] args) {\n        System.out.println(\"main() started\");\n        Config c1 = new Config(\"Alice\");\n        Config c2 = new Config(\"Bob\");\n        // Output:\n        // Class loaded: MyApp v1.0   <- static block runs BEFORE main!\n        // main() started\n        // Object created for: Alice\n        // Object created for: Bob\n    }\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "note",
+      "label": "Initialisation Order: static block → main() → constructors",
+      "content": "The JVM loads the class, runs all `static { }` blocks in order, then enters `main()`. Only after that do constructor calls happen. The order is: **static initialisation → main() body → constructor(s)**. This affects output order in predict-output questions involving static blocks."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🧩 Common Constructor Patterns in Exams"
+    },
+    {
+      "type": "table",
+      "headers": ["Pattern", "Code Sketch", "What to Watch For"],
+      "rows": [
+        ["No constructor → default used", "`class Foo {}` then `new Foo()`", "Fields get default values (0, false, null)"],
+        ["Parameterised only (no default)", "`class Foo { Foo(int x){...} }` then `new Foo()`", "**Compile error** — no default constructor"],
+        ["this() chaining", "`Foo(int x){ this(x, 0); }` `Foo(int x,int y){...}`", "Prints in bottom-up order; this() must be first"],
+        ["Static counter in constructor", "`static int count=0; Ctor(){ count++; }`", "count increments for every `new` call"],
+        ["Static final constant", "`static final int MAX = 100;`", "Can never be reassigned; shared by all"],
+        ["Instance method called from static", "`void go(){...}` called from `main`", "Need an object: `new Foo().go()` or `Foo f = new Foo(); f.go();`"]
+      ]
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🏋️ Practice Exercises"
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 1: Tracing Constructor Chaining Output Order",
+      "language": "java",
+      "code": "public class Lamp {\n    String color;\n    int brightness;\n    boolean isOn;\n\n    public Lamp() {\n        this(\"white\", 50);\n        System.out.println(\"Lamp() called\");\n    }\n\n    public Lamp(String color, int brightness) {\n        this(color, brightness, false);\n        System.out.println(\"Lamp(color,brightness) called\");\n    }\n\n    public Lamp(String color, int brightness, boolean isOn) {\n        this.color      = color;\n        this.brightness = brightness;\n        this.isOn       = isOn;\n        System.out.println(\"Lamp(color,brightness,isOn) called\");\n    }\n\n    public static void main(String[] args) {\n        Lamp a = new Lamp();\n        System.out.println(a.color + \" \" + a.brightness + \" \" + a.isOn);\n    }\n}",
+      "answer": "Lamp(color,brightness,isOn) called\nLamp(color,brightness) called\nLamp() called\nwhite 50 false",
+      "explanation": "Execution trace:\n\n1. `new Lamp()` → enters `Lamp()`, first statement is `this(\"white\", 50)` — control passes to `Lamp(String, int)`.\n2. Inside `Lamp(String, int)`, first statement is `this(\"white\", 50, false)` — control passes to `Lamp(String, int, boolean)`.\n3. Inside `Lamp(String, int, boolean)`: fields are set (`color=\"white\"`, `brightness=50`, `isOn=false`), then **prints** `\"Lamp(color,brightness,isOn) called\"`. This constructor returns.\n4. Back in `Lamp(String, int)`: the `this(...)` call has returned, so the next statement **prints** `\"Lamp(color,brightness) called\"`. This constructor returns.\n5. Back in `Lamp()`: the `this(...)` call has returned, so the next statement **prints** `\"Lamp() called\"`. This constructor returns.\n6. `main` continues: `a.color` = \"white\", `a.brightness` = 50, `a.isOn` = false → prints `\"white 50 false\"`.\n\n**Key rule:** `this()` transfers control immediately; everything below it executes only after the called constructor finishes — so the deepest constructor always prints first."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 2: Static Counter Across Multiple Object Creations",
+      "language": "java",
+      "code": "public class Ticket {\n    static int nextId = 1;\n    int id;\n    String event;\n\n    public Ticket(String event) {\n        this.id    = nextId;\n        nextId++;\n        this.event = event;\n    }\n\n    public static void main(String[] args) {\n        Ticket t1 = new Ticket(\"Concert\");\n        Ticket t2 = new Ticket(\"Festival\");\n        System.out.println(t1.id + \" \" + t2.id);\n        System.out.println(Ticket.nextId);\n\n        Ticket t3 = new Ticket(\"Theatre\");\n        System.out.println(t3.id);\n        System.out.println(t1.nextId); // same as Ticket.nextId\n\n        t1 = new Ticket(\"Opera\"); // t1 now references a NEW object\n        System.out.println(t1.id);\n    }\n}",
+      "answer": "1 2\n3\n3\n4\n4",
+      "explanation": "**`nextId` is static** — one shared counter for all Ticket objects.\n\nInitially: `nextId = 1`.\n\n`new Ticket(\"Concert\")`: t1.id = 1, then nextId becomes 2.\n`new Ticket(\"Festival\")`: t2.id = 2, then nextId becomes 3.\n\n**Line 1:** `t1.id + \" \" + t2.id` → `\"1 2\"`\n**Line 2:** `Ticket.nextId` → `3`\n\n`new Ticket(\"Theatre\")`: t3.id = 3, then nextId becomes 4.\n**Line 3:** `t3.id` → `3`\n**Line 4:** `t1.nextId` — accessing static field via instance reference; same as `Ticket.nextId` → `4`\n\n`new Ticket(\"Opera\")`: nextId is 4, so this new Ticket.id = 4, then nextId becomes 5. Variable `t1` is reassigned to point to this new object.\n**Line 5:** `t1.id` → `4` (the new object's id)"
+    },
+    {
+      "type": "accordion",
+      "variant": "find-error",
+      "title": "Exercise 3: Accessing Instance Member from Static Context",
+      "language": "java",
+      "code": "public class Circle {\n    double radius;\n    static final double PI = 3.14159;\n\n    public Circle(double radius) {\n        this.radius = radius;\n    }\n\n    public static void main(String[] args) {\n        double area = PI * radius * radius;\n        System.out.println(\"Area: \" + area);\n    }\n}",
+      "error": "Line 10: Compile-time error — `\"non-static variable radius cannot be referenced from a static context.\"` The instance field `radius` belongs to objects, but `main` is a static method and has no `this` reference. There is no object, so `radius` is undefined inside `main`.",
+      "fix": "public class Circle {\n    double radius;\n    static final double PI = 3.14159;\n\n    public Circle(double radius) {\n        this.radius = radius;\n    }\n\n    public double area() {\n        return PI * radius * radius; // instance method: 'radius' is fine here\n    }\n\n    public static void main(String[] args) {\n        Circle c = new Circle(5.0); // create an object first!\n        System.out.println(\"Area: \" + c.area()); // Area: 78.53975\n    }\n}",
+      "explanation": "`main` is a `static` method — it belongs to the class, not to any object. Instance fields like `radius` only exist when an object has been created with `new`. Inside a static context, Java has no `this` to look up, so `radius` is inaccessible.\n\nThe fix has two parts: (1) move the area calculation into an **instance method** `area()`, where `this` is available and `radius` makes sense; (2) create a `Circle` object in `main` and call the method on it.\n\nThis is a **compile-time error** — the code will not run at all until the reference to `radius` is removed from the static context."
+    },
+    {
+      "type": "accordion",
+      "variant": "find-error",
+      "title": "Exercise 4: Missing No-Arg Constructor After Adding Parameterised One",
+      "language": "java",
+      "code": "public class Player {\n    String name;\n    int score;\n\n    public Player(String name, int score) {\n        this.name  = name;\n        this.score = score;\n    }\n\n    public static void main(String[] args) {\n        Player p1 = new Player(\"Alice\", 100);\n        Player p2 = new Player();  // create a default player\n        System.out.println(p1.name + \" \" + p2.name);\n    }\n}",
+      "error": "Line 11: Compile-time error — `\"constructor Player() in class Player cannot be applied to given types; no suitable constructor found.\"` Once the programmer defines `Player(String, int)`, Java no longer generates the implicit no-argument constructor, so `new Player()` fails.",
+      "fix": "public class Player {\n    String name;\n    int score;\n\n    // Explicitly provide a no-arg constructor with defaults\n    public Player() {\n        this.name  = \"Unknown\";\n        this.score = 0;\n    }\n\n    public Player(String name, int score) {\n        this.name  = name;\n        this.score = score;\n    }\n\n    public static void main(String[] args) {\n        Player p1 = new Player(\"Alice\", 100);\n        Player p2 = new Player();\n        System.out.println(p1.name + \" \" + p2.name); // Alice Unknown\n    }\n}",
+      "explanation": "Java automatically provides a **default no-arg constructor** only when the programmer has written **zero constructors**. The moment `Player(String, int)` was added, the default constructor disappeared.\n\nThe fix explicitly defines `Player()` with sensible default values. Alternatively, the no-arg constructor could use constructor chaining: `Player() { this(\"Unknown\", 0); }` — this delegates to the parameterised constructor and avoids duplicating the assignment logic.\n\nThis is a **compile-time error** — caught by the compiler before execution."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 5: Design a Library Book Tracker with Static Count",
+      "language": "java",
+      "code": "// Design a Book class for a library system:\n//   Static field: totalBooks (count of all Book objects created)\n//   Instance fields: title (String), author (String), bookId (int)\n//   Constructor: Book(String title, String author)\n//     Automatically assigns bookId = totalBooks (after incrementing)\n//   Static method: int getTotal() — returns totalBooks\n//   Instance method: String toString() — returns \"[id] title by author\"\n// In main: create 3 books and print them, then print the total count.",
+      "approach": "Use a static field `totalBooks` initialised to 0. In the constructor, increment totalBooks first, then assign bookId = totalBooks. This gives IDs starting at 1. The static method getTotal() simply returns totalBooks. toString() formats the output string.",
+      "solution": "public class Book {\n    static int totalBooks = 0;\n\n    int bookId;\n    String title;\n    String author;\n\n    // Every time a Book is created, totalBooks increases\n    public Book(String title, String author) {\n        totalBooks++;         // increment shared counter first\n        this.bookId = totalBooks; // assign this book's unique id\n        this.title  = title;\n        this.author = author;\n    }\n\n    public static int getTotal() {\n        return totalBooks; // static method returns static field\n    }\n\n    public String toString() {\n        return \"[\" + bookId + \"] \" + title + \" by \" + author;\n    }\n\n    public static void main(String[] args) {\n        Book b1 = new Book(\"Clean Code\",     \"Robert Martin\");\n        Book b2 = new Book(\"Effective Java\", \"Joshua Bloch\");\n        Book b3 = new Book(\"The Pragmatic Programmer\", \"Hunt & Thomas\");\n\n        System.out.println(b1); // [1] Clean Code by Robert Martin\n        System.out.println(b2); // [2] Effective Java by Joshua Bloch\n        System.out.println(b3); // [3] The Pragmatic Programmer by Hunt & Thomas\n        System.out.println(\"Total books: \" + Book.getTotal()); // Total books: 3\n    }\n}",
+      "explanation": "**Static field `totalBooks`:** shared across all instances. Starts at 0. Each constructor call increments it before using it as the new book's ID — this guarantees IDs are 1, 2, 3, ... in creation order.\n\n**Static method `getTotal()`:** accesses only `totalBooks` (a static field) — no instance needed. Called as `Book.getTotal()`.\n\n**`toString()` override:** Java calls this automatically when a Book object is passed to `println` or concatenated with a String, producing the formatted output line.\n\n**Design insight:** `totalBooks` also serves as the next available ID because we increment it **before** assigning. If we assigned first and incremented after, IDs would start at 0 — a common subtle bug in this pattern."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📝 Quick Reference Summary"
+    },
+    {
+      "type": "list",
+      "ordered": false,
+      "items": [
+        "**Constructor** = special method with no return type, same name as class; runs automatically on `new`.",
+        "**Default constructor** (no-arg, empty body) is provided by Java **only if no constructor is written**. Adding any constructor removes it.",
+        "**Constructor overloading:** multiple constructors in one class, each with a different parameter list.",
+        "**`this(args)`** calls another constructor in the same class — must be the **very first** statement; chains execute deepest-first.",
+        "**Static field:** one shared copy per class, not per object. Persists for the lifetime of the program. Accessed as `ClassName.field`.",
+        "**Static method:** no implicit `this`; can only directly access static members. Instance fields/methods require an object reference.",
+        "**`static final`** = named constant: shared across all instances, can never be reassigned after initialisation. Use UPPER_SNAKE_CASE.",
+        "**Static initialisation block** `static { }` runs once when the class is first loaded — before `main()` and before any constructor.",
+        "**Common compile error:** `\"non-static variable X cannot be referenced from a static context\"` — you accessed an instance member inside `main` or another static method without creating an object first."
+      ]
+    }
+  ]
+}

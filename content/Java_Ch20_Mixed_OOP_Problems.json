@@ -1,0 +1,237 @@
+{
+  "id": "Java_Ch20_Mixed_OOP_Problems",
+  "track": "java",
+  "chapter": 20,
+  "title": "Mixed OOP Problems",
+  "description": "Full-program analysis and exam-style questions that synthesize every OOP concept — inheritance chains, polymorphism, static vs instance, exception handling, collections, and generics — exactly as they appear in CSE110 finals.",
+  "sections": [
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🎯 Why This Chapter Is Your Exam Battleground"
+    },
+    {
+      "type": "paragraph",
+      "content": "CSE110 final exams at East West University do not test topics in isolation. A single question can involve a class hierarchy with `abstract` methods, a `static` counter, a `try/catch` block, and an `ArrayList` — all at once. This chapter is a simulation of that reality. Every exercise here is a **full-program trace** or **debug mission** that requires you to hold the entire object model in your head simultaneously. The skill being tested is not memorizing syntax — it is **reasoning about object state, dispatch order, and program flow under pressure**."
+    },
+    {
+      "type": "callout",
+      "variant": "tip",
+      "label": "Exam Strategy",
+      "content": "When tracing a multi-class program: (1) identify all **static** initializers and fields first — they run before any constructor. (2) Draw a quick **object diagram** on your answer sheet showing which reference points to which heap object. (3) Resolve every method call by asking: *what is the runtime type of this reference?* — that decides dynamic dispatch."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📋 OOP Concept Integration Map"
+    },
+    {
+      "type": "paragraph",
+      "content": "The table below shows which CSE110 concepts tend to appear **together** in the same exam question, and which chapters they draw from. Use it to identify your weak links before sitting the exam."
+    },
+    {
+      "type": "table",
+      "headers": ["Question Pattern", "Concepts Combined", "Source Chapters"],
+      "rows": [
+        ["Inheritance chain trace", "extends, super(), constructor chaining, method hiding", "Ch9, Ch10, Ch11"],
+        ["Polymorphic dispatch", "@Override, dynamic dispatch, casting, instanceof", "Ch11, Ch12"],
+        ["Abstract + Interface mix", "abstract class, interface, default method, multiple types", "Ch13"],
+        ["Encapsulation + Static", "private fields, getters/setters, static counter, this", "Ch10, Ch14"],
+        ["Exception propagation", "try/catch/finally, throws, custom exception class", "Ch15"],
+        ["Collections + Generics", "ArrayList<T>, HashMap<K,V>, enhanced for, autoboxing", "Ch17, Ch18"],
+        ["String manipulation", "immutability, equals vs ==, StringBuilder, methods", "Ch16"],
+        ["Full OOP program", "all of the above woven into one 40–60 line program", "All chapters"]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔗 Constructor Chaining & Static State Review"
+    },
+    {
+      "type": "paragraph",
+      "content": "Before the exercises, review the two most commonly mis-traced features in full-program questions: **constructor chaining** (who calls whom, and in what order) and **static vs instance state** (shared across all objects vs owned per object)."
+    },
+    {
+      "type": "table",
+      "headers": ["Feature", "Behavior", "Common Mistake"],
+      "rows": [
+        ["`super(args)`", "Must be first statement in child constructor; calls parent constructor", "Forgetting parent constructor runs before child body"],
+        ["`this(args)`", "Calls another constructor in the same class; must be first statement", "Combining super() and this() in the same constructor — illegal"],
+        ["static field", "One copy shared by all instances; survives object deletion", "Thinking each object has its own copy"],
+        ["static method", "No `this`; cannot access instance fields directly", "Calling instance method from static context without an object"],
+        ["Instance initializer block", "Runs before every constructor body, after field defaults", "Forgetting it runs even for constructors that call this()"],
+        ["Static initializer block", "Runs once when class is first loaded, before any constructor", "Assuming it runs per object creation"]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔍 Polymorphism & Casting Rules Review"
+    },
+    {
+      "type": "table",
+      "headers": ["Operation", "Compile-time check", "Runtime check", "Failure type"],
+      "rows": [
+        ["Upcasting `Animal a = new Dog()`", "Always legal (implicit)", "Always safe", "Never fails"],
+        ["Downcasting `Dog d = (Dog) a`", "Must be explicit", "Checks actual type", "ClassCastException if wrong"],
+        ["`instanceof` check", "Legal if types are related", "Returns true/false", "Never throws"],
+        ["Calling overridden method via parent ref", "Resolved at compile to parent signature", "Dispatched at runtime to child impl", "None — this is polymorphism"],
+        ["Accessing hidden static method via parent ref", "Resolved at compile to parent", "No dispatch — static binding", "Silently uses parent version"]
+      ]
+    },
+    {
+      "type": "callout",
+      "variant": "danger",
+      "label": "The #1 Exam Mistake: Confusing Static Binding with Dynamic Dispatch",
+      "content": "If `Parent p = new Child()` and both classes define a **static** method `show()`, calling `p.show()` invokes **Parent's** version — static methods are bound at compile time, not dispatched at runtime. But if `show()` is an **instance** method with `@Override`, `p.show()` invokes **Child's** version. This distinction kills marks every semester."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "⚙️ Exception Control Flow Review"
+    },
+    {
+      "type": "paragraph",
+      "content": "Multi-class programs often pass exceptions **up the call stack**. The rule is simple: if a method does not catch an exception, it propagates to the caller. `finally` always executes — even if a `return` statement is inside the `try` or `catch` block. The only exceptions are `System.exit()` and JVM crashes."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Exception Propagation & Finally Guarantee",
+      "code": "public class ExFlow {\n    static int compute(int x) {\n        try {\n            if (x == 0) throw new ArithmeticException(\"zero!\");\n            return 100 / x;\n        } catch (ArithmeticException e) {\n            System.out.println(\"Caught: \" + e.getMessage());\n            return -1;\n        } finally {\n            System.out.println(\"Finally runs always\");\n        }\n    }\n\n    public static void main(String[] args) {\n        System.out.println(compute(5));   // 20, finally, then prints 20\n        System.out.println(compute(0));   // caught, finally, then prints -1\n    }\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "warning",
+      "label": "finally + return Trap",
+      "content": "If both `catch` and `finally` contain a `return` statement, the `finally` return **overrides** the `catch` return. The value from `catch` is silently discarded. This is a known exam trick — always check if `finally` has a `return`."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🧩 Full-Program Trace Exercises"
+    },
+    {
+      "type": "paragraph",
+      "content": "The following exercises are modeled on actual CSE110 exam formats. Each involves at least three OOP concepts working simultaneously. Work through them **without running the code first** — tracing by hand is the exam skill being built."
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 1: Inheritance Chain with Static Counter and Constructor Order",
+      "language": "java",
+      "code": "public class Exercise1 {\n    static class Vehicle {\n        static int count = 0;\n        String brand;\n\n        Vehicle(String brand) {\n            this.brand = brand;\n            count++;\n            System.out.println(\"Vehicle: \" + brand);\n        }\n\n        String info() {\n            return \"Vehicle-\" + brand;\n        }\n    }\n\n    static class Car extends Vehicle {\n        int doors;\n\n        Car(String brand, int doors) {\n            super(brand);\n            this.doors = doors;\n            System.out.println(\"Car: \" + doors + \" doors\");\n        }\n\n        @Override\n        String info() {\n            return \"Car-\" + brand + \"-\" + doors;\n        }\n    }\n\n    static class ElectricCar extends Car {\n        int range;\n\n        ElectricCar(String brand, int doors, int range) {\n            super(brand, doors);\n            this.range = range;\n            System.out.println(\"ElectricCar: \" + range + \"km\");\n        }\n\n        @Override\n        String info() {\n            return super.info() + \"-EV-\" + range;\n        }\n    }\n\n    public static void main(String[] args) {\n        Vehicle v = new Vehicle(\"Generic\");\n        Car c = new Car(\"Toyota\", 4);\n        ElectricCar e = new ElectricCar(\"Tesla\", 4, 500);\n\n        Vehicle ref = e;\n        System.out.println(ref.info());\n        System.out.println(Vehicle.count);\n    }\n}",
+      "answer": "Vehicle: Generic\nVehicle: Toyota\nCar: 4 doors\nVehicle: Tesla\nCar: 4 doors\nElectricCar: 500km\nCar-Tesla-4-EV-500\n3",
+      "explanation": "**Step 1 — `new Vehicle(\"Generic\")`:** Calls Vehicle constructor directly. Prints `Vehicle: Generic`. `count` becomes 1.\n\n**Step 2 — `new Car(\"Toyota\", 4)`:** Car constructor calls `super(\"Toyota\")` first → Vehicle constructor runs, prints `Vehicle: Toyota`, `count` becomes 2. Control returns to Car constructor body → prints `Car: 4 doors`.\n\n**Step 3 — `new ElectricCar(\"Tesla\", 4, 500)`:** ElectricCar calls `super(\"Tesla\", 4)` → Car calls `super(\"Tesla\")` → Vehicle prints `Vehicle: Tesla`, `count` becomes 3 → back to Car body, prints `Car: 4 doors` → back to ElectricCar body, prints `ElectricCar: 500km`.\n\n**Step 4 — `ref.info()`:** `ref` is of compile-time type `Vehicle` but runtime type `ElectricCar`. Dynamic dispatch selects `ElectricCar.info()`. That calls `super.info()` which calls `Car.info()` → `\"Car-Tesla-4\"` → appended with `\"-EV-500\"` → prints `Car-Tesla-4-EV-500`.\n\n**Step 5 — `Vehicle.count`:** Static field, incremented 3 times. Prints `3`."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 2: Abstract Class, Interface, and Default Method Collision",
+      "language": "java",
+      "code": "public class Exercise2 {\n    interface Flyable {\n        default String move() { return \"Fly\"; }\n        String describe();\n    }\n\n    interface Swimmable {\n        default String move() { return \"Swim\"; }\n    }\n\n    static abstract class Animal {\n        String name;\n        Animal(String name) { this.name = name; }\n        abstract String sound();\n        String info() { return name + \" says \" + sound(); }\n    }\n\n    static class Duck extends Animal implements Flyable, Swimmable {\n        Duck(String name) { super(name); }\n\n        @Override\n        public String sound() { return \"Quack\"; }\n\n        @Override\n        public String describe() { return name + \" is a duck\"; }\n\n        @Override\n        public String move() { return \"Fly and Swim\"; }  // resolves diamond\n    }\n\n    public static void main(String[] args) {\n        Duck d = new Duck(\"Donald\");\n        Flyable f = d;\n        Animal a = d;\n\n        System.out.println(a.info());\n        System.out.println(f.describe());\n        System.out.println(f.move());\n        System.out.println(d.move());\n\n        System.out.println(a instanceof Swimmable);\n        System.out.println(a instanceof Flyable);\n    }\n}",
+      "answer": "Donald says Quack\nDonald is a duck\nFly and Swim\nFly and Swim\ntrue\ntrue",
+      "explanation": "**Line 1 — `a.info()`:** `a` is Animal reference, runtime type Duck. `info()` is not overridden in Duck so Animal's version runs. It calls `sound()` — dynamic dispatch hits Duck's `sound()` → `\"Quack\"`. Output: `Donald says Quack`.\n\n**Line 2 — `f.describe()`:** `f` is Flyable reference, runtime Duck. `describe()` is an abstract interface method, Duck provides it → `Donald is a duck`.\n\n**Line 3 — `f.move()`:** Both `Flyable` and `Swimmable` have a default `move()`. Duck **must** override `move()` to resolve the diamond conflict — and it does. Even through the `Flyable` reference, dynamic dispatch hits Duck's `move()` → `Fly and Swim`.\n\n**Line 4 — `d.move()`:** Direct call, same result → `Fly and Swim`.\n\n**Lines 5–6 — `instanceof`:** `a` has runtime type `Duck`. `Duck implements Swimmable` → `true`. `Duck implements Flyable` → `true`. The compile-time type of `a` (Animal) is irrelevant to `instanceof` — it checks the actual object."
+    },
+    {
+      "type": "accordion",
+      "variant": "find-error",
+      "title": "Exercise 3: Broken Generic Stack with Multiple Bugs",
+      "language": "java",
+      "code": "import java.util.ArrayList;\n\npublic class Exercise3 {\n    static class Stack<T> {\n        private ArrayList<T> data = new ArrayList<>();\n\n        public void push(T item) {\n            data.add(item);\n        }\n\n        public T pop() {\n            if (data.isEmpty()) {\n                throw new RuntimeException(\"Stack is empty\");\n            }\n            return data.remove(data.size() - 1);\n        }\n\n        public T peek() {\n            return data.get(data.size());  // Bug 1\n        }\n\n        public static int size() {  // Bug 2\n            return data.size();\n        }\n    }\n\n    public static void main(String[] args) {\n        Stack<Integer> s = new Stack<>();\n        s.push(10);\n        s.push(20);\n        s.push(30);\n\n        System.out.println(s.peek());\n        System.out.println(s.size());\n        System.out.println(s.pop());\n        System.out.println(s.pop());\n        System.out.println(s.pop());\n        System.out.println(s.pop());  // Bug 3\n    }\n}",
+      "error": "Bug 1 — Line 18: `data.get(data.size())` → runtime IndexOutOfBoundsException. Valid indices are 0 to size()-1; `data.size()` is one past the last element.\nBug 2 — Line 22: `static int size()` references instance field `data` from a static context → compile-time error: 'non-static variable data cannot be referenced from a static context'.\nBug 3 — Line 35: `s.pop()` called on empty stack after all 3 elements are removed → runtime RuntimeException: 'Stack is empty'.",
+      "fix": "import java.util.ArrayList;\n\npublic class Exercise3 {\n    static class Stack<T> {\n        private ArrayList<T> data = new ArrayList<>();\n\n        public void push(T item) {\n            data.add(item);\n        }\n\n        public T pop() {\n            if (data.isEmpty()) {\n                throw new RuntimeException(\"Stack is empty\");\n            }\n            return data.remove(data.size() - 1);\n        }\n\n        public T peek() {\n            return data.get(data.size() - 1);  // Fix 1: size()-1\n        }\n\n        public int size() {  // Fix 2: remove static keyword\n            return data.size();\n        }\n    }\n\n    public static void main(String[] args) {\n        Stack<Integer> s = new Stack<>();\n        s.push(10);\n        s.push(20);\n        s.push(30);\n\n        System.out.println(s.peek());\n        System.out.println(s.size());\n        System.out.println(s.pop());\n        System.out.println(s.pop());\n        System.out.println(s.pop());\n        // Fix 3: removed the 4th pop() call on empty stack\n    }\n}",
+      "explanation": "**Bug 1 (runtime — IndexOutOfBoundsException):** ArrayList uses 0-based indexing. For a list of size N, valid indices are 0 through N-1. `data.get(data.size())` attempts index N which does not exist. Fix: `data.get(data.size() - 1)`.\n\n**Bug 2 (compile-time — non-static field in static context):** The field `data` is an instance variable — it belongs to a specific Stack object. A `static` method has no `this` reference, so it cannot access `data`. Removing the `static` keyword makes `size()` an instance method with normal access to `this.data`.\n\n**Bug 3 (runtime — RuntimeException on empty stack):** After three `pop()` calls, the stack is empty. The fourth `pop()` hits the `isEmpty()` guard and throws. Fix: either add a size check before the call or remove the extra pop. This models **defensive programming** — always verify state before calling methods that have preconditions."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 4: Exception Propagation Across Methods with Finally",
+      "language": "java",
+      "code": "public class Exercise4 {\n    static void level3() {\n        System.out.println(\"L3 start\");\n        throw new IllegalArgumentException(\"bad arg\");\n    }\n\n    static void level2() {\n        try {\n            System.out.println(\"L2 try\");\n            level3();\n            System.out.println(\"L2 after call\");  // never reached\n        } catch (NullPointerException e) {\n            System.out.println(\"L2 catch NPE\");\n        } finally {\n            System.out.println(\"L2 finally\");\n        }\n    }\n\n    static void level1() {\n        try {\n            System.out.println(\"L1 try\");\n            level2();\n            System.out.println(\"L1 after call\");  // never reached\n        } catch (IllegalArgumentException e) {\n            System.out.println(\"L1 catch: \" + e.getMessage());\n        } finally {\n            System.out.println(\"L1 finally\");\n        }\n    }\n\n    public static void main(String[] args) {\n        System.out.println(\"Main start\");\n        level1();\n        System.out.println(\"Main end\");\n    }\n}",
+      "answer": "Main start\nL1 try\nL2 try\nL3 start\nL2 finally\nL1 catch: bad arg\nL1 finally\nMain end",
+      "explanation": "**Main → level1():** Prints `Main start`, enters level1's try, prints `L1 try`, calls level2().\n\n**level1 → level2():** Prints `L2 try`, calls level3().\n\n**level2 → level3():** Prints `L3 start`, throws `IllegalArgumentException`.\n\n**Back in level2:** Exception propagates. The `catch (NullPointerException)` does NOT match `IllegalArgumentException` — wrong type. The catch is skipped. But `finally` always runs → prints `L2 finally`. Exception continues propagating upward. `L2 after call` is never printed.\n\n**Back in level1:** `catch (IllegalArgumentException e)` matches. Prints `L1 catch: bad arg`. Then `finally` runs → `L1 finally`. `L1 after call` is never printed.\n\n**Back in main:** Exception was caught in level1, so main resumes normally. Prints `Main end`.\n\n**Key insight:** `finally` runs even when the exception is NOT caught locally — it ran in level2 despite level2 not catching the exception. This is the exam-critical behavior."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 5: Design a Bank Account Hierarchy with Encapsulation and Polymorphism",
+      "language": "java",
+      "code": "// Design the following class hierarchy and demonstrate it in main():\n//\n// Abstract class: BankAccount\n//   - private double balance (encapsulated)\n//   - private String owner\n//   - Constructor(owner, initialBalance): validates balance >= 0, throws\n//     IllegalArgumentException if negative\n//   - void deposit(double amount): validates amount > 0\n//   - abstract void withdraw(double amount)\n//   - double getBalance()    (getter)\n//   - String getOwner()      (getter)\n//   - String toString():     returns \"[owner: balance]\"\n//\n// Class: SavingsAccount extends BankAccount\n//   - Has a minimum balance of 500.0 (constant)\n//   - withdraw(): throws IllegalStateException if balance - amount < 500\n//\n// Class: CheckingAccount extends BankAccount\n//   - Has an overdraft limit of 200.0 (constant)\n//   - withdraw(): allows balance to go negative, but not below -200\n//   - throws IllegalStateException if it would exceed overdraft\n//\n// In main():\n//   - Create one of each, store in BankAccount[] array\n//   - Deposit and withdraw from each via the array (polymorphic calls)\n//   - Use try/catch to handle one illegal withdrawal gracefully\n//   - Print all accounts using toString()",
+      "approach": "1. Declare BankAccount as abstract with private fields — encapsulation means no direct field access from subclasses, only via inherited getters and a protected setter for balance.\n2. Constructor validates balance; deposit validates amount — both throw IllegalArgumentException for bad input.\n3. withdraw() is abstract — each subclass enforces its own rule.\n4. SavingsAccount checks `getBalance() - amount >= 500` before withdrawing.\n5. CheckingAccount checks `getBalance() - amount >= -200` before withdrawing.\n6. In main(), use a BankAccount[] to call deposit() and withdraw() polymorphically — the runtime type determines which withdraw() runs.\n7. Wrap one withdraw in try/catch to demonstrate graceful error handling.",
+      "solution": "public class Exercise5 {\n    static abstract class BankAccount {\n        private double balance;\n        private String owner;\n\n        BankAccount(String owner, double initialBalance) {\n            if (initialBalance < 0)\n                throw new IllegalArgumentException(\"Balance cannot be negative\");\n            this.owner = owner;\n            this.balance = initialBalance;\n        }\n\n        void deposit(double amount) {\n            if (amount <= 0)\n                throw new IllegalArgumentException(\"Deposit must be positive\");\n            balance += amount;\n        }\n\n        abstract void withdraw(double amount);\n\n        double getBalance() { return balance; }\n        String getOwner()   { return owner; }\n\n        protected void setBalance(double b) { balance = b; }\n\n        @Override\n        public String toString() {\n            return String.format(\"[%s: %.2f]\", owner, balance);\n        }\n    }\n\n    static class SavingsAccount extends BankAccount {\n        static final double MIN_BALANCE = 500.0;\n\n        SavingsAccount(String owner, double initialBalance) {\n            super(owner, initialBalance);\n        }\n\n        @Override\n        void withdraw(double amount) {\n            if (getBalance() - amount < MIN_BALANCE)\n                throw new IllegalStateException(\n                    \"Cannot drop below minimum balance of \" + MIN_BALANCE);\n            setBalance(getBalance() - amount);\n        }\n    }\n\n    static class CheckingAccount extends BankAccount {\n        static final double OVERDRAFT_LIMIT = 200.0;\n\n        CheckingAccount(String owner, double initialBalance) {\n            super(owner, initialBalance);\n        }\n\n        @Override\n        void withdraw(double amount) {\n            if (getBalance() - amount < -OVERDRAFT_LIMIT)\n                throw new IllegalStateException(\n                    \"Exceeds overdraft limit of \" + OVERDRAFT_LIMIT);\n            setBalance(getBalance() - amount);\n        }\n    }\n\n    public static void main(String[] args) {\n        BankAccount[] accounts = {\n            new SavingsAccount(\"Alice\", 1000.0),\n            new CheckingAccount(\"Bob\", 300.0)\n        };\n\n        accounts[0].deposit(200.0);\n        accounts[0].withdraw(500.0);  // OK: 700 remaining (>= 500 min)\n\n        accounts[1].deposit(100.0);\n        accounts[1].withdraw(550.0);  // OK: -150 (within -200 overdraft)\n\n        // Attempt an illegal savings withdrawal\n        try {\n            accounts[0].withdraw(400.0);  // Would leave 300 < 500 min\n        } catch (IllegalStateException e) {\n            System.out.println(\"Caught: \" + e.getMessage());\n        }\n\n        for (BankAccount acc : accounts) {\n            System.out.println(acc);\n        }\n    }\n}",
+      "explanation": "**Encapsulation:** `balance` is private. Subclasses cannot assign `balance = x` directly. They must call the `protected setBalance()` method — this is intentional: it keeps mutation controlled while still allowing subclass withdraw implementations.\n\n**Abstract + Polymorphism:** `accounts[0].withdraw(500.0)` dispatches to `SavingsAccount.withdraw()`. `accounts[1].withdraw(550.0)` dispatches to `CheckingAccount.withdraw()`. The caller code is identical — this is polymorphism.\n\n**Exception design:** `IllegalArgumentException` (unchecked) for programming errors like negative deposits. `IllegalStateException` (unchecked) for valid operations that violate business rules. Both are subclasses of `RuntimeException` so they don't need `throws` declarations.\n\n**toString():** `String.format(\"%.2f\", balance)` formats to 2 decimal places. Overriding `toString()` from `Object` means `System.out.println(acc)` calls it automatically.\n\n**Expected output:**\n```\nCaught: Cannot drop below minimum balance of 500.0\n[Alice: 700.00]\n[Bob: -150.00]\n```"
+    },
+    {
+      "type": "accordion",
+      "variant": "find-error",
+      "title": "Exercise 6: Broken Encapsulation and Inheritance Contract",
+      "language": "java",
+      "code": "public class Exercise6 {\n    static class Person {\n        private String name;\n        private int age;\n\n        Person(String name, int age) {\n            name = name;   // Bug 1\n            this.age = age;\n        }\n\n        public String getName() { return name; }\n        public int getAge()     { return age; }\n\n        public String toString() {\n            return name + \", age \" + age;\n        }\n    }\n\n    static class Student extends Person {\n        private String major;\n\n        Student(String name, int age, String major) {\n            super(name, age);\n            this.major = major;\n        }\n\n        public String toString() {  // Bug 2: missing @Override\n            return super.toString() + \", major: \" + major;\n        }\n\n        public void birthday() {\n            age++;   // Bug 3\n        }\n    }\n\n    public static void main(String[] args) {\n        Student s = new Student(\"Rafi\", 20, \"CSE\");\n        s.birthday();\n        System.out.println(s);\n    }\n}",
+      "error": "Bug 1 — Line 8 (logical): `name = name` assigns the parameter to itself instead of to the field. The field `this.name` remains null. Fix: `this.name = name`.\nBug 2 — Line 23 (logical): Missing `@Override` annotation. While not a compile error, without it the compiler cannot catch accidental signature mismatches. It is a required best practice and EWU exam rubrics deduct marks for its absence on overriding methods.\nBug 3 — Line 27 (compile-time): `age` is `private` in Person. Subclasses cannot access private fields of the parent. Fix: either add a `protected` setter `setAge(int a)` in Person, or call a `birthday()` method defined in Person that increments age internally.",
+      "fix": "public class Exercise6 {\n    static class Person {\n        private String name;\n        private int age;\n\n        Person(String name, int age) {\n            this.name = name;   // Fix 1\n            this.age = age;\n        }\n\n        public String getName() { return name; }\n        public int getAge()     { return age; }\n\n        // Fix 3: protected setter so subclasses can modify age\n        protected void setAge(int age) { this.age = age; }\n\n        @Override\n        public String toString() {\n            return name + \", age \" + age;\n        }\n    }\n\n    static class Student extends Person {\n        private String major;\n\n        Student(String name, int age, String major) {\n            super(name, age);\n            this.major = major;\n        }\n\n        @Override  // Fix 2\n        public String toString() {\n            return super.toString() + \", major: \" + major;\n        }\n\n        public void birthday() {\n            setAge(getAge() + 1);  // Fix 3: use inherited accessor\n        }\n    }\n\n    public static void main(String[] args) {\n        Student s = new Student(\"Rafi\", 20, \"CSE\");\n        s.birthday();\n        System.out.println(s);  // Rafi, age 21, major: CSE\n    }\n}",
+      "explanation": "**Bug 1 (logical — shadow assignment):** Inside a constructor, a parameter named `name` shadows the field `name`. Without `this.`, the assignment `name = name` writes the parameter back to itself — the field stays `null`. This is one of the most common Java beginner bugs. Always use `this.field = parameter` in constructors.\n\n**Bug 2 (logical — missing @Override):** Without `@Override`, if you accidentally misspell the method name or use a slightly wrong signature, the compiler treats it as a brand-new overloaded method rather than catching the mistake. EWU labs and exams require `@Override` on all intentional overrides.\n\n**Bug 3 (compile-time — private access violation):** Private visibility is the strictest encapsulation level — not even subclasses can access it. The correct OOP solution is to expose a `protected setAge()` method in the parent class, keeping `age` private but allowing controlled modification through the class hierarchy."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 7: Student Grade Book using Collections and Generics",
+      "language": "java",
+      "code": "// Implement a GradeBook system:\n//\n// Class: Student\n//   - String name, String id\n//   - Constructor, getters, toString() -> \"[id] name\"\n//\n// Class: GradeBook<T extends Student>\n//   - HashMap<T, ArrayList<Integer>> storing scores per student\n//   - void enroll(T student): add student with empty score list\n//   - void addScore(T student, int score): append score; throw\n//     IllegalArgumentException if score not in 0-100\n//   - double getAverage(T student): average of their scores;\n//     throw IllegalStateException if no scores\n//   - T getTopStudent(): student with highest average\n//     (assume at least one enrolled student with scores)\n//\n// In main():\n//   - Enroll 3 students, add varied scores\n//   - Print each student's average\n//   - Print the top student",
+      "approach": "1. Student is a simple data class. Give it a meaningful toString().\n2. GradeBook uses HashMap<T, ArrayList<Integer>> — each student maps to their list of scores. The bound `T extends Student` ensures T has at least Student's interface.\n3. enroll() puts a new empty ArrayList if not already present.\n4. addScore() validates 0-100, then appends.\n5. getAverage() uses a loop to sum, divides by count. Guard against empty list.\n6. getTopStudent() iterates all keys, tracks the key with max average.\n7. In main(), demonstrate with 3 students and test getTopStudent().",
+      "solution": "import java.util.ArrayList;\nimport java.util.HashMap;\nimport java.util.Map;\n\npublic class Exercise7 {\n    static class Student {\n        private String name;\n        private String id;\n\n        Student(String id, String name) {\n            this.id = id;\n            this.name = name;\n        }\n\n        public String getName() { return name; }\n        public String getId()   { return id; }\n\n        @Override\n        public String toString() { return \"[\" + id + \"] \" + name; }\n    }\n\n    static class GradeBook<T extends Student> {\n        private HashMap<T, ArrayList<Integer>> records = new HashMap<>();\n\n        public void enroll(T student) {\n            records.putIfAbsent(student, new ArrayList<>());\n        }\n\n        public void addScore(T student, int score) {\n            if (score < 0 || score > 100)\n                throw new IllegalArgumentException(\n                    \"Score must be 0-100, got: \" + score);\n            if (!records.containsKey(student))\n                throw new IllegalStateException(student + \" not enrolled\");\n            records.get(student).add(score);\n        }\n\n        public double getAverage(T student) {\n            ArrayList<Integer> scores = records.get(student);\n            if (scores == null || scores.isEmpty())\n                throw new IllegalStateException(\n                    student + \" has no scores\");\n            int sum = 0;\n            for (int s : scores) sum += s;\n            return (double) sum / scores.size();\n        }\n\n        public T getTopStudent() {\n            T top = null;\n            double topAvg = -1;\n            for (Map.Entry<T, ArrayList<Integer>> entry : records.entrySet()) {\n                T s = entry.getKey();\n                ArrayList<Integer> sc = entry.getValue();\n                if (sc.isEmpty()) continue;\n                int sum = 0;\n                for (int v : sc) sum += v;\n                double avg = (double) sum / sc.size();\n                if (avg > topAvg) { topAvg = avg; top = s; }\n            }\n            return top;\n        }\n    }\n\n    public static void main(String[] args) {\n        GradeBook<Student> book = new GradeBook<>();\n\n        Student s1 = new Student(\"2025-001\", \"Ashik\");\n        Student s2 = new Student(\"2025-002\", \"Raisa\");\n        Student s3 = new Student(\"2025-003\", \"Kabir\");\n\n        book.enroll(s1);\n        book.enroll(s2);\n        book.enroll(s3);\n\n        book.addScore(s1, 85);\n        book.addScore(s1, 90);\n        book.addScore(s1, 78);\n\n        book.addScore(s2, 95);\n        book.addScore(s2, 92);\n        book.addScore(s2, 88);\n\n        book.addScore(s3, 70);\n        book.addScore(s3, 65);\n        book.addScore(s3, 72);\n\n        for (Student s : new Student[]{s1, s2, s3}) {\n            System.out.printf(\"%s -> avg: %.2f%n\", s, book.getAverage(s));\n        }\n\n        System.out.println(\"Top student: \" + book.getTopStudent());\n    }\n}",
+      "explanation": "**Generic bound `T extends Student`:** This means GradeBook can work with Student or any subclass (e.g., GraduateStudent). Inside the class, `T` is guaranteed to have all of Student's methods.\n\n**`putIfAbsent`:** Atomic convenience method — only puts the new ArrayList if the key is not already present. Prevents accidentally resetting a student's scores on a second enroll call.\n\n**`Map.Entry<T, ArrayList<Integer>>`:** The most reliable way to iterate both keys and values of a HashMap simultaneously. The alternative (`for T key : records.keySet()`) requires a second `records.get(key)` call.\n\n**Autoboxing:** `scores.add(score)` autoboxes `int score` to `Integer`. The enhanced for loop `for (int s : scores)` unboxes back. This happens transparently but at a small cost — important to know for Ch18.\n\n**Expected output:**\n```\n[2025-001] Ashik -> avg: 84.33\n[2025-002] Raisa -> avg: 91.67\n[2025-003] Kabir -> avg: 69.00\nTop student: [2025-002] Raisa\n```"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📊 Common Exam Patterns Quick Reference"
+    },
+    {
+      "type": "table",
+      "headers": ["Pattern", "What to check immediately", "Points lost if missed"],
+      "rows": [
+        ["Constructor chain", "Which constructor calls super() or this()? What order do print statements execute?", "Wrong output order"],
+        ["Overriding vs hiding", "Is the method static or instance? Static = hidden (parent version), instance = overridden (child version)", "Wrong method traced"],
+        ["final finally return", "Does finally have a return? It overrides catch's return silently", "Wrong return value"],
+        ["Generic type bound", "`<T extends X>` means T has X's methods available inside the class", "Compiler error if bound ignored"],
+        ["equals() vs ==", "== compares references (same object). equals() compares content (String, Integer override it)", "Wrong boolean traced"],
+        ["static field shared", "All objects share one static field. Incrementing it in constructor changes it for everyone", "Wrong count traced"],
+        ["abstract method call chain", "abstract method in parent called via parent reference → runtime type's impl runs", "Wrong method dispatch"]
+      ]
+    },
+    {
+      "type": "callout",
+      "variant": "note",
+      "label": "Last-Minute Exam Checklist",
+      "content": "Before submitting any OOP trace: (1) Did you check whether each method is **static or instance**? (2) Did you follow **constructor chaining all the way up to Object**? (3) For every method call through a parent reference, did you ask **what is the actual runtime type**? (4) Did `finally` run even when you didn't catch the exception? (5) Are there any **String == comparisons** that should be `.equals()`?"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📝 Quick Reference Summary"
+    },
+    {
+      "type": "list",
+      "ordered": false,
+      "items": [
+        "**Constructor execution order:** static blocks → instance fields → instance initializer blocks → constructor body; in inheritance, parent constructor always completes before child body starts.",
+        "**Dynamic dispatch rule:** the method that runs is always determined by the **runtime type** of the object, not the compile-time type of the reference — applies only to instance methods, not static.",
+        "**Static method binding:** static methods are resolved at compile-time based on the **declared type** of the reference, not the runtime type — calling a static method through a parent reference always invokes the parent's version.",
+        "**Interface diamond default method:** if two interfaces provide the same default method, the implementing class **must override it** or the code will not compile.",
+        "**finally guarantee:** the finally block runs after every try/catch path — even if catch has a `return`, even if an exception propagates, even if no exception occurred. Only `System.exit()` bypasses it.",
+        "**private field access:** subclasses cannot directly access `private` fields of a parent; they must use `protected` or `public` getters/setters defined in the parent class.",
+        "**@Override importance:** always annotate overriding methods; the compiler then catches typos or signature mismatches that would otherwise silently create a new overloaded method.",
+        "**Generic bounded type `<T extends Base>`:** inside the generic class, T can call any method declared in Base; without a bound, only Object methods are available on T.",
+        "**HashMap.putIfAbsent(key, value):** adds the key-value pair only if the key is absent — cleaner and safer than a manual containsKey check for initialization.",
+        "**String equality:** use `.equals()` for content comparison; `==` only checks if two references point to the same object in memory — always produces surprising results with String literals vs `new String(...)`.",
+        "**Autoboxing pitfall:** `Integer a = 127; Integer b = 127; a == b` is `true` (cached); `Integer a = 200; Integer b = 200; a == b` is `false` (not cached) — always use `.equals()` for Integer comparison.",
+        "**Exception hierarchy for exams:** `Throwable → Error / Exception → RuntimeException → unchecked exceptions` — only checked exceptions (those that extend Exception but not RuntimeException) require `try/catch` or `throws` declaration."
+      ]
+    }
+  ]
+}

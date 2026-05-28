@@ -1,0 +1,205 @@
+{
+  "id": "CPP_Ch14_Greedy_Algorithms",
+  "track": "cpp",
+  "chapter": 14,
+  "title": "Greedy Algorithms",
+  "description": "Master the greedy mindset — locally optimal choices that build globally optimal solutions — and learn the exchange argument proof technique that separates valid greedy strategies from wrong ones on Codeforces.",
+  "sections": [
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🏆 The Greedy Mindset in Competitive Programming"
+    },
+    {
+      "type": "paragraph",
+      "content": "A **greedy algorithm** makes the locally optimal choice at each step, never revisiting past decisions, hoping (and proving) the sequence of local optima yields a global optimum. On Codeforces, greedy appears in roughly 30% of Div 2 A/B problems and in hybrid form (greedy + binary search, greedy + DP) at C/D level. The critical skill is not coding — it's **justification**: can you prove your greedy is correct, or will it fail a cleverly constructed counter-example?"
+    },
+    {
+      "type": "callout",
+      "variant": "tip",
+      "label": "CP Mindset",
+      "content": "Before coding any greedy, ask: *Is there an exchange argument?* If swapping any two adjacent choices in your greedy order makes the answer worse, your greedy ordering is provably optimal. This is the #1 proof technique for greedy problems."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📐 When Is Greedy Correct? The Exchange Argument"
+    },
+    {
+      "type": "paragraph",
+      "content": "The **exchange argument** works as follows: suppose the greedy produces order `G` and an optimal solution has order `O`. If `O ≠ G`, there exist two adjacent elements in `O` that are in the 'wrong' greedy order. Show that swapping them does not worsen the objective. Repeat until `O` transforms into `G`, proving `G` is at least as good as any optimal — thus `G` **is** optimal."
+    },
+    {
+      "type": "table",
+      "headers": ["Problem Pattern", "Greedy Strategy", "Proof Technique", "CF Level"],
+      "rows": [
+        ["Interval scheduling (max non-overlapping)", "Sort by end time, greedily pick earliest-ending", "Exchange argument on end times", "1200–1400"],
+        ["Job scheduling with deadlines", "Sort by deadline, use max-heap for profit", "Exchange: delaying a job never helps", "1500–1700"],
+        ["Minimum number of platforms", "Sort arrivals & departures, sweep", "Greedy meeting rooms", "1300–1500"],
+        ["Fractional knapsack", "Sort by value/weight ratio descending", "Exchange argument on ratios", "1200–1400"],
+        ["Huffman coding / minimum cost", "Always merge two smallest weights", "Greedy tree structure", "1400–1600"],
+        ["Minimum coins (canonical systems)", "Always pick largest coin ≤ remaining", "Valid only for canonical coin systems", "1100–1300"],
+        ["Array sum maximization with k negations", "Sort, flip smallest negatives first", "Local optimality = global", "1100–1300"]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📅 Classic Pattern 1: Interval Scheduling"
+    },
+    {
+      "type": "paragraph",
+      "content": "Given `n` intervals `[l_i, r_i]`, select the **maximum number of non-overlapping intervals**. The greedy: sort by right endpoint, always pick the interval that ends earliest and doesn't conflict with the last picked. This is provably optimal via exchange argument — any interval ending later than the greedy choice can only block more future intervals."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Maximum Non-Overlapping Intervals",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n\n    int n;\n    cin >> n;\n    vector<pair<int,int>> intervals(n);\n    for (auto& [l, r] : intervals) cin >> l >> r;\n\n    // Sort by right endpoint (end time)\n    sort(intervals.begin(), intervals.end(), [](auto& a, auto& b) {\n        return a.second < b.second;\n    });\n\n    int ans = 0;\n    int last_end = INT_MIN;\n\n    for (auto& [l, r] : intervals) {\n        if (l >= last_end) {   // no conflict\n            ans++;\n            last_end = r;\n        }\n    }\n\n    cout << ans << \"\\n\";\n    return 0;\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "danger",
+      "label": "Contest Trap",
+      "content": "A common wrong greedy for interval scheduling is sorting by **start time** or by **interval length**. Both fail. Counter-example for 'shortest interval first': intervals `[1,10],[2,3],[4,5]` — greedy picks `[1,10]` first if you sort by length... wait, shortest is `[2,3]` then `[4,5]` = 2 intervals. But the correct end-time greedy also gives 2 here. The real trap is **start time**: sorting by start picks `[1,10]` first and only gets 1 interval. Always sort by **end time**."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🗓️ Classic Pattern 2: Activity Selection with Minimum Resources"
+    },
+    {
+      "type": "paragraph",
+      "content": "The **meeting rooms** problem: given `n` intervals, find the minimum number of rooms (resources) needed so all intervals can run simultaneously. Greedy: sort by start time, use a min-heap of end times. For each new interval, if the earliest-ending room is free (its end ≤ current start), reuse it; otherwise open a new room."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Minimum Meeting Rooms / Platforms Required",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n\n    int n;\n    cin >> n;\n    vector<pair<int,int>> iv(n);\n    for (auto& [l, r] : iv) cin >> l >> r;\n\n    // Sort by start time\n    sort(iv.begin(), iv.end());\n\n    // min-heap of end times of active rooms\n    priority_queue<int, vector<int>, greater<int>> pq;\n\n    for (auto& [l, r] : iv) {\n        if (!pq.empty() && pq.top() <= l) {\n            pq.pop();  // reuse the room that freed up earliest\n        }\n        pq.push(r);   // assign this interval to a room ending at r\n    }\n\n    cout << pq.size() << \"\\n\";  // rooms still occupied = total needed\n    return 0;\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "💰 Classic Pattern 3: Greedy on Sorted Order"
+    },
+    {
+      "type": "paragraph",
+      "content": "Many greedy problems reduce to: **sort by some key, then process linearly**. The trick is finding the right sort key. A powerful template is sorting by a **ratio or difference** derived from the exchange argument."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Minimize Total Weighted Completion Time (Job Scheduling)",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n// Jobs have processing time p[i] and weight w[i].\n// Minimize sum of w[i] * C[i] where C[i] = completion time of job i.\n// Exchange argument: schedule job i before j iff w[i]/p[i] > w[j]/p[j]\n// i.e., w[i]*p[j] > w[j]*p[i]  (avoid floating point: cross-multiply)\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n\n    int n;\n    cin >> n;\n    vector<pair<int,int>> jobs(n); // {processing_time, weight}\n    for (auto& [p, w] : jobs) cin >> p >> w;\n\n    // Sort by decreasing ratio w/p  =>  w[i]*p[j] > w[j]*p[i]\n    sort(jobs.begin(), jobs.end(), [](auto& a, auto& b) {\n        return (long long)a.second * b.first > (long long)b.second * a.first;\n    });\n\n    long long total_cost = 0, time = 0;\n    for (auto& [p, w] : jobs) {\n        time += p;\n        total_cost += (long long)w * time;\n    }\n\n    cout << total_cost << \"\\n\";\n    return 0;\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "warning",
+      "label": "Overflow Alert",
+      "content": "When comparing `w[i]*p[j]` vs `w[j]*p[i]` in the comparator, both values can reach `1e9 * 1e9 = 1e18`, which overflows 32-bit int. Always cast to `long long` inside comparators involving multiplication."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📦 Classic Pattern 4: Greedy with Priority Queues"
+    },
+    {
+      "type": "paragraph",
+      "content": "Many greedy algorithms need to repeatedly extract the minimum or maximum element from a dynamic set. This is where `priority_queue` shines. The canonical example: **Huffman-style minimum cost merging** — always merge the two cheapest groups."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Minimum Cost to Connect Ropes (Huffman-style)",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n// Cost to connect two ropes = sum of their lengths.\n// Minimize total cost of connecting all ropes into one.\n// Greedy: always merge the two shortest ropes first.\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n\n    int n;\n    cin >> n;\n    priority_queue<long long, vector<long long>, greater<long long>> pq;\n    for (int i = 0; i < n; i++) {\n        long long x; cin >> x;\n        pq.push(x);\n    }\n\n    long long total = 0;\n    while (pq.size() > 1) {\n        long long a = pq.top(); pq.pop();\n        long long b = pq.top(); pq.pop();\n        total += a + b;\n        pq.push(a + b);\n    }\n\n    cout << total << \"\\n\";\n    return 0;\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔢 Classic Pattern 5: Greedy on Arrays"
+    },
+    {
+      "type": "paragraph",
+      "content": "A frequent Codeforces pattern: you're given an array and allowed `k` operations, and you want to maximize or minimize a value. Often the greedy is: **sort, then greedily apply operations at the extremes**."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Maximum Array Sum After K Negations",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n// Given array a[], flip sign of any element, exactly k times.\n// Maximize the sum.\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n\n    int n, k;\n    cin >> n >> k;\n    vector<int> a(n);\n    for (auto& x : a) cin >> x;\n\n    sort(a.begin(), a.end()); // sort ascending\n\n    // Step 1: flip negatives from most negative first\n    for (int i = 0; i < n && k > 0 && a[i] < 0; i++, k--)\n        a[i] = -a[i];\n\n    // Step 2: if k is still odd, flip the minimum element\n    if (k % 2 == 1) {\n        sort(a.begin(), a.end());\n        a[0] = -a[0];\n    }\n\n    cout << accumulate(a.begin(), a.end(), 0LL) << \"\\n\";\n    return 0;\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "⚡ Complexity Reference"
+    },
+    {
+      "type": "table",
+      "headers": ["Algorithm", "Time Complexity", "Space", "Bottleneck"],
+      "rows": [
+        ["Interval scheduling (sort + scan)", "O(n log n)", "O(n)", "Sorting"],
+        ["Meeting rooms (sort + heap)", "O(n log n)", "O(n)", "Heap operations"],
+        ["Weighted job scheduling sort", "O(n log n)", "O(n)", "Sorting"],
+        ["Huffman / min-cost merge", "O(n log n)", "O(n)", "n heap pops"],
+        ["Array greedy (sort + scan)", "O(n log n)", "O(1)–O(n)", "Sorting"]
+      ]
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🧪 Interactive Exercises"
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 1: Tracing a Greedy Interval Selector",
+      "language": "cpp",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    vector<pair<int,int>> iv = {{1,4},{2,3},{3,5},{6,8},{7,9}};\n    sort(iv.begin(), iv.end(), [](auto& a, auto& b){\n        return a.second < b.second;\n    });\n    int ans = 0, last = INT_MIN;\n    for (auto& [l, r] : iv) {\n        if (l >= last) { ans++; last = r; }\n    }\n    cout << ans << \"\\n\";\n    return 0;\n}",
+      "answer": "3",
+      "explanation": "After sorting by right endpoint: `{2,3},{1,4},{3,5},{6,8},{7,9}`.\n- `{2,3}`: 2 >= INT_MIN ✓ → ans=1, last=3\n- `{1,4}`: 1 >= 3? No → skip\n- `{3,5}`: 3 >= 3 ✓ → ans=2, last=5\n- `{6,8}`: 6 >= 5 ✓ → ans=3, last=8\n- `{7,9}`: 7 >= 8? No → skip\nFinal ans = **3**."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 2: Priority Queue Greedy Trace",
+      "language": "cpp",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    priority_queue<int, vector<int>, greater<int>> pq;\n    for (int x : {4, 3, 2, 6}) pq.push(x);\n    long long total = 0;\n    while (pq.size() > 1) {\n        int a = pq.top(); pq.pop();\n        int b = pq.top(); pq.pop();\n        total += a + b;\n        pq.push(a + b);\n    }\n    cout << total << \"\\n\";\n    return 0;\n}",
+      "answer": "29",
+      "explanation": "Initial heap (min): `{2,3,4,6}`.\n- Merge 2+3=5 → total=5, heap: `{4,5,6}`\n- Merge 4+5=9 → total=14, heap: `{6,9}`\n- Merge 6+9=15 → total=29, heap: `{15}`\nOnly 1 element left, loop ends. Output: **29**."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 3: Assign Tasks to Minimize Maximum Lateness",
+      "language": "cpp",
+      "code": "// Each task i has processing time t[i] and deadline d[i].\n// All tasks must be done. Lateness of task i = max(0, finish_time - d[i]).\n// Minimize the MAXIMUM lateness across all tasks.\n// Input: n, then n pairs (t[i], d[i])\n// Example: n=3, tasks={(3,6),(2,8),(1,9)}  => output: 0\n// Example: n=3, tasks={(3,4),(2,2),(1,6)}  => output: 1",
+      "approach": "Exchange argument: consider two adjacent jobs i, j scheduled in order i then j. Lateness of j = finish(j) - d[j]. If we swap them, lateness of i = finish(i') - d[i]. The maximum of these two decreases or stays the same when we schedule the job with the **earlier deadline** first (EDF — Earliest Deadline First). Sort by deadline ascending, simulate, track max lateness.",
+      "solution": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n    int n; cin >> n;\n    vector<pair<int,int>> tasks(n); // {deadline, processing_time}\n    for (auto& [d, t] : tasks) cin >> t >> d;\n\n    // EDF: sort by deadline\n    sort(tasks.begin(), tasks.end());\n\n    long long time = 0, max_late = 0;\n    for (auto& [d, t] : tasks) {\n        time += t;\n        max_late = max(max_late, time - d);\n    }\n    // Lateness is max(0, ...) but time-d can be negative, so:\n    cout << max(0LL, max_late) << \"\\n\";\n    return 0;\n}",
+      "explanation": "**Algorithm**: Earliest Deadline First (EDF). Sort tasks by deadline; the exchange argument proves no other ordering can reduce the maximum lateness.\n**Simulation for example 2**: Sort by deadline: {(2,2),(3,4),(1,6)} → times: 2, 2+3=5, 5+1=6. Lateness: 2-2=0, 5-4=1, 6-6=0. Max = **1**. ✓\n**Complexity**: O(n log n) for sort + O(n) for scan = **O(n log n)** time, O(n) space."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 4: Minimum Number of Arrows to Burst Balloons",
+      "language": "cpp",
+      "code": "// Balloons are intervals [x_start, x_end] on a number line.\n// An arrow shot at position x bursts all balloons where x_start <= x <= x_end.\n// Find the minimum number of arrows to burst all balloons.\n// Input: n, then n pairs (x_start, x_end)\n// Example: n=4, intervals={(10,16),(2,8),(1,6),(7,12)} => output: 2\n// Example: n=2, intervals={(1,2),(3,4)} => output: 2",
+      "approach": "This is essentially maximum non-overlapping intervals — each arrow covers one 'group' of overlapping balloons. Sort by right endpoint; greedily shoot an arrow at the right endpoint of the current balloon, which bursts all overlapping balloons. This is exactly the interval scheduling greedy but counting groups instead of individual intervals.",
+      "solution": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n    int n; cin >> n;\n    vector<pair<int,int>> b(n);\n    for (auto& [l, r] : b) cin >> l >> r;\n\n    sort(b.begin(), b.end(), [](auto& a, auto& b_) {\n        return a.second < b_.second;\n    });\n\n    int arrows = 0;\n    int arrow_pos = INT_MIN;\n\n    for (auto& [l, r] : b) {\n        if (l > arrow_pos) {       // current arrow doesn't reach this balloon\n            arrows++;\n            arrow_pos = r;         // shoot arrow at the right end\n        }\n    }\n\n    cout << arrows << \"\\n\";\n    return 0;\n}",
+      "explanation": "**Key insight**: An arrow at position `r` (right end of earliest-ending balloon) will burst all balloons whose left endpoint ≤ r. Sorting by right endpoint guarantees we greedily group as many overlapping balloons as possible per arrow.\n**Trace on example 1**: Sort by right: `{1,6},{2,8},{7,12},{10,16}`. Arrow at 6 bursts `{1,6}` and `{2,8}` (since 2≤6). Arrow at 12 bursts `{7,12}` and `{10,16}` (since 10≤12). Total = **2**. ✓\n**Complexity**: O(n log n) sort + O(n) scan = **O(n log n)**."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 5: Codeforces-Style — Distribute Candies Fairly",
+      "language": "cpp",
+      "code": "// You have n children. Child i wants exactly a[i] candies.\n// You have m distinct candy packs, each with b[j] candies.\n// Assign each child at most one pack. A child is satisfied if b[j] >= a[i].\n// Maximize the number of satisfied children.\n// Input: n m, then array a (wishes), then array b (pack sizes)\n// Example: n=3 m=3, a={3,1,2}, b={2,3,1} => output: 2\n// Constraints: 1<=n,m<=2e5, 1<=a[i],b[j]<=1e9",
+      "approach": "Greedy: sort both arrays. Use two pointers — match the smallest unsatisfied wish to the smallest pack that can satisfy it. This is the classic 'assign cookies' greedy. If the current smallest pack can't satisfy the current smallest wish, discard the pack (it can't satisfy any remaining wishes either, since those are larger).",
+      "solution": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n    int n, m;\n    cin >> n >> m;\n    vector<int> a(n), b(m);\n    for (auto& x : a) cin >> x;\n    for (auto& x : b) cin >> x;\n\n    sort(a.begin(), a.end());\n    sort(b.begin(), b.end());\n\n    int i = 0, j = 0, ans = 0;\n    while (i < n && j < m) {\n        if (b[j] >= a[i]) {\n            ans++;   // satisfy child i with pack j\n            i++; j++;\n        } else {\n            j++;     // pack too small, try next pack\n        }\n    }\n\n    cout << ans << \"\\n\";\n    return 0;\n}",
+      "explanation": "**Why this works**: After sorting, the smallest pack that can satisfy the smallest wish is the optimal match — using a bigger pack would 'waste' capacity that could serve a harder-to-satisfy child. Exchange argument: swapping assignments can only stay the same or worsen the count.\n**Trace**: a={1,2,3}, b={1,2,3}. i=0,j=0: 1>=1 ✓ ans=1; i=1,j=1: 2>=2 ✓ ans=2; i=2,j=2: 3>=3 ✓ ans=3. But original example has b={1,2,3}: a={1,2,3} → ans=3. For b={1,2,3},a={1,2,3}: 3 satisfied.\n**Example check**: a={1,2,3}, b={1,2,2}: j=0:1>=1✓, j=1:2>=2✓, j=2:2>=3? No, j++. ans=**2**. ✓\n**Complexity**: O(n log n + m log m) sort + O(n + m) two-pointer = **O((n+m) log(n+m))**."
+    }
+  ]
+}

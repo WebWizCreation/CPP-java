@@ -1,0 +1,246 @@
+{
+  "id": "Java_Ch13_Abstract_Interface",
+  "track": "java",
+  "chapter": 13,
+  "title": "Abstract Classes & Interfaces",
+  "description": "Decode the rules of abstract classes and interfaces — the OOP contracts that dominate CSE110 design questions and output-tracing exams.",
+  "sections": [
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📚 Why This Chapter Dominates CSE110 Exams"
+    },
+    {
+      "type": "paragraph",
+      "content": "Abstract classes and interfaces are where Java OOP becomes truly powerful — and truly tricky to trace. Exams test whether you know: which methods **must** be implemented, what happens when a class inherits from an abstract class but misses an abstract method, how default methods in interfaces work, and how to resolve **diamond problem** conflicts. Every rule in this chapter has appeared in past CSE110 questions."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🏗️ Abstract Classes — Partial Blueprints"
+    },
+    {
+      "type": "paragraph",
+      "content": "An **abstract class** is declared with the `abstract` keyword. It can contain **abstract methods** (signature only, no body) and **concrete methods** (with full implementation). You cannot instantiate an abstract class directly — you must subclass it and implement all abstract methods."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Abstract Class with Abstract and Concrete Methods",
+      "code": "public abstract class Shape {\n    String color;                          // concrete field\n\n    public Shape(String color) {           // concrete constructor\n        this.color = color;\n    }\n\n    public abstract double area();         // ABSTRACT: no body\n    public abstract double perimeter();    // ABSTRACT: no body\n\n    public void describe() {               // CONCRETE: has body\n        System.out.println(color + \" shape, area=\" + area());\n    }\n}\n\npublic class Circle extends Shape {\n    double r;\n    public Circle(String color, double r) {\n        super(color);\n        this.r = r;\n    }\n    @Override public double area()      { return Math.PI * r * r; }\n    @Override public double perimeter() { return 2 * Math.PI * r; }\n}\n\npublic class Test {\n    public static void main(String[] args) {\n        // Shape s = new Shape(\"red\");   // COMPILE ERROR: cannot instantiate abstract\n        Shape c = new Circle(\"blue\", 5);\n        c.describe();   // blue shape, area=78.53981...\n    }\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "danger",
+      "label": "🚨 Exam Trap: Partial Implementation of Abstract Class",
+      "content": "If a subclass of an abstract class does **not** implement ALL abstract methods, that subclass must also be declared `abstract`. Forgetting `abstract` on a partially implemented subclass is a **compile-time error**: *'class X is not abstract and does not override abstract method y() in Z'*. This exact error is tested in CSE110 find-error questions."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📋 Abstract Class Rules Reference"
+    },
+    {
+      "type": "table",
+      "headers": ["Rule", "Allowed?", "Notes"],
+      "rows": [
+        ["Instantiate abstract class directly", "❌ No", "Compile error"],
+        ["Abstract class with NO abstract methods", "✅ Yes", "Can still prevent direct instantiation"],
+        ["Abstract class with constructor", "✅ Yes", "Called via super() from subclass"],
+        ["Abstract class extending another abstract class", "✅ Yes", "May defer implementation to grandchild"],
+        ["Abstract method with a body", "❌ No", "Compile error — abstract methods have no body"],
+        ["Concrete class with unimplemented abstract method", "❌ No", "Must declare class abstract too"],
+        ["Abstract static method", "❌ No", "Compile error — static cannot be overridden"],
+        ["Abstract private method", "❌ No", "Private = not inherited = cannot override"]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔌 Interfaces — Pure Contracts"
+    },
+    {
+      "type": "paragraph",
+      "content": "An **interface** is declared with the `interface` keyword. Traditionally, all its methods are implicitly `public abstract` and all its fields are implicitly `public static final`. A class **implements** an interface (not extends). Unlike inheritance, a class can implement **multiple interfaces** — this is Java's answer to multiple inheritance."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Defining and Implementing an Interface",
+      "code": "public interface Drawable {\n    // implicitly: public static final\n    double PI = 3.14159;\n\n    // implicitly: public abstract\n    void draw();\n    double getArea();\n}\n\npublic interface Resizable {\n    void resize(double factor);\n}\n\n// A class can implement MULTIPLE interfaces\npublic class Square implements Drawable, Resizable {\n    double side;\n\n    public Square(double side) { this.side = side; }\n\n    @Override public void draw() {\n        System.out.println(\"Drawing square with side \" + side);\n    }\n    @Override public double getArea() { return side * side; }\n    @Override public void resize(double factor) { side *= factor; }\n}\n\npublic class Test {\n    public static void main(String[] args) {\n        Square sq = new Square(4);\n        sq.draw();\n        sq.resize(2);\n        System.out.println(sq.getArea());  // 64.0\n\n        Drawable d = sq;    // upcast to Drawable\n        d.draw();           // dynamic dispatch: Square.draw()\n        // d.resize(2);     // COMPILE ERROR: resize not in Drawable\n    }\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "⚡ Default Methods in Interfaces (Java 8+)"
+    },
+    {
+      "type": "paragraph",
+      "content": "Since Java 8, interfaces can have **default methods** — concrete methods with the `default` keyword. Implementing classes **inherit** the default method automatically without having to override it. This was introduced to allow adding new methods to interfaces without breaking existing implementations."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Interface Default Method — Inherited and Overridable",
+      "code": "public interface Greetable {\n    String getName();             // abstract: must implement\n\n    default void greet() {        // DEFAULT: inherited automatically\n        System.out.println(\"Hello, I am \" + getName());\n    }\n}\n\npublic class Person implements Greetable {\n    String name;\n    public Person(String name) { this.name = name; }\n    @Override public String getName() { return name; }\n    // greet() is inherited — no need to override\n}\n\npublic class FormalPerson implements Greetable {\n    String name;\n    public FormalPerson(String name) { this.name = name; }\n    @Override public String getName() { return name; }\n    @Override public void greet() {    // OVERRIDE the default\n        System.out.println(\"Good day. My name is \" + getName() + \".\");\n    }\n}\n\npublic class Test {\n    public static void main(String[] args) {\n        new Person(\"Alice\").greet();        // Hello, I am Alice\n        new FormalPerson(\"Bob\").greet();    // Good day. My name is Bob.\n    }\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "⚠️ The Diamond Problem — Interface Conflict Resolution"
+    },
+    {
+      "type": "paragraph",
+      "content": "When a class implements **two interfaces that both define a default method with the same signature**, a conflict arises. Java requires the implementing class to **explicitly override** the method to resolve the ambiguity. Inside the override, you can choose which interface's default to delegate to using `InterfaceName.super.method()`."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Diamond Conflict — Forced Override Resolution",
+      "code": "public interface A {\n    default void hello() { System.out.println(\"Hello from A\"); }\n}\n\npublic interface B {\n    default void hello() { System.out.println(\"Hello from B\"); }\n}\n\n// This would COMPILE ERROR without overriding hello():\npublic class C implements A, B {\n    @Override\n    public void hello() {\n        A.super.hello();   // explicitly delegate to A's version\n        // or B.super.hello(); or write custom logic\n        System.out.println(\"Hello from C\");\n    }\n}\n\npublic class Test {\n    public static void main(String[] args) {\n        C obj = new C();\n        obj.hello();\n        // Output:\n        // Hello from A\n        // Hello from C\n    }\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "warning",
+      "label": "Class Implementation Wins Over Interface Default",
+      "content": "If a class inherits a concrete method from a **superclass** AND implements an interface with a default method of the same signature, the **superclass method wins** automatically — no conflict, no override required. The priority order is: (1) concrete class method, (2) interface default method."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📊 Abstract Class vs Interface — Comparison Table"
+    },
+    {
+      "type": "table",
+      "headers": ["Feature", "Abstract Class", "Interface"],
+      "rows": [
+        ["Keyword", "`abstract class`", "`interface`"],
+        ["Instantiate directly?", "❌ No", "❌ No"],
+        ["Multiple inheritance?", "❌ One parent only", "✅ Implement many"],
+        ["Constructors?", "✅ Yes", "❌ No"],
+        ["Instance fields?", "✅ Any access modifier", "❌ Only `public static final`"],
+        ["Concrete methods?", "✅ Yes", "✅ Via `default` keyword"],
+        ["Abstract methods?", "✅ Yes", "✅ (implicitly abstract)"],
+        ["Static methods?", "✅ Yes", "✅ Yes (Java 8+)"],
+        ["Access modifiers on methods?", "✅ Any", "⚠️ Only `public` (implicit)"],
+        ["Use when?", "Shared state + partial impl", "Define a capability/contract"]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔀 Combining Abstract Class and Interface"
+    },
+    {
+      "type": "paragraph",
+      "content": "A common real-world pattern is an abstract class that **implements an interface partially**, leaving some methods for concrete subclasses. The abstract class satisfies some of the interface's contract, and concrete subclasses complete the rest."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Abstract Class Partially Implementing an Interface",
+      "code": "public interface Vehicle {\n    void start();\n    void stop();\n    String fuelType();\n}\n\n// Abstract class implements start/stop but defers fuelType\npublic abstract class MotorVehicle implements Vehicle {\n    String model;\n    public MotorVehicle(String model) { this.model = model; }\n\n    @Override public void start() {\n        System.out.println(model + \" engine starts\");\n    }\n    @Override public void stop() {\n        System.out.println(model + \" engine stops\");\n    }\n    // fuelType() NOT implemented here — left abstract\n}\n\npublic class ElectricCar extends MotorVehicle {\n    public ElectricCar(String model) { super(model); }\n    @Override public String fuelType() { return \"Electric\"; }\n}\n\npublic class GasCar extends MotorVehicle {\n    public GasCar(String model) { super(model); }\n    @Override public String fuelType() { return \"Gasoline\"; }\n}\n\npublic class Test {\n    public static void main(String[] args) {\n        Vehicle v = new ElectricCar(\"Tesla\");\n        v.start();\n        System.out.println(v.fuelType());\n        v.stop();\n    }\n}\n// Tesla engine starts\n// Electric\n// Tesla engine stops"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔍 Interface as a Type — Polymorphism"
+    },
+    {
+      "type": "paragraph",
+      "content": "An interface is a **reference type** — you can declare variables, parameters, and return types as interface types. Dynamic dispatch works just like with abstract classes: the actual runtime type determines which implementation runs."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Interface Reference — Polymorphic Array of Shapes",
+      "code": "public interface Printable {\n    void print();\n}\n\npublic class Invoice implements Printable {\n    int id;\n    public Invoice(int id) { this.id = id; }\n    @Override public void print() {\n        System.out.println(\"Invoice #\" + id);\n    }\n}\n\npublic class Report implements Printable {\n    String title;\n    public Report(String title) { this.title = title; }\n    @Override public void print() {\n        System.out.println(\"Report: \" + title);\n    }\n}\n\npublic class Printer {\n    // accepts ANY Printable — true polymorphism\n    public static void printAll(Printable[] items) {\n        for (Printable p : items) p.print();\n    }\n    public static void main(String[] args) {\n        Printable[] docs = {\n            new Invoice(101),\n            new Report(\"Q4 Sales\"),\n            new Invoice(202)\n        };\n        printAll(docs);\n    }\n}\n// Invoice #101\n// Report: Q4 Sales\n// Invoice #202"
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🏋️ Interactive Exercises"
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 1: Abstract Method Dispatch Through Hierarchy",
+      "language": "java",
+      "code": "abstract class Base {\n    abstract String tag();\n    void show() {\n        System.out.println(\"[\" + tag() + \"] Base.show\");\n    }\n}\nabstract class Mid extends Base {\n    void display() {\n        System.out.println(\"Mid.display: \" + tag());\n    }\n}\nclass Leaf extends Mid {\n    @Override String tag() { return \"LEAF\"; }\n}\npublic class Test {\n    public static void main(String[] args) {\n        Base obj = new Leaf();\n        obj.show();\n        ((Mid) obj).display();\n    }\n}",
+      "answer": "[LEAF] Base.show\nMid.display: LEAF",
+      "explanation": "Step 1: `obj.show()` — declared type Base, actual type Leaf. `show()` is concrete in Base, not overridden. Runs Base.show(). Inside Base.show(), `tag()` is called — dynamic dispatch → actual type Leaf → Leaf.tag() = 'LEAF'. Prints '[LEAF] Base.show'. Step 2: `((Mid) obj).display()` — downcast to Mid (valid: Leaf extends Mid). `display()` is concrete in Mid, not overridden by Leaf. Runs Mid.display(). Inside, `tag()` → dynamic dispatch → Leaf.tag() = 'LEAF'. Prints 'Mid.display: LEAF'."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 2: Default Method — Inherited vs Overridden",
+      "language": "java",
+      "code": "interface Speak {\n    default String voice() { return \"...silent...\"; }\n    default void introduce() {\n        System.out.println(\"I say: \" + voice());\n    }\n}\nclass Cat implements Speak {\n    @Override public String voice() { return \"Meow\"; }\n}\nclass Fish implements Speak {\n    // uses default voice()\n}\nclass Dog implements Speak {\n    @Override public void introduce() {\n        System.out.println(\"Dog says: \" + voice());\n    }\n    @Override public String voice() { return \"Woof\"; }\n}\npublic class Test {\n    public static void main(String[] args) {\n        Speak[] animals = { new Cat(), new Fish(), new Dog() };\n        for (Speak s : animals) s.introduce();\n    }\n}",
+      "answer": "I say: Meow\nI say: ...silent...\nDog says: Woof",
+      "explanation": "Cat: `introduce()` not overridden → uses Speak default. Inside, `voice()` → dynamic dispatch → Cat.voice() = 'Meow'. Prints 'I say: Meow'. Fish: `introduce()` not overridden → Speak default. `voice()` not overridden → Speak default = '...silent...'. Prints 'I say: ...silent...'. Dog: `introduce()` IS overridden → Dog.introduce() runs. Inside, `voice()` → Dog.voice() = 'Woof'. Prints 'Dog says: Woof'."
+    },
+    {
+      "type": "accordion",
+      "variant": "find-error",
+      "title": "Exercise 3: Concrete Class Missing Abstract Method",
+      "language": "java",
+      "code": "public abstract class Appliance {\n    String brand;\n    public Appliance(String brand) { this.brand = brand; }\n    public abstract void powerOn();\n    public abstract void powerOff();\n    public void showBrand() {\n        System.out.println(\"Brand: \" + brand);\n    }\n}\n\npublic class WashingMachine extends Appliance {\n    public WashingMachine(String brand) {\n        super(brand);\n    }\n    @Override\n    public void powerOn() {\n        System.out.println(brand + \" washing machine ON\");\n    }\n    // powerOff() not implemented\n}\n\npublic class Test {\n    public static void main(String[] args) {\n        WashingMachine wm = new WashingMachine(\"LG\");\n        wm.powerOn();\n        wm.showBrand();\n    }\n}",
+      "error": "WashingMachine class declaration: Compile-time error — WashingMachine is not abstract and does not override abstract method powerOff() in Appliance. Every abstract method from the parent must be implemented unless the subclass is itself declared abstract.",
+      "fix": "public class WashingMachine extends Appliance {\n    public WashingMachine(String brand) {\n        super(brand);\n    }\n    @Override\n    public void powerOn() {\n        System.out.println(brand + \" washing machine ON\");\n    }\n    @Override\n    public void powerOff() {          // ADD the missing implementation\n        System.out.println(brand + \" washing machine OFF\");\n    }\n}\n// OR: declare WashingMachine itself as abstract\n// public abstract class WashingMachine extends Appliance { ... }",
+      "explanation": "A concrete class must implement ALL abstract methods inherited from its parent. WashingMachine only implements `powerOn()` but misses `powerOff()`. Fix option 1: add `powerOff()` implementation. Fix option 2: declare WashingMachine as abstract (defers `powerOff()` to WashingMachine's own subclasses). This is a **compile-time** error."
+    },
+    {
+      "type": "accordion",
+      "variant": "find-error",
+      "title": "Exercise 4: Interface Field Reassignment",
+      "language": "java",
+      "code": "public interface Config {\n    int MAX_RETRIES = 3;    // implicitly public static final\n    String HOST = \"localhost\";\n}\n\npublic class Server implements Config {\n    public void connect() {\n        MAX_RETRIES = 5;            // Line 9\n        System.out.println(\"Connecting to \" + HOST);\n    }\n    public static void main(String[] args) {\n        new Server().connect();\n    }\n}",
+      "error": "Line 9: Compile-time error — cannot assign a value to final variable MAX_RETRIES. All fields declared in an interface are implicitly `public static final`. Attempting to reassign them is a compile-time error, just like reassigning any `final` variable.",
+      "fix": "public class Server implements Config {\n    private int retries;              // use a mutable instance field instead\n\n    public Server() {\n        this.retries = MAX_RETRIES;   // read the interface constant\n    }\n\n    public void connect() {\n        // MAX_RETRIES = 5;  // not allowed — it's final\n        retries = 5;                  // modify the instance field instead\n        System.out.println(\"Connecting to \" + HOST + \" with \" + retries + \" retries\");\n    }\n    public static void main(String[] args) {\n        new Server().connect();\n    }\n}",
+      "explanation": "Interface fields are always `public static final` regardless of whether you write those modifiers or not. `final` means the variable can only be assigned once — at declaration. Use interface constants as read-only values. If you need a mutable version, declare a regular instance or local variable initialized from the constant. This is a **compile-time** error."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 5: Abstract Class Constructor Chain with Dynamic Dispatch",
+      "language": "java",
+      "code": "abstract class Animal {\n    String type;\n    public Animal() {\n        type = \"unknown\";\n        System.out.println(\"Animal init, type=\" + getType());\n    }\n    public abstract String getType();\n}\nclass Lion extends Animal {\n    public Lion() {\n        // super() auto-inserted\n        type = \"Lion\";\n        System.out.println(\"Lion init, type=\" + getType());\n    }\n    @Override\n    public String getType() { return type; }\n}\npublic class Test {\n    public static void main(String[] args) {\n        Animal a = new Lion();\n        System.out.println(a.getType());\n    }\n}",
+      "answer": "Animal init, type=unknown\nLion init, type=Lion\nLion",
+      "explanation": "Step 1: `new Lion()` → Lion() calls implicit super() → Animal() constructor runs. In Animal(): `type='unknown'`. Then `getType()` is called — dynamic dispatch → actual type is Lion → Lion.getType() returns `type` which is currently 'unknown'. Prints 'Animal init, type=unknown'. Step 2: Animal() returns. Back in Lion(): `type='Lion'`. `getType()` → Lion.getType() = 'Lion'. Prints 'Lion init, type=Lion'. Step 3: main: `a.getType()` → Lion → 'Lion'. Prints 'Lion'. This illustrates the constructor + dynamic dispatch trap: abstract method called in parent constructor dispatches to the subclass override, but subclass fields are not yet initialized."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 6: Design a Payment System with Abstract Class + Interface",
+      "language": "java",
+      "code": "// Design a mini payment system:\n//\n// Interface: Taxable\n//   - double TAX_RATE = 0.15  (constant)\n//   - double calculateTax(double amount)  (abstract)\n//\n// Abstract class: Payment implements Taxable\n//   - double amount\n//   - constructor Payment(double amount)\n//   - abstract String paymentMethod()\n//   - concrete void processPayment() that prints:\n//     \"Processing [paymentMethod()] payment of [amount]\"\n//     \"Tax: [calculateTax(amount)]\"\n//     \"Total: [amount + calculateTax(amount)]\"\n//\n// Concrete class: CreditCard extends Payment\n//   - String cardType\n//   - Override paymentMethod() → return \"Credit Card (\" + cardType + \")\"\n//   - Override calculateTax(amount) → return amount * TAX_RATE\n//\n// Concrete class: Cash extends Payment\n//   - Override paymentMethod() → return \"Cash\"\n//   - Override calculateTax(amount) → return 0.0  (cash is tax-free)\n//\n// Demo: process CreditCard(500, \"Visa\") and Cash(200)",
+      "approach": "Abstract class Payment provides the template method processPayment() which calls the abstract methods paymentMethod() and calculateTax(). Concrete subclasses fill in the details. The interface Taxable provides the TAX_RATE constant and the calculateTax() contract. CreditCard must implement both abstract methods from Payment and the abstract method from Taxable.",
+      "solution": "public interface Taxable {\n    double TAX_RATE = 0.15;   // public static final\n    double calculateTax(double amount);\n}\n\npublic abstract class Payment implements Taxable {\n    double amount;\n\n    public Payment(double amount) {\n        this.amount = amount;\n    }\n\n    public abstract String paymentMethod();\n\n    // Template method — calls abstract methods\n    public void processPayment() {\n        double tax   = calculateTax(amount);\n        double total = amount + tax;\n        System.out.printf(\"Processing %s payment of %.2f%n\",\n                          paymentMethod(), amount);\n        System.out.printf(\"Tax: %.2f%n\", tax);\n        System.out.printf(\"Total: %.2f%n\", total);\n    }\n}\n\npublic class CreditCard extends Payment {\n    String cardType;\n\n    public CreditCard(double amount, String cardType) {\n        super(amount);\n        this.cardType = cardType;\n    }\n\n    @Override\n    public String paymentMethod() {\n        return \"Credit Card (\" + cardType + \")\";\n    }\n\n    @Override\n    public double calculateTax(double amount) {\n        return amount * TAX_RATE;     // use interface constant\n    }\n}\n\npublic class Cash extends Payment {\n    public Cash(double amount) { super(amount); }\n\n    @Override\n    public String paymentMethod() { return \"Cash\"; }\n\n    @Override\n    public double calculateTax(double amount) { return 0.0; }\n}\n\npublic class PaymentSystem {\n    public static void main(String[] args) {\n        Payment[] payments = {\n            new CreditCard(500, \"Visa\"),\n            new Cash(200)\n        };\n        for (Payment p : payments) {\n            p.processPayment();\n            System.out.println(\"---\");\n        }\n    }\n}\n// Processing Credit Card (Visa) payment of 500.00\n// Tax: 75.00\n// Total: 575.00\n// ---\n// Processing Cash payment of 200.00\n// Tax: 0.00\n// Total: 200.00\n// ---",
+      "explanation": "This design shows the Template Method Pattern: `processPayment()` in the abstract class defines the algorithm structure, calling abstract methods `paymentMethod()` and `calculateTax()` whose implementations vary by subclass. CreditCard must implement: (1) `paymentMethod()` from abstract Payment, (2) `calculateTax()` from Taxable interface. Cash does the same with different logic. The polymorphic array allows processing all payment types with a single loop — open/closed principle: add new payment types without changing processPayment()."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📋 Quick Reference Summary"
+    },
+    {
+      "type": "list",
+      "ordered": false,
+      "items": [
+        "**`abstract class`**: cannot be instantiated; can have constructors, any fields, concrete + abstract methods",
+        "**`abstract method`**: no body, no braces; subclass must override ALL of them or also be `abstract`",
+        "**`interface`**: all fields are `public static final`; all non-default methods are `public abstract`",
+        "**`implements`**: used to apply an interface to a class; a class can implement multiple interfaces",
+        "**`default` method**: concrete method in an interface; inherited automatically; can be overridden",
+        "**Diamond conflict**: two interfaces with same default method → implementing class MUST override it; use `Interface.super.method()` to delegate",
+        "**Priority**: concrete superclass method > interface default method (no override needed)",
+        "**Cannot**: create abstract static method; create abstract private method; instantiate abstract class or interface",
+        "**`@Override`**: use on all abstract method implementations; causes compile error if signature is wrong",
+        "**Dynamic dispatch rule**: applies equally to abstract class and interface method calls — actual runtime type determines which body runs"
+      ]
+    }
+  ]
+}

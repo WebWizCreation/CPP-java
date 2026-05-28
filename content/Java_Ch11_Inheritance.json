@@ -1,0 +1,247 @@
+{
+  "id": "Java_Ch11_Inheritance",
+  "track": "java",
+  "chapter": 11,
+  "title": "Inheritance",
+  "description": "Master Java inheritance — extends, super(), method hiding, and the is-a relationship — the way CSE110 exams test it, with full tracing exercises.",
+  "sections": [
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📚 Why Inheritance Dominates CSE110 Exams"
+    },
+    {
+      "type": "paragraph",
+      "content": "Inheritance questions appear in **every** CSE110 exam format — output prediction, error identification, and short-answer tracing. The exam tests whether you know the difference between `super()` and `this()`, how constructor chains run, when method hiding applies vs overriding, and what `instanceof` returns for multi-level hierarchies. This chapter builds every rule you need with traceable code examples."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔑 Core Concept: The is-a Relationship"
+    },
+    {
+      "type": "paragraph",
+      "content": "Inheritance models the **is-a relationship**: a `Dog` *is-a* `Animal`, a `SavingsAccount` *is-a* `BankAccount`. In Java, `class Dog extends Animal` means Dog **inherits** all non-private fields and methods of Animal, and can **add** new ones or **override** inherited behavior."
+    },
+    {
+      "type": "callout",
+      "variant": "note",
+      "label": "Java's Single Inheritance Rule",
+      "content": "Java allows **single inheritance only** — a class can `extends` exactly one parent class. However, a class can implement multiple interfaces (covered in Ch13). If no `extends` clause is written, the class implicitly extends `Object`."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🏗️ Basic Inheritance Syntax"
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Defining a Parent and Child Class",
+      "code": "public class Animal {\n    String name;\n    int age;\n\n    public Animal(String name, int age) {\n        this.name = name;\n        this.age = age;\n        System.out.println(\"Animal constructor: \" + name);\n    }\n\n    public void speak() {\n        System.out.println(name + \" makes a sound.\");\n    }\n\n    public void describe() {\n        System.out.println(\"Name: \" + name + \", Age: \" + age);\n    }\n}\n\npublic class Dog extends Animal {\n    String breed;\n\n    public Dog(String name, int age, String breed) {\n        super(name, age);   // MUST be first statement\n        this.breed = breed;\n        System.out.println(\"Dog constructor: \" + breed);\n    }\n\n    @Override\n    public void speak() {              // overrides Animal.speak()\n        System.out.println(name + \" barks!\");\n    }\n\n    public void fetch() {\n        System.out.println(name + \" fetches the ball.\");\n    }\n}"
+    },
+    {
+      "type": "paragraph",
+      "content": "When `new Dog(\"Rex\", 3, \"Lab\")` is called, the output order is: `Animal constructor: Rex` then `Dog constructor: Lab`. The **parent constructor always runs first** because `super(...)` must be the first statement in the child constructor."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔗 Constructor Chaining Rules"
+    },
+    {
+      "type": "table",
+      "headers": ["Scenario", "What Happens", "Rule"],
+      "rows": [
+        ["Child has `super(args)` explicitly", "Calls specified parent constructor", "`super()` must be line 1"],
+        ["Child has no `super()` at all", "Compiler inserts `super()` automatically", "Parent must have a no-arg constructor"],
+        ["Parent has no no-arg constructor", "Compile error if child omits `super(...)`", "Must explicitly call matching parent constructor"],
+        ["Child uses `this(args)`", "Calls sibling constructor; super chain triggered from there", "`this()` and `super()` cannot both be on line 1"]
+      ]
+    },
+    {
+      "type": "callout",
+      "variant": "danger",
+      "label": "🚨 Exam Trap: Missing super() When Parent Has No Default Constructor",
+      "content": "If the parent class defines **only** a parameterized constructor (no no-arg constructor), and the child does not explicitly call `super(args)`, the code will **not compile**. The error is: *'implicit super constructor Animal() is undefined — must explicitly invoke another constructor'*. This is one of the most-tested compile-time errors in CSE110."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "⬆️ Method Overriding vs Method Hiding"
+    },
+    {
+      "type": "paragraph",
+      "content": "**Overriding** applies to **instance methods**: the child class provides a new implementation. At runtime, the JVM uses the **actual object type** to decide which version runs (dynamic dispatch). **Hiding** applies to **static methods**: if a child defines a static method with the same signature, it *hides* (not overrides) the parent's version. Which version runs depends on the **declared type**, not the actual type."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Override vs Hide — Spot the Difference",
+      "code": "public class Parent {\n    public void instanceMethod() {\n        System.out.println(\"Parent instance\");\n    }\n    public static void staticMethod() {\n        System.out.println(\"Parent static\");\n    }\n}\n\npublic class Child extends Parent {\n    @Override\n    public void instanceMethod() {         // OVERRIDE\n        System.out.println(\"Child instance\");\n    }\n    public static void staticMethod() {    // HIDE (not override)\n        System.out.println(\"Child static\");\n    }\n}\n\npublic class Demo {\n    public static void main(String[] args) {\n        Parent ref = new Child();          // declared=Parent, actual=Child\n        ref.instanceMethod();              // → \"Child instance\"  (dynamic dispatch)\n        ref.staticMethod();               // → \"Parent static\"   (compile-time type)\n    }\n}"
+    },
+    {
+      "type": "table",
+      "headers": ["Feature", "Method Overriding", "Method Hiding"],
+      "rows": [
+        ["Applies to", "Instance methods", "Static methods"],
+        ["Resolution", "Runtime (actual type)", "Compile-time (declared type)"],
+        ["Keyword needed", "`@Override` (recommended)", "None (automatic)"],
+        ["Polymorphism?", "Yes", "No"],
+        ["Can use `@Override`?", "Yes", "No — compile error"]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔼 The `super` Keyword"
+    },
+    {
+      "type": "paragraph",
+      "content": "`super` has two uses: (1) **`super(args)`** in a constructor to call the parent constructor; (2) **`super.method()`** or **`super.field`** in a method body to access the parent's version that was overridden."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Using super() and super.method() Together",
+      "code": "public class Shape {\n    String color;\n    public Shape(String color) {\n        this.color = color;\n    }\n    public String describe() {\n        return \"Shape[\" + color + \"]\";\n    }\n}\n\npublic class Circle extends Shape {\n    double radius;\n    public Circle(String color, double radius) {\n        super(color);           // call Shape(color)\n        this.radius = radius;\n    }\n    @Override\n    public String describe() {\n        return super.describe() + \"+Circle[r=\" + radius + \"]\";\n    }\n    public static void main(String[] args) {\n        Circle c = new Circle(\"red\", 5.0);\n        System.out.println(c.describe());\n        // Output: Shape[red]+Circle[r=5.0]\n    }\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🌲 Multi-Level Inheritance & Constructor Chain"
+    },
+    {
+      "type": "paragraph",
+      "content": "Java supports multi-level inheritance (A → B → C). When `new C()` is called, the constructor chain runs **top-down**: A's constructor first, then B's, then C's. This is guaranteed by the `super()` call requirement."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Three-Level Constructor Chain Trace",
+      "code": "public class A {\n    public A() { System.out.println(\"A\"); }\n}\npublic class B extends A {\n    public B() { System.out.println(\"B\"); }\n}\npublic class C extends B {\n    public C() { System.out.println(\"C\"); }\n}\npublic class Test {\n    public static void main(String[] args) {\n        C obj = new C();\n    }\n}\n// Output:\n// A\n// B\n// C"
+    },
+    {
+      "type": "callout",
+      "variant": "warning",
+      "label": "Field Shadowing in Inherited Classes",
+      "content": "If a child class declares a field with the **same name** as a parent field, the child's field *shadows* (not overrides) the parent's. Both fields exist; which one is accessed depends on the **declared type** of the reference. This is a subtle but commonly tested trap — avoid naming conflicts in real code."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔍 instanceof Operator"
+    },
+    {
+      "type": "paragraph",
+      "content": "The `instanceof` operator tests whether an object is an instance of a class **or any of its ancestors**. For a reference `Dog d = new Dog()`: `d instanceof Dog` → true, `d instanceof Animal` → true, `d instanceof Object` → true. It always returns false for null."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "instanceof in an Inheritance Hierarchy",
+      "code": "public class Vehicle {}\npublic class Car extends Vehicle {}\npublic class SportsCar extends Car {}\n\npublic class Test {\n    public static void main(String[] args) {\n        SportsCar sc = new SportsCar();\n        System.out.println(sc instanceof SportsCar);  // true\n        System.out.println(sc instanceof Car);         // true\n        System.out.println(sc instanceof Vehicle);     // true\n        System.out.println(sc instanceof Object);      // true\n\n        Vehicle v = new Vehicle();\n        System.out.println(v instanceof Car);          // false\n        System.out.println(null instanceof Vehicle);   // false\n    }\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🚫 What is NOT Inherited"
+    },
+    {
+      "type": "list",
+      "ordered": false,
+      "items": [
+        "**Constructors** — they are not inherited; each class must define its own",
+        "**`private` members** — not directly accessible in the child (though they exist in memory)",
+        "**`static` members** are inherited in the sense that they're accessible, but they can only be hidden, not overridden",
+        "**`final` methods** cannot be overridden in any subclass"
+      ]
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🏋️ Interactive Exercises"
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 1: Constructor Chain Order",
+      "language": "java",
+      "code": "public class Base {\n    public Base() {\n        System.out.println(\"Base\");\n    }\n    public Base(int x) {\n        System.out.println(\"Base(\" + x + \")\");\n    }\n}\npublic class Mid extends Base {\n    public Mid() {\n        this(10);\n        System.out.println(\"Mid()\");\n    }\n    public Mid(int x) {\n        super(x);\n        System.out.println(\"Mid(\" + x + \")\");\n    }\n}\npublic class Top extends Mid {\n    public Top() {\n        System.out.println(\"Top\");\n    }\n    public static void main(String[] args) {\n        new Top();\n    }\n}",
+      "answer": "Base(10)\nMid(10)\nMid()\nTop",
+      "explanation": "Trace: 1) `new Top()` calls `Top()`. 2) `Top()` has no explicit super/this, so compiler inserts `super()` → calls `Mid()`. 3) `Mid()` has `this(10)` on line 1 → calls `Mid(10)`. 4) `Mid(10)` calls `super(10)` → `Base(10)`. 5) `Base(10)` prints 'Base(10)', returns. 6) Back in `Mid(10)`: prints 'Mid(10)', returns. 7) Back in `Mid()`: `this(10)` chain done, continues → prints 'Mid()', returns. 8) Back in `Top()`: prints 'Top'. Final output: Base(10) / Mid(10) / Mid() / Top."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 2: Override vs Hide with Polymorphic Reference",
+      "language": "java",
+      "code": "public class A {\n    public void show() { System.out.println(\"A.show()\"); }\n    public static void print() { System.out.println(\"A.print()\"); }\n}\npublic class B extends A {\n    public void show() { System.out.println(\"B.show()\"); }\n    public static void print() { System.out.println(\"B.print()\"); }\n}\npublic class Test {\n    public static void main(String[] args) {\n        A obj = new B();\n        obj.show();\n        obj.print();\n        B obj2 = new B();\n        obj2.show();\n        obj2.print();\n    }\n}",
+      "answer": "B.show()\nA.print()\nB.show()\nB.print()",
+      "explanation": "Line 1 `obj.show()`: declared type is A, actual type is B. `show()` is an instance method that is **overridden** in B → dynamic dispatch → 'B.show()'. Line 2 `obj.print()`: `print()` is **static** → method hiding, not overriding → resolved by DECLARED type (A) → 'A.print()'. Line 3 `obj2.show()`: actual type is B, overridden → 'B.show()'. Line 4 `obj2.print()`: declared type is B, static → resolved by declared type B → 'B.print()'."
+    },
+    {
+      "type": "accordion",
+      "variant": "find-error",
+      "title": "Exercise 3: Missing super() With No Default Constructor",
+      "language": "java",
+      "code": "public class Employee {\n    String name;\n    double salary;\n\n    public Employee(String name, double salary) {\n        this.name = name;\n        this.salary = salary;\n    }\n\n    public void display() {\n        System.out.println(name + \" earns \" + salary);\n    }\n}\n\npublic class Manager extends Employee {\n    int teamSize;\n\n    public Manager(int teamSize) {\n        this.teamSize = teamSize;   // Line 18\n    }\n\n    public static void main(String[] args) {\n        Manager m = new Manager(5);\n        m.display();\n    }\n}",
+      "error": "Line 18 (Manager constructor): Compile-time error — implicit super constructor Employee() is undefined. The Employee class has only a parameterized constructor Employee(String, double), so the compiler cannot insert a no-arg super() call automatically. Manager() must explicitly call super(name, salary).",
+      "fix": "public class Manager extends Employee {\n    int teamSize;\n\n    public Manager(String name, double salary, int teamSize) {\n        super(name, salary);   // explicitly call the only parent constructor\n        this.teamSize = teamSize;\n    }\n\n    public static void main(String[] args) {\n        Manager m = new Manager(\"Alice\", 80000, 5);\n        m.display();\n        System.out.println(\"Team size: \" + m.teamSize);\n    }\n}",
+      "explanation": "When a parent class defines only parameterized constructors, Java does NOT auto-generate a no-arg constructor. Since Manager() provides no explicit super(...) call, the compiler tries to insert super() and fails because Employee() does not exist. Fix: add the missing parameters to Manager's constructor and explicitly call super(name, salary) as the first statement. This is a **compile-time** error."
+    },
+    {
+      "type": "accordion",
+      "variant": "find-error",
+      "title": "Exercise 4: Calling super() After this()",
+      "language": "java",
+      "code": "public class Vehicle {\n    String type;\n    public Vehicle(String type) {\n        this.type = type;\n    }\n}\n\npublic class Car extends Vehicle {\n    int doors;\n\n    public Car(int doors) {\n        this.doors = doors;      // Line 11\n        super(\"Car\");             // Line 12\n    }\n\n    public static void main(String[] args) {\n        Car c = new Car(4);\n        System.out.println(c.type + \", doors=\" + c.doors);\n    }\n}",
+      "error": "Line 12: Compile-time error — call to super() must be the first statement in a constructor. super(\"Car\") is placed after this.doors=doors on line 11, which is illegal in Java.",
+      "fix": "public class Car extends Vehicle {\n    int doors;\n\n    public Car(int doors) {\n        super(\"Car\");            // super() MUST be first\n        this.doors = doors;\n    }\n\n    public static void main(String[] args) {\n        Car c = new Car(4);\n        System.out.println(c.type + \", doors=\" + c.doors);\n        // Output: Car, doors=4\n    }\n}",
+      "explanation": "Java strictly requires that `super(...)` or `this(...)` is the **very first statement** in a constructor body, before any other code including field assignments. Moving `this.doors = doors` after `super(\"Car\")` resolves the compile error. This is a **compile-time** error."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 5: Multi-Level Override Chain Trace",
+      "language": "java",
+      "code": "public class X {\n    public String greet() { return \"Hello from X\"; }\n    public void run() { System.out.println(greet()); }\n}\npublic class Y extends X {\n    public String greet() { return \"Hello from Y\"; }\n}\npublic class Z extends Y {\n    public String greet() { return super.greet() + \" and Z\"; }\n}\npublic class Test {\n    public static void main(String[] args) {\n        X a = new X();\n        X b = new Y();\n        X c = new Z();\n        a.run();\n        b.run();\n        c.run();\n    }\n}",
+      "answer": "Hello from X\nHello from Y\nHello from Y and Z",
+      "explanation": "The `run()` method is only defined in X and calls `greet()`. Because `greet()` is a virtual (instance) method, it uses dynamic dispatch based on the **actual** runtime type. (1) `a.run()`: actual type X → `greet()` returns 'Hello from X'. (2) `b.run()`: `run()` inherited from X; inside `run()`, `this` is a Y object → `greet()` dispatches to Y → 'Hello from Y'. (3) `c.run()`: `run()` inherited from X; `this` is Z → `greet()` in Z calls `super.greet()` which is Y's `greet()` = 'Hello from Y', concatenated with ' and Z' → 'Hello from Y and Z'."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 6: Build a 3-Level Inheritance Hierarchy",
+      "language": "java",
+      "code": "// Design the following class hierarchy:\n// Animal (name, sound) → makeSound() prints \"[name] says [sound]\"\n// Pet extends Animal (owner) → describe() prints \"[name] owned by [owner]\"\n// Dog extends Pet (breed) → override makeSound() to print \"[name] barks!\"\n//                          and add fetch() that prints \"[name] fetches!\"\n//\n// In main():\n//   Create Dog(\"Rex\", \"Woof\", \"Alice\", \"Labrador\")\n//   Call makeSound(), describe(), fetch()\n//   Also call Animal's makeSound via super reference\n//\n// Expected output:\n//   Rex barks!\n//   Rex owned by Alice\n//   Rex fetches!\n//   Rex says Woof",
+      "approach": "Each constructor must call super() with the right args. Dog.makeSound() overrides Animal.makeSound(). We need a way to call the original Animal version — use super.super? No: Java doesn't allow super.super. We can call Pet's version, but Pet doesn't override it, so super.makeSound() from Dog calls up to Animal. Create an Animal ref pointing to the Dog to demonstrate the original implementation is accessible.",
+      "solution": "public class Animal {\n    String name, sound;\n    public Animal(String name, String sound) {\n        this.name = name;\n        this.sound = sound;\n    }\n    public void makeSound() {\n        System.out.println(name + \" says \" + sound);\n    }\n}\n\npublic class Pet extends Animal {\n    String owner;\n    public Pet(String name, String sound, String owner) {\n        super(name, sound);\n        this.owner = owner;\n    }\n    public void describe() {\n        System.out.println(name + \" owned by \" + owner);\n    }\n}\n\npublic class Dog extends Pet {\n    String breed;\n    public Dog(String name, String sound, String owner, String breed) {\n        super(name, sound, owner);\n        this.breed = breed;\n    }\n    @Override\n    public void makeSound() {\n        System.out.println(name + \" barks!\");\n    }\n    public void fetch() {\n        System.out.println(name + \" fetches!\");\n    }\n    public static void main(String[] args) {\n        Dog d = new Dog(\"Rex\", \"Woof\", \"Alice\", \"Labrador\");\n        d.makeSound();          // Rex barks!\n        d.describe();           // Rex owned by Alice\n        d.fetch();              // Rex fetches!\n        // call original Animal makeSound via super\n        Animal a = d;           // upcasting\n        // dynamic dispatch still calls Dog.makeSound!\n        // to call Animal.makeSound directly from Dog:\n        // can do from inside Dog: super.makeSound()\n        // From outside, demonstrate with a plain Animal object:\n        Animal base = new Animal(\"Rex\", \"Woof\");\n        base.makeSound();       // Rex says Woof\n    }\n}",
+      "explanation": "The constructor chain for Dog: Dog() → super() = Pet(name,sound,owner) → super() = Animal(name,sound). Each level sets its own field. Dog.makeSound() is an override — dynamic dispatch always calls it when the actual type is Dog, even through an Animal reference. To call Animal.makeSound() from outside the class without an Animal object, you'd need to be inside Dog's code using `super.makeSound()`. The `@Override` annotation ensures a compile error if the signature doesn't match the parent, protecting against typos."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📋 Quick Reference Summary"
+    },
+    {
+      "type": "list",
+      "ordered": false,
+      "items": [
+        "**`extends`**: declares inheritance; Java allows only one parent class",
+        "**`super(args)`**: calls parent constructor; must be the **first statement** in child constructor",
+        "**`super.method()`**: calls the parent's overridden version of a method from inside a child method",
+        "**Constructor chain order**: top-most ancestor first, child last (A → B → C)",
+        "**Overriding**: instance methods; resolved at **runtime** by actual object type (dynamic dispatch)",
+        "**Hiding**: static methods; resolved at **compile time** by declared reference type",
+        "**`@Override`**: annotation to verify at compile time that overriding is correct; use always",
+        "**`instanceof`**: returns true if object is an instance of that class OR any ancestor class",
+        "**NOT inherited**: constructors, `private` fields/methods, `final` method bodies (can't override)",
+        "**Field shadowing**: child field with same name shadows parent field; resolved by declared type"
+      ]
+    }
+  ]
+}

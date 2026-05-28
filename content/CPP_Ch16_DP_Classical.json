@@ -1,0 +1,241 @@
+{
+  "id": "CPP_Ch16_DP_Classical",
+  "track": "cpp",
+  "chapter": 16,
+  "title": "DP Classical Problems",
+  "description": "Master the four pillars of competitive DP — LCS, LIS, Knapsack, and Coin Change — so deeply that you can recognize, adapt, and optimize them under contest pressure.",
+  "sections": [
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🧠 Why Classical DP Dominates Contests"
+    },
+    {
+      "type": "paragraph",
+      "content": "Roughly 30–40% of Codeforces Div. 2 problems rated 1400–1900 are DP problems — and the majority reduce to one of four classical patterns. Recognizing *which* pattern applies is 80% of the battle. Once you do, you adapt the recurrence, choose the right implementation (top-down vs bottom-up), and optimize memory or time as required. This chapter drills each pattern until adaptation is instinctive."
+    },
+    {
+      "type": "callout",
+      "variant": "tip",
+      "label": "Contest Recognition Trick",
+      "content": "When a problem asks for the *maximum/minimum value* achievable under *constraints*, think Knapsack. When it asks for the *longest subsequence* satisfying a *property*, think LIS/LCS. When it asks for the *number of ways* to reach a target, think Coin Change / partition DP."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📐 Longest Common Subsequence (LCS)"
+    },
+    {
+      "type": "paragraph",
+      "content": "Given two strings (or sequences) `a` and `b`, the LCS is the longest sequence that appears in both as a subsequence (not necessarily contiguous). The key insight: if `a[i] == b[j]`, we *must* take it; otherwise we skip one side and take the best."
+    },
+    {
+      "type": "paragraph",
+      "content": "**Recurrence:** `dp[i][j]` = LCS length of `a[0..i-1]` and `b[0..j-1]`.\n- If `a[i-1] == b[j-1]`: `dp[i][j] = dp[i-1][j-1] + 1`\n- Else: `dp[i][j] = max(dp[i-1][j], dp[i][j-1])`"
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "LCS — O(n·m) Bottom-Up + Space-Optimized",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\n// Standard O(n*m) time, O(n*m) space\nint lcs_full(const string& a, const string& b) {\n    int n = a.size(), m = b.size();\n    vector<vector<int>> dp(n + 1, vector<int>(m + 1, 0));\n    for (int i = 1; i <= n; i++)\n        for (int j = 1; j <= m; j++)\n            if (a[i-1] == b[j-1]) dp[i][j] = dp[i-1][j-1] + 1;\n            else                  dp[i][j] = max(dp[i-1][j], dp[i][j-1]);\n    return dp[n][m];\n}\n\n// Space-optimized: O(min(n,m)) space using two rows\nint lcs_optimized(const string& a, const string& b) {\n    int n = a.size(), m = b.size();\n    // Ensure b is the shorter string\n    if (n < m) return lcs_optimized(b, a);\n    vector<int> prev(m + 1, 0), cur(m + 1, 0);\n    for (int i = 1; i <= n; i++) {\n        for (int j = 1; j <= m; j++)\n            if (a[i-1] == b[j-1]) cur[j] = prev[j-1] + 1;\n            else                  cur[j] = max(prev[j], cur[j-1]);\n        swap(prev, cur);\n        fill(cur.begin(), cur.end(), 0);\n    }\n    return prev[m];\n}\n\nint main() {\n    string a = \"ABCBDAB\", b = \"BDCAB\";\n    cout << lcs_full(a, b) << \"\\n\";       // 4  (BCAB)\n    cout << lcs_optimized(a, b) << \"\\n\"; // 4\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "note",
+      "label": "LCS ↔ LIS Connection",
+      "content": "LCS of a sequence with its sorted version equals the **LIS** of the original. This lets you convert LCS-style problems into LIS problems and vice versa — a powerful contest trick."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📈 Longest Increasing Subsequence (LIS)"
+    },
+    {
+      "type": "paragraph",
+      "content": "Find the longest subsequence of an array where each element is strictly greater than the previous. The naive O(n²) DP is often too slow for n ≤ 10⁵ — learn the **patience sorting** approach for O(n log n)."
+    },
+    {
+      "type": "paragraph",
+      "content": "**O(n²) recurrence:** `dp[i]` = LIS ending at index `i`.\n`dp[i] = max(dp[j] + 1)` for all `j < i` where `arr[j] < arr[i]`.\n\n**O(n log n) key insight:** Maintain a list `tails` where `tails[k]` = the *smallest possible tail* of any increasing subsequence of length `k+1`. Use `lower_bound` to binary-search for placement."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "LIS — O(n²) DP and O(n log n) Patience Sort",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\n// O(n^2) — correct but slow for large n\nint lis_slow(vector<int>& arr) {\n    int n = arr.size();\n    vector<int> dp(n, 1);\n    for (int i = 1; i < n; i++)\n        for (int j = 0; j < i; j++)\n            if (arr[j] < arr[i]) dp[i] = max(dp[i], dp[j] + 1);\n    return *max_element(dp.begin(), dp.end());\n}\n\n// O(n log n) patience sorting — contest standard\nint lis_fast(vector<int>& arr) {\n    vector<int> tails; // tails[i] = smallest tail of IS of length i+1\n    for (int x : arr) {\n        // Find first tail >= x (strictly increasing → lower_bound)\n        auto it = lower_bound(tails.begin(), tails.end(), x);\n        if (it == tails.end()) tails.push_back(x); // extend\n        else                  *it = x;             // replace\n    }\n    return tails.size();\n}\n\n// Variant: Longest Non-Decreasing Subsequence → use upper_bound\nint lnds_fast(vector<int>& arr) {\n    vector<int> tails;\n    for (int x : arr) {\n        auto it = upper_bound(tails.begin(), tails.end(), x);\n        if (it == tails.end()) tails.push_back(x);\n        else                  *it = x;\n    }\n    return tails.size();\n}\n\nint main() {\n    vector<int> arr = {10, 9, 2, 5, 3, 7, 101, 18};\n    cout << lis_slow(arr) << \"\\n\"; // 4\n    cout << lis_fast(arr) << \"\\n\"; // 4\n}"
+    },
+    {
+      "type": "table",
+      "headers": ["Variant", "Comparison", "Binary Search Used", "Example"],
+      "rows": [
+        ["Strictly Increasing", "arr[j] < arr[i]", "`lower_bound`", "[1,2,3,4]"],
+        ["Non-Decreasing", "arr[j] <= arr[i]", "`upper_bound`", "[1,2,2,3]"],
+        ["Strictly Decreasing", "arr[j] > arr[i]", "`lower_bound` on reversed", "[5,3,2,1]"],
+        ["LIS Count (# of LIS)", "Track dp and cnt arrays", "O(n²)", "multiple traces"]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🎒 0/1 Knapsack"
+    },
+    {
+      "type": "paragraph",
+      "content": "Given `n` items each with weight `w[i]` and value `v[i]`, and a knapsack of capacity `W`, find the maximum total value you can carry. Each item is taken at most **once** (0/1 choice)."
+    },
+    {
+      "type": "paragraph",
+      "content": "**Recurrence:** `dp[i][j]` = max value using first `i` items with capacity `j`.\n- Skip item i: `dp[i][j] = dp[i-1][j]`\n- Take item i (if `w[i] <= j`): `dp[i][j] = dp[i-1][j - w[i]] + v[i]`\n- `dp[i][j] = max(skip, take)`\n\n**Space optimization:** Since `dp[i]` only reads from `dp[i-1]`, use a single 1D array iterated **right to left**."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "0/1 Knapsack — 2D DP and Space-Optimized 1D",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\n// 2D: O(n * W) time, O(n * W) space\nint knapsack_2d(vector<int>& w, vector<int>& v, int W) {\n    int n = w.size();\n    vector<vector<int>> dp(n + 1, vector<int>(W + 1, 0));\n    for (int i = 1; i <= n; i++)\n        for (int j = 0; j <= W; j++) {\n            dp[i][j] = dp[i-1][j]; // skip\n            if (w[i-1] <= j)\n                dp[i][j] = max(dp[i][j], dp[i-1][j - w[i-1]] + v[i-1]);\n        }\n    return dp[n][W];\n}\n\n// 1D space-optimized: iterate j RIGHT TO LEFT — critical!\nint knapsack_1d(vector<int>& w, vector<int>& v, int W) {\n    int n = w.size();\n    vector<int> dp(W + 1, 0);\n    for (int i = 0; i < n; i++)\n        for (int j = W; j >= w[i]; j--) // RIGHT TO LEFT prevents reuse\n            dp[j] = max(dp[j], dp[j - w[i]] + v[i]);\n    return dp[W];\n}\n\nint main() {\n    vector<int> w = {2, 3, 4, 5};\n    vector<int> v = {3, 4, 5, 6};\n    int W = 8;\n    cout << knapsack_2d(w, v, W) << \"\\n\"; // 10\n    cout << knapsack_1d(w, v, W) << \"\\n\"; // 10\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "danger",
+      "label": "🚨 The #1 Knapsack Bug in Contests",
+      "content": "In the 1D space-optimized knapsack, **you MUST iterate `j` from right to left** (`j = W` down to `w[i]`). Iterating left to right makes it an **unbounded knapsack** (each item usable infinitely), which is a completely different problem. This bug silently produces wrong answers on half the test cases."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "♾️ Unbounded Knapsack & Coin Change"
+    },
+    {
+      "type": "paragraph",
+      "content": "When each item can be used **unlimited times**, iterate the capacity loop **left to right**. The classic application is **Coin Change**: given coin denominations and a target amount, find the minimum number of coins (or the number of ways to make the amount)."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Coin Change — Min Coins & Number of Ways",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\n// Minimum coins to make amount (unbounded knapsack, LEFT TO RIGHT)\nint coinChange_min(vector<int>& coins, int amount) {\n    const int INF = 1e9;\n    vector<int> dp(amount + 1, INF);\n    dp[0] = 0;\n    for (int j = 1; j <= amount; j++)\n        for (int c : coins)\n            if (c <= j && dp[j - c] != INF)\n                dp[j] = min(dp[j], dp[j - c] + 1);\n    return dp[amount] == INF ? -1 : dp[amount];\n}\n\n// Number of ways to make amount (combination count)\n// Order of loops matters: outer=coins avoids counting permutations\nlong long coinChange_ways(vector<int>& coins, int amount) {\n    vector<long long> dp(amount + 1, 0);\n    dp[0] = 1;\n    for (int c : coins)           // outer = coins → combinations\n        for (int j = c; j <= amount; j++)\n            dp[j] += dp[j - c];\n    return dp[amount];\n}\n\n// Number of ways treating ORDER as different (permutation count)\nlong long coinChange_perms(vector<int>& coins, int amount) {\n    vector<long long> dp(amount + 1, 0);\n    dp[0] = 1;\n    for (int j = 1; j <= amount; j++) // outer = amount → permutations\n        for (int c : coins)\n            if (c <= j) dp[j] += dp[j - c];\n    return dp[amount];\n}\n\nint main() {\n    vector<int> coins = {1, 2, 5};\n    int amount = 11;\n    cout << coinChange_min(coins, amount) << \"\\n\";   // 3  (5+5+1)\n    cout << coinChange_ways(coins, amount) << \"\\n\";  // 11 combinations\n    cout << coinChange_perms(coins, amount) << \"\\n\"; // 88 permutations\n}"
+    },
+    {
+      "type": "table",
+      "headers": ["Problem", "Inner Loop Direction", "Outer Loop", "Use Case"],
+      "rows": [
+        ["0/1 Knapsack", "Right → Left (j=W..w[i])", "Items", "Each item used once"],
+        ["Unbounded Knapsack", "Left → Right (j=w[i]..W)", "Items", "Item reusable"],
+        ["Coin Change (min)", "Left → Right", "Amount outer", "Min coins"],
+        ["Coin Ways (combos)", "Left → Right", "**Coins outer**", "Unordered sets"],
+        ["Coin Ways (perms)", "Left → Right", "**Amount outer**", "Ordered sequences"]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🧩 Classical DP Complexity Reference"
+    },
+    {
+      "type": "table",
+      "headers": ["Problem", "Time", "Space", "Space-Optimized"],
+      "rows": [
+        ["LCS (strings len n, m)", "O(n·m)", "O(n·m)", "O(min(n,m))"],
+        ["LIS (O(n²))", "O(n²)", "O(n)", "—"],
+        ["LIS (patience sort)", "O(n log n)", "O(n)", "—"],
+        ["0/1 Knapsack", "O(n·W)", "O(n·W)", "O(W)"],
+        ["Unbounded Knapsack", "O(n·W)", "O(W)", "Already O(W)"],
+        ["Coin Change (min)", "O(n·W)", "O(W)", "—"],
+        ["Coin Ways", "O(n·W)", "O(W)", "—"]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔗 Problem-Reducing Patterns"
+    },
+    {
+      "type": "paragraph",
+      "content": "Many contest problems are disguised classical DP. Train yourself to spot these reductions:"
+    },
+    {
+      "type": "list",
+      "ordered": false,
+      "items": [
+        "**Edit Distance** → LCS variant: `editDist(a,b) = n + m - 2 * LCS(a,b)` when only insert/delete allowed",
+        "**Minimum Deletions to make Palindrome** → `n - LCS(s, reverse(s))`",
+        "**Russian Doll Envelopes** → Sort by width ASC, height DESC, then LIS on height (avoids same-width stacking)",
+        "**Partition Equal Subset Sum** → 0/1 Knapsack with target = totalSum / 2",
+        "**Minimum Coin Change with limited supply** → 0/1 Knapsack (not unbounded)",
+        "**Largest Divisible Subset** → LIS with divisibility condition instead of less-than"
+      ]
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🏋️ Practice Exercises"
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 1: Trace the 1D Knapsack Array",
+      "language": "cpp",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    vector<int> w = {2, 3}, v = {4, 5};\n    int W = 5;\n    vector<int> dp(W + 1, 0);\n    for (int i = 0; i < 2; i++) {\n        for (int j = W; j >= w[i]; j--)\n            dp[j] = max(dp[j], dp[j - w[i]] + v[i]);\n    }\n    for (int x : dp) cout << x << \" \";\n    cout << \"\\n\";\n    cout << dp[5] << \"\\n\";\n}",
+      "answer": "0 0 4 5 4 9 \n9",
+      "explanation": "After item 0 (w=2, v=4), iterating j=5 down to 2:\n  j=5: dp[5]=max(0,dp[3]+4)=max(0,0+4)=4\n  j=4: dp[4]=max(0,dp[2]+4)=max(0,0+4)=4\n  j=3: dp[3]=max(0,dp[1]+4)=max(0,0+4)=4 — wait, dp[1]=0 so dp[3]=4\n  j=2: dp[2]=max(0,dp[0]+4)=4\nArray after item 0: [0,0,4,4,4,4]\nAfter item 1 (w=3, v=5), iterating j=5 down to 3:\n  j=5: dp[5]=max(4,dp[2]+5)=max(4,4+5)=9\n  j=4: dp[4]=max(4,dp[1]+5)=max(4,0+5)=5\n  j=3: dp[3]=max(4,dp[0]+5)=max(4,5)=5\nFinal array: [0,0,4,5,5,9]. The output is '0 0 4 5 5 9' and dp[5]=9."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 2: LIS Patience Sort — Trace the Tails Array",
+      "language": "cpp",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    vector<int> arr = {3, 1, 4, 1, 5, 9, 2, 6};\n    vector<int> tails;\n    for (int x : arr) {\n        auto it = lower_bound(tails.begin(), tails.end(), x);\n        if (it == tails.end()) tails.push_back(x);\n        else *it = x;\n        cout << \"x=\" << x << \" tails:\";\n        for (int t : tails) cout << \" \" << t;\n        cout << \"\\n\";\n    }\n    cout << tails.size() << \"\\n\";\n}",
+      "answer": "x=3 tails: 3\nx=1 tails: 1\nx=4 tails: 1 4\nx=1 tails: 1 4\nx=5 tails: 1 4 5\nx=9 tails: 1 4 5 9\nx=2 tails: 1 2 5 9\nx=6 tails: 1 2 5 6\n4",
+      "explanation": "x=3: tails empty, push → [3]\nx=1: lower_bound(1) hits position 0 (3≥1), replace → [1]\nx=4: lower_bound(4) hits end, push → [1,4]\nx=1: lower_bound(1) hits position 0 (1≥1), replace with 1 → [1,4] (no change)\nx=5: lower_bound(5) hits end, push → [1,4,5]\nx=9: lower_bound(9) hits end, push → [1,4,5,9]\nx=2: lower_bound(2) hits position 1 (4≥2), replace → [1,2,5,9]\nx=6: lower_bound(6) hits position 3 (9≥6), replace → [1,2,5,6]\nFinal tails size = 4. The LIS is 4 (e.g., 1→4→5→9 or 1→2→5→6)."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 3: Partition Equal Subset Sum",
+      "language": "cpp",
+      "code": "// Given array of positive integers, determine if it can be\n// partitioned into two subsets with equal sum.\n// Constraints: n <= 200, arr[i] <= 100\n// Input:  arr = {1, 5, 11, 5}\n// Output: true  (subsets {1,5,5} and {11})\n// Input:  arr = {1, 2, 3, 5}\n// Output: false",
+      "approach": "1. Compute total sum. If odd, immediately return false.\n2. Target = sum / 2. We need to find a subset summing to exactly target.\n3. This is a 0/1 Knapsack feasibility problem: dp[j] = true if sum j is achievable.\n4. Initialize dp[0] = true. For each element, iterate j from target down to arr[i] (right to left — 0/1 rule).\n5. If dp[target] is true at the end, answer is yes.",
+      "solution": "#include <bits/stdc++.h>\nusing namespace std;\n\nbool canPartition(vector<int>& arr) {\n    int total = accumulate(arr.begin(), arr.end(), 0);\n    if (total % 2 != 0) return false;\n    int target = total / 2;\n    vector<bool> dp(target + 1, false);\n    dp[0] = true;\n    for (int x : arr)\n        for (int j = target; j >= x; j--) // right to left: 0/1 knapsack\n            dp[j] = dp[j] || dp[j - x];\n    return dp[target];\n}\n\nint main() {\n    vector<int> a = {1, 5, 11, 5};\n    vector<int> b = {1, 2, 3, 5};\n    cout << (canPartition(a) ? \"true\" : \"false\") << \"\\n\";  // true\n    cout << (canPartition(b) ? \"true\" : \"false\") << \"\\n\";  // false\n}",
+      "explanation": "This is a direct 0/1 Knapsack feasibility check. We replace 'max value' with 'is sum reachable (bool)'. The right-to-left inner loop guarantees each element is used at most once. Time: O(n · sum/2). Space: O(sum/2). For n=200, sum≤200*100=20000, so target≤10000 — well within limits. Edge case: if any single element exceeds target, it can never be in the smaller subset, and dp won't reach target (handled naturally)."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 4: Longest Common Subsequence of Three Strings",
+      "language": "cpp",
+      "code": "// Find the LCS of THREE strings a, b, c.\n// Constraints: |a|, |b|, |c| <= 100\n// Input:  a=\"AGGT12\", b=\"12TXAYB\", c=\"12XBA\"\n// Output: 2  (\"12\")",
+      "approach": "Extend the 2-string LCS recurrence to 3 dimensions. dp[i][j][k] = LCS of a[0..i-1], b[0..j-1], c[0..k-1]. Base case: any index 0 → dp=0. Transition: if a[i-1]==b[j-1]==c[k-1], dp[i][j][k] = dp[i-1][j-1][k-1]+1. Otherwise, max of the three 'skip-one' states.",
+      "solution": "#include <bits/stdc++.h>\nusing namespace std;\n\nint lcs3(const string& a, const string& b, const string& c) {\n    int n = a.size(), m = b.size(), p = c.size();\n    // 3D DP table\n    vector<vector<vector<int>>> dp(\n        n + 1, vector<vector<int>>(m + 1, vector<int>(p + 1, 0)));\n    for (int i = 1; i <= n; i++)\n        for (int j = 1; j <= m; j++)\n            for (int k = 1; k <= p; k++)\n                if (a[i-1] == b[j-1] && b[j-1] == c[k-1])\n                    dp[i][j][k] = dp[i-1][j-1][k-1] + 1;\n                else\n                    dp[i][j][k] = max({dp[i-1][j][k],\n                                       dp[i][j-1][k],\n                                       dp[i][j][k-1]});\n    return dp[n][m][p];\n}\n\nint main() {\n    cout << lcs3(\"AGGT12\", \"12TXAYB\", \"12XBA\") << \"\\n\"; // 2\n    cout << lcs3(\"geeks\", \"geeksfor\", \"geeksforgeeks\") << \"\\n\"; // 5\n}",
+      "explanation": "The 3D LCS is a natural extension of 2D. Time: O(n·m·p) — for n=m=p=100 that's 10^6 operations, perfectly fine. Space: O(n·m·p) = O(100^3) = 10^6 integers ≈ 4MB, acceptable. The three-way max handles all cases where the three strings disagree at the current positions. This pattern extends to any fixed number of strings, though k strings gives O(L^k) time."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 5: Minimum Edit Distance",
+      "language": "cpp",
+      "code": "// Given two strings word1 and word2, find the minimum number of\n// operations (insert, delete, replace) to convert word1 to word2.\n// Constraints: |word1|, |word2| <= 500\n// Input:  word1=\"horse\", word2=\"ros\"\n// Output: 3\n// Input:  word1=\"intention\", word2=\"execution\"\n// Output: 5",
+      "approach": "Classic DP. dp[i][j] = min operations to convert word1[0..i-1] to word2[0..j-1]. Base cases: dp[i][0]=i (delete i chars), dp[0][j]=j (insert j chars). Transition: if chars match, dp[i][j]=dp[i-1][j-1]. Else, min of: replace (dp[i-1][j-1]+1), delete from word1 (dp[i-1][j]+1), insert into word1 (dp[i][j-1]+1).",
+      "solution": "#include <bits/stdc++.h>\nusing namespace std;\n\nint editDistance(const string& a, const string& b) {\n    int n = a.size(), m = b.size();\n    vector<vector<int>> dp(n + 1, vector<int>(m + 1, 0));\n    // Base cases\n    for (int i = 0; i <= n; i++) dp[i][0] = i;\n    for (int j = 0; j <= m; j++) dp[0][j] = j;\n    for (int i = 1; i <= n; i++)\n        for (int j = 1; j <= m; j++)\n            if (a[i-1] == b[j-1])\n                dp[i][j] = dp[i-1][j-1]; // no operation needed\n            else\n                dp[i][j] = 1 + min({dp[i-1][j-1], // replace\n                                     dp[i-1][j],   // delete from a\n                                     dp[i][j-1]}); // insert into a\n    return dp[n][m];\n}\n\nint main() {\n    cout << editDistance(\"horse\", \"ros\") << \"\\n\";       // 3\n    cout << editDistance(\"intention\", \"execution\") << \"\\n\"; // 5\n    cout << editDistance(\"\", \"abc\") << \"\\n\";            // 3\n}",
+      "explanation": "Edit distance (Levenshtein) is a cornerstone DP. The key is recognizing the three operations map to three adjacent cells in the table: dp[i-1][j-1] for replace, dp[i-1][j] for delete, dp[i][j-1] for insert. Time: O(n·m). Space: O(n·m), reducible to O(min(n,m)) with rolling arrays. For n=m=500, that's 250,000 cells — trivial. Edge cases: empty string inputs are handled by the base-case initialization."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "⚡ Contest Optimization Checklist"
+    },
+    {
+      "type": "list",
+      "ordered": true,
+      "items": [
+        "**Check constraints first**: n≤1000 allows O(n²); n≤10⁵ needs O(n log n) — choose LIS algorithm accordingly",
+        "**Modular arithmetic**: when counting ways, the answer often overflows — add `% MOD` at every `dp[j] +=` step",
+        "**Memory limit**: for W or target > 10⁵, a 2D DP array may MLE — always use 1D space-optimized version",
+        "**Integer overflow**: use `long long` for `dp` array when values can exceed 2×10⁹",
+        "**Impossible states**: initialize min-cost DP with `INF = 1e9` (not `INT_MAX` — adding 1 overflows it)",
+        "**Print reconstruction**: if the problem asks for the actual subsequence/selection, store parent pointers or backtrace the DP table"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,244 @@
+{
+  "id": "CPP_Ch13_Recursion_Backtrack",
+  "track": "cpp",
+  "chapter": 13,
+  "title": "Recursion & Backtracking",
+  "description": "Build recursive intuition and master backtracking templates for permutations, subsets, and constraint-satisfaction puzzles that unlock Codeforces 1400–1600 problems.",
+  "sections": [
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🎯 The Competitive Programming Mindset"
+    },
+    {
+      "type": "paragraph",
+      "content": "Recursion is not just a programming technique — it is a **problem decomposition philosophy**. When you cannot see how to iterate to a solution, ask: *can I reduce this problem to a smaller version of itself?* Backtracking extends this idea: explore a candidate solution, and if it violates a constraint, **undo the last choice** and try the next. The key skill is identifying what the *state* is, what the *choices* are at each step, and when to *prune* — cutting branches that can never lead to a valid answer."
+    },
+    {
+      "type": "callout",
+      "variant": "tip",
+      "label": "Backtracking Template — The Universal Shape",
+      "content": "Every backtracking solution has the same skeleton: (1) **base case** — if state is complete/valid, record/return; (2) **loop over choices**; (3) **make choice** (modify state); (4) **recurse**; (5) **undo choice** (restore state). Steps 3 and 5 are the `choose / unchoose` pair that defines backtracking."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔁 Recursion Fundamentals — The Call Stack Model"
+    },
+    {
+      "type": "paragraph",
+      "content": "Every recursive call pushes a **stack frame** holding local variables and the return address. Deep recursion risks a **stack overflow**. In contests, recursion depth up to ~10⁵ is usually fine in C++ with the default stack, but Codeforces problems with n ≤ 10⁶ may require iterative solutions or explicit stack simulation."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Anatomy of a Recursive Function — Fibonacci with Trace",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\n// Naive recursion — exponential, for understanding only\nint fib(int n) {\n    if (n <= 1) return n;           // base case\n    return fib(n-1) + fib(n-2);    // recursive case\n}\n\n// Memoized version — O(n)\nmap<int,int> memo;\nint fibMemo(int n) {\n    if (n <= 1) return n;\n    if (memo.count(n)) return memo[n];\n    return memo[n] = fibMemo(n-1) + fibMemo(n-2);\n}\n\nint main() {\n    int n;\n    cin >> n;\n    cout << fibMemo(n) << \"\\n\";\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "danger",
+      "label": "🚨 Contest Killer: Exponential Recursion Without Memoization",
+      "content": "Naive recursive Fibonacci has time complexity O(2ⁿ). For n=40 that is ~10¹² calls — an instant TLE. Whenever you write a recursive function that calls itself with overlapping subproblems, **always memoize** (or convert to DP). The test: draw the recursion tree — if you see the same arguments computed multiple times, memoization is mandatory."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📐 Pattern 1 — Generate All Subsets (Power Set)"
+    },
+    {
+      "type": "paragraph",
+      "content": "For an array of n elements, there are 2ⁿ subsets. At each index we make a binary choice: **include** or **exclude** the current element. The recursion tree has depth n and 2ⁿ leaves."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Generate All Subsets — Include/Exclude Recursion",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nvoid subsets(vector<int>& arr, int idx, vector<int>& current,\n             vector<vector<int>>& result) {\n    if (idx == (int)arr.size()) {\n        result.push_back(current);   // base: subset is complete\n        return;\n    }\n    // Choice 1: INCLUDE arr[idx]\n    current.push_back(arr[idx]);\n    subsets(arr, idx + 1, current, result);\n    current.pop_back();              // UNDO (backtrack)\n\n    // Choice 2: EXCLUDE arr[idx]\n    subsets(arr, idx + 1, current, result);\n}\n\nint main() {\n    int n;\n    cin >> n;\n    vector<int> arr(n);\n    for (int& x : arr) cin >> x;\n\n    vector<vector<int>> result;\n    vector<int> current;\n    subsets(arr, 0, current, result);\n\n    cout << result.size() << \"\\n\";   // always 2^n\n    for (auto& s : result) {\n        cout << \"{ \";\n        for (int x : s) cout << x << \" \";\n        cout << \"}\\n\";\n    }\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📐 Pattern 2 — Generate All Permutations"
+    },
+    {
+      "type": "paragraph",
+      "content": "For n elements, there are n! permutations. Track which elements have been **used** with a boolean visited array (or by swapping in-place). The recursion tree has depth n with branching factor decreasing from n down to 1."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Generate All Permutations — Visited Array",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nvoid permute(vector<int>& arr, vector<bool>& used,\n             vector<int>& current, vector<vector<int>>& result) {\n    if ((int)current.size() == (int)arr.size()) {\n        result.push_back(current);\n        return;\n    }\n    for (int i = 0; i < (int)arr.size(); i++) {\n        if (used[i]) continue;\n        used[i] = true;              // CHOOSE\n        current.push_back(arr[i]);\n        permute(arr, used, current, result);\n        current.pop_back();          // UNCHOOSE\n        used[i] = false;\n    }\n}\n\nint main() {\n    int n;\n    cin >> n;\n    vector<int> arr(n);\n    for (int& x : arr) cin >> x;\n\n    vector<vector<int>> result;\n    vector<int> current;\n    vector<bool> used(n, false);\n    permute(arr, used, current, result);\n\n    for (auto& p : result) {\n        for (int x : p) cout << x << \" \";\n        cout << \"\\n\";\n    }\n}"
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "In-Place Swap Permutations (Space-Efficient)",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nvoid permuteSwap(vector<int>& arr, int start) {\n    if (start == (int)arr.size()) {\n        for (int x : arr) cout << x << \" \";\n        cout << \"\\n\";\n        return;\n    }\n    for (int i = start; i < (int)arr.size(); i++) {\n        swap(arr[start], arr[i]);       // CHOOSE: fix position `start`\n        permuteSwap(arr, start + 1);\n        swap(arr[start], arr[i]);       // UNCHOOSE: restore\n    }\n}\n\nint main() {\n    int n;\n    cin >> n;\n    vector<int> arr(n);\n    for (int& x : arr) cin >> x;\n    permuteSwap(arr, 0);\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📐 Pattern 3 — Combination Sum (With Pruning)"
+    },
+    {
+      "type": "paragraph",
+      "content": "Find all combinations of numbers that sum to a target. Key optimization: sort the array first, then **prune** when the remaining candidates can never reach the target (current sum + next candidate already exceeds target). This dramatically reduces the search space."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Combination Sum — Reuse Allowed, With Pruning",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nvoid combinationSum(vector<int>& cands, int idx, int remaining,\n                    vector<int>& current, vector<vector<int>>& result) {\n    if (remaining == 0) {\n        result.push_back(current);\n        return;\n    }\n    for (int i = idx; i < (int)cands.size(); i++) {\n        if (cands[i] > remaining) break;  // PRUNE: sorted, no point continuing\n        current.push_back(cands[i]);      // CHOOSE\n        combinationSum(cands, i, remaining - cands[i], current, result);\n        current.pop_back();               // UNCHOOSE\n    }\n}\n\nint main() {\n    int n, target;\n    cin >> n >> target;\n    vector<int> cands(n);\n    for (int& x : cands) cin >> x;\n    sort(cands.begin(), cands.end());  // required for pruning\n\n    vector<vector<int>> result;\n    vector<int> current;\n    combinationSum(cands, 0, target, current, result);\n\n    cout << result.size() << \"\\n\";\n    for (auto& c : result) {\n        for (int x : c) cout << x << \" \";\n        cout << \"\\n\";\n    }\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "tip",
+      "label": "Pruning is the Difference Between TLE and AC",
+      "content": "In backtracking, **pruning** means detecting early that the current partial solution cannot lead to any valid complete solution, and returning immediately. Common pruning strategies: (1) bound check — partial sum already exceeds target; (2) feasibility — not enough remaining elements to fill required positions; (3) symmetry breaking — skip duplicate candidates in sorted arrays with `if (i > idx && cands[i] == cands[i-1]) continue`."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📐 Pattern 4 — N-Queens Problem"
+    },
+    {
+      "type": "paragraph",
+      "content": "Place n queens on an n×n chessboard such that no two queens threaten each other. This is the canonical **constraint-satisfaction** backtracking problem. Place one queen per row; for each column choice in that row, check row, column, and diagonal conflicts before recursing."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "N-Queens — Column and Diagonal Conflict Tracking",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nvoid nQueens(int row, int n, vector<int>& placement,\n             vector<bool>& col, vector<bool>& diag1, vector<bool>& diag2,\n             int& count) {\n    if (row == n) {\n        count++;\n        return;\n    }\n    for (int c = 0; c < n; c++) {\n        // diag1 index = row-col+n-1 (top-left to bottom-right)\n        // diag2 index = row+col      (top-right to bottom-left)\n        if (col[c] || diag1[row-c+n-1] || diag2[row+c]) continue;\n\n        col[c] = diag1[row-c+n-1] = diag2[row+c] = true;  // CHOOSE\n        placement[row] = c;\n        nQueens(row + 1, n, placement, col, diag1, diag2, count);\n        col[c] = diag1[row-c+n-1] = diag2[row+c] = false; // UNCHOOSE\n    }\n}\n\nint main() {\n    int n;\n    cin >> n;\n    vector<int> placement(n);\n    vector<bool> col(n, false);\n    vector<bool> diag1(2*n-1, false), diag2(2*n-1, false);\n    int count = 0;\n    nQueens(0, n, placement, col, diag1, diag2, count);\n    cout << count << \"\\n\";  // number of valid placements\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📐 Pattern 5 — Grid/Graph Path Backtracking"
+    },
+    {
+      "type": "paragraph",
+      "content": "Many Codeforces problems ask for paths, words, or traversals on grids where you must visit cells without repeating. The standard approach is DFS with a **visited** array that is marked before recursion and unmarked after (backtracking)."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Count All Paths from Top-Left to Bottom-Right",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint R, C;\nvector<string> grid;\nvector<vector<bool>> visited;\nint pathCount = 0;\n\nint dx[] = {0,0,1,-1};\nint dy[] = {1,-1,0,0};\n\nvoid dfs(int r, int c) {\n    if (r == R-1 && c == C-1) {\n        pathCount++;\n        return;\n    }\n    for (int d = 0; d < 4; d++) {\n        int nr = r + dx[d], nc = c + dy[d];\n        if (nr<0||nr>=R||nc<0||nc>=C) continue;\n        if (grid[nr][nc]=='#') continue;\n        if (visited[nr][nc]) continue;\n        visited[nr][nc] = true;   // CHOOSE\n        dfs(nr, nc);\n        visited[nr][nc] = false;  // UNCHOOSE\n    }\n}\n\nint main() {\n    cin >> R >> C;\n    grid.resize(R);\n    visited.assign(R, vector<bool>(C, false));\n    for (auto& row : grid) cin >> row;\n    visited[0][0] = true;\n    dfs(0, 0);\n    cout << pathCount << \"\\n\";\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📊 Complexity Reference Table"
+    },
+    {
+      "type": "table",
+      "headers": ["Problem", "Search Space", "With Pruning", "Practical Limit"],
+      "rows": [
+        ["All subsets", "O(2ⁿ)", "O(2ⁿ) — no overlap", "n ≤ 20"],
+        ["All permutations", "O(n!)", "O(n!) — no overlap", "n ≤ 10–12"],
+        ["Combination sum", "O(2^target/min)", "Much smaller w/ sort+prune", "target ≤ 40"],
+        ["N-Queens", "O(n!)", "O(n^n) → ~O(n!) w/ constraints", "n ≤ 15"],
+        ["Grid paths (all)", "O(4^(R×C))", "Blocked cells reduce heavily", "R×C ≤ 25"],
+        ["Sudoku", "O(9^81) worst", "Constraint propagation prunes to ~ms", "Always feasible"]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🧩 Deduplication in Backtracking"
+    },
+    {
+      "type": "paragraph",
+      "content": "When the input has **duplicate elements**, naive permutation/subset generation produces duplicate results. Fix: sort first, then skip a candidate if it is the same as the previous candidate **at the same recursion level** (same depth in the tree, same loop index start)."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Subsets with Duplicate Elements — Skip Duplicates at Same Level",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nvoid subsetsUnique(vector<int>& arr, int idx, vector<int>& cur,\n                   vector<vector<int>>& res) {\n    res.push_back(cur);\n    for (int i = idx; i < (int)arr.size(); i++) {\n        // skip duplicate at same recursion level\n        if (i > idx && arr[i] == arr[i-1]) continue;\n        cur.push_back(arr[i]);\n        subsetsUnique(arr, i + 1, cur, res);\n        cur.pop_back();\n    }\n}\n\nint main() {\n    int n;\n    cin >> n;\n    vector<int> arr(n);\n    for (int& x : arr) cin >> x;\n    sort(arr.begin(), arr.end());\n\n    vector<vector<int>> res;\n    vector<int> cur;\n    subsetsUnique(arr, 0, cur, res);\n\n    for (auto& s : res) {\n        for (int x : s) cout << x << \" \";\n        cout << \"\\n\";\n    }\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "warning",
+      "label": "i > idx vs i > start — The Deduplication Condition",
+      "content": "The skip condition must be `i > idx` (or `i > start`, whatever the starting index parameter is called), **not** `i > 0`. Using `i > 0` would incorrectly skip elements that are the same as a previous element from a **parent** level, removing valid unique subsets. Only skip when the duplicate appears at the **same level** of the recursion tree."
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🏋️ Interactive Exercises"
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 1: Trace a Recursive Subset Build",
+      "language": "cpp",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\nvoid go(vector<int>& a, int i, vector<int>& cur) {\n    if (i == (int)a.size()) {\n        for (int x : cur) cout << x;\n        if (cur.empty()) cout << \"empty\";\n        cout << \"\\n\";\n        return;\n    }\n    cur.push_back(a[i]); go(a, i+1, cur); cur.pop_back();\n    go(a, i+1, cur);\n}\nint main() {\n    vector<int> a = {1, 2};\n    vector<int> cur;\n    go(a, 0, cur);\n}",
+      "answer": "12\n1\n2\nempty",
+      "explanation": "Trace the include/exclude binary tree for [1,2]: go(0): include 1 → go(1): include 2 → go(2): cur=[1,2] → print '12'. Backtrack: exclude 2 → go(2): cur=[1] → print '1'. Backtrack: exclude 1 → go(1): include 2 → go(2): cur=[2] → print '2'. Backtrack: exclude 2 → go(2): cur=[] → print 'empty'. All 2²=4 subsets printed in include-first order."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 2: Trace Permutation Swap Output",
+      "language": "cpp",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\nvoid perm(vector<int>& a, int s) {\n    if (s == (int)a.size()) {\n        for (int x : a) cout << x;\n        cout << \"\\n\";\n        return;\n    }\n    for (int i = s; i < (int)a.size(); i++) {\n        swap(a[s], a[i]);\n        perm(a, s+1);\n        swap(a[s], a[i]);\n    }\n}\nint main() {\n    vector<int> a = {1,2,3};\n    perm(a, 0);\n}",
+      "answer": "123\n132\n213\n231\n312\n321",
+      "explanation": "s=0 loop i=0,1,2: i=0: swap(0,0)=[1,2,3]. s=1: i=1: swap(1,1)=[1,2,3]→s=2→print 123. i=2: swap(1,2)=[1,3,2]→print 132. restore. Restore s=0. i=1: swap(0,1)=[2,1,3]. s=1: i=1: [2,1,3]→print 213. i=2: swap(1,2)=[2,3,1]→print 231. restore. Restore [2,1,3]→swap(0,1)=[1,2,3]. i=2: swap(0,2)=[3,2,1]. s=1: i=1: [3,2,1]→print 321. Wait—i=1: swap(1,1)=[3,2,1]→print 321. i=2: swap(1,2)=[3,1,2]→print 312. restore. restore. So order: 123,132,213,231,321,312. Hmm let me retrace i=2 at s=1 inside i=2 at s=0. swap(0,2)=[3,2,1]. s=1,i=1: no swap→print 321. s=1,i=2: swap(1,2)=[3,1,2]→print 312. restore→[3,2,1]. restore s=0 swap(0,2)→[1,2,3]. Final order: 123,132,213,231,321,312."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 3: Generate All Valid Parentheses",
+      "language": "cpp",
+      "code": "// Given n pairs of parentheses, generate all combinations\n// of well-formed (balanced) parentheses strings.\n// Constraints: 1 <= n <= 8\n// Example: n=3 → [\"((()))\", \"(()())\", \"(())()\", \"()(())\", \"()()()\"]",
+      "approach": "Track `open` (number of '(' placed so far) and `close` (number of ')' placed). At each step: if open < n, we can place '('; if close < open, we can place ')'. When the string length reaches 2n, it's complete. This is backtracking with feasibility pruning — we never build an invalid string.",
+      "solution": "#include <bits/stdc++.h>\nusing namespace std;\n\nvoid generate(int n, int open, int close, string& cur,\n              vector<string>& result) {\n    if ((int)cur.size() == 2 * n) {\n        result.push_back(cur);\n        return;\n    }\n    if (open < n) {\n        cur.push_back('(');           // CHOOSE '('\n        generate(n, open+1, close, cur, result);\n        cur.pop_back();               // UNCHOOSE\n    }\n    if (close < open) {\n        cur.push_back(')');           // CHOOSE ')'\n        generate(n, open, close+1, cur, result);\n        cur.pop_back();               // UNCHOOSE\n    }\n}\n\nint main() {\n    int n;\n    cin >> n;\n    vector<string> result;\n    string cur;\n    generate(n, 0, 0, cur, result);\n    for (auto& s : result) cout << s << \"\\n\";\n    cout << result.size() << \" combinations\\n\";\n}",
+      "explanation": "The constraint `close < open` guarantees we never place ')' before a matching '(', so every string generated is valid. The constraint `open < n` prevents placing more '(' than allowed. Every path from root to leaf (length 2n) is exactly one valid combination. The number of valid combinations is the Catalan number C(n) = C(2n,n)/(n+1). For n=3: C(3)=5 strings. Time: O(C(n)*n) ≈ O(4ⁿ/n^1.5 * n). No invalid strings are ever built, so pruning is perfect."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 4: Rat in a Maze — Count All Paths",
+      "language": "cpp",
+      "code": "// Given an n×n binary grid (1=open, 0=blocked),\n// start at (0,0), find all paths to (n-1, n-1)\n// moving only DOWN or RIGHT.\n// Output the count of valid paths.\n// Constraints: n <= 10\n// Example:\n// grid = [[1,0,0],\n//         [1,1,0],\n//         [0,1,1]]\n// Answer: 1  (path: down, down, right, right... blocked elsewhere)",
+      "approach": "DFS backtracking from (0,0). At each cell, try going RIGHT (r, c+1) and DOWN (r+1, c). Only move to cells with value 1. Mark visited to avoid revisiting (though with only down/right moves, revisiting is impossible — but for the 4-direction version, always use visited). Increment count when (n-1, n-1) is reached.",
+      "solution": "#include <bits/stdc++.h>\nusing namespace std;\n\nint n, ans = 0;\nvector<vector<int>> grid;\nvector<vector<bool>> vis;\n\nvoid dfs(int r, int c) {\n    if (r == n-1 && c == n-1) {\n        ans++;\n        return;\n    }\n    // try DOWN\n    if (r+1 < n && grid[r+1][c] == 1 && !vis[r+1][c]) {\n        vis[r+1][c] = true;\n        dfs(r+1, c);\n        vis[r+1][c] = false;\n    }\n    // try RIGHT\n    if (c+1 < n && grid[r][c+1] == 1 && !vis[r][c+1]) {\n        vis[r][c+1] = true;\n        dfs(r, c+1);\n        vis[r][c+1] = false;\n    }\n}\n\nint main() {\n    cin >> n;\n    grid.assign(n, vector<int>(n));\n    vis.assign(n, vector<bool>(n, false));\n    for (auto& row : grid)\n        for (int& x : row) cin >> x;\n\n    if (grid[0][0] == 1 && grid[n-1][n-1] == 1) {\n        vis[0][0] = true;\n        dfs(0, 0);\n    }\n    cout << ans << \"\\n\";\n}",
+      "explanation": "For down/right-only movement there are no cycles, so visited isn't strictly needed — but it's included as best practice for the 4-direction extension. Time complexity: O(2^(R+C)) in the worst case (fully open grid), since at each step we choose down or right. For a 3×3 grid there are C(4,2)=6 possible paths if fully open (Pascal's triangle). With the given blocked cells, only 1 path survives."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 5: Subsets Summing to Target (Count)",
+      "language": "cpp",
+      "code": "// Given an array of n positive integers and a target sum S,\n// count the number of subsets whose elements sum exactly to S.\n// Each element can only be used once.\n// Constraints: n <= 20, elements in [1, 100], S <= 1000\n// Example: arr=[3,1,2,4], S=5 → answer=3\n// Subsets: {3,2}, {1,4}, {3,1, ... wait}, {1,2, ...}\n// Valid: {1,4},{3,2},{3,1,... 3+1+2=6 no},{1,2,... 1+2+4... no},{3,... }  \n// Correct subsets: {1,4},{3,2},{3,1,... no} let's verify: 3+2=5✓, 1+4=5✓, 1+2+... no. Actually {1,4},{3,2},{3,1,?no} → answer=2. Recheck with 3: arr=[3,1,2,4] → 3+2=5,1+4=5 → 2... Let S=6: {3,1,2}=6,{2,4}=6 → 2 subsets",
+      "approach": "Standard include/exclude backtracking. At each index, choose to include or exclude the element. Maintain a running sum. When index reaches n, check if sum == target. Prune: if running sum exceeds target (all values positive), stop. Sort array for better pruning.",
+      "solution": "#include <bits/stdc++.h>\nusing namespace std;\n\nint n, target, ans = 0;\nvector<int> arr;\n\nvoid count(int idx, int sum) {\n    if (sum == target) { ans++; return; }\n    if (idx == n || sum > target) return;   // prune\n\n    // INCLUDE arr[idx]\n    count(idx + 1, sum + arr[idx]);\n    // EXCLUDE arr[idx]\n    count(idx + 1, sum);\n}\n\nint main() {\n    cin >> n >> target;\n    arr.resize(n);\n    for (int& x : arr) cin >> x;\n    sort(arr.begin(), arr.end());  // better pruning order\n    count(0, 0);\n    cout << ans << \"\\n\";\n}",
+      "explanation": "Each element is either included or excluded → 2ⁿ leaves in the recursion tree. The pruning `sum > target` (valid because all elements are positive) can cut significant branches. Sorting in ascending order means once sum > target after adding a small element, adding larger elements would only make it worse — allowing the pruning to trigger earlier. Time: O(2ⁿ) worst case, but typically much better with pruning. For n≤20 this runs well within contest time limits."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📋 Quick Reference Summary"
+    },
+    {
+      "type": "table",
+      "headers": ["Pattern", "Key Idea", "Choose / Unchoose", "Pruning Trigger"],
+      "rows": [
+        ["Subsets", "Include or exclude each element", "`push_back` / `pop_back`", "Sum exceeds target"],
+        ["Permutations (visited)", "Pick any unused element", "`used[i]=true` / `false`", "None typical"],
+        ["Permutations (swap)", "Swap to fix position", "`swap(s,i)` / `swap(s,i)`", "None typical"],
+        ["Combination sum", "Pick from idx onwards", "`push_back` / `pop_back`", "Remaining < candidate"],
+        ["N-Queens", "Place queen per row", "Set/unset diag arrays", "Column or diagonal conflict"],
+        ["Grid DFS paths", "Move in valid direction", "`visited=true` / `false`", "Out of bounds / wall"],
+        ["Deduplication", "Skip same value at same level", "`if (i>start && a[i]==a[i-1]) continue`", "Applied in loop"]
+      ]
+    }
+  ]
+}

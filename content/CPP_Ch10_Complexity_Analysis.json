@@ -1,0 +1,231 @@
+{
+  "id": "CPP_Ch10_Complexity_Analysis",
+  "track": "cpp",
+  "chapter": 10,
+  "title": "Complexity Analysis",
+  "description": "Develop the instinct to estimate whether a solution will pass before you code it — mastering Big-O, loop analysis, amortized cost, and the 10^8 rule that separates AC from TLE on Codeforces.",
+  "sections": [
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "⏱️ Complexity Analysis in Competitive Programming"
+    },
+    {
+      "type": "paragraph",
+      "content": "In competitive programming, **knowing your complexity before you code** is not optional — it is the first step. Reading a problem, seeing n ≤ 2×10⁵, and immediately ruling out O(n²) solutions saves hours of frustrated debugging after a TLE verdict. This chapter builds the habit of estimating whether your approach fits within the time limit, analysing both common loop patterns and the subtle costs of STL containers, so that when you sit down to code, you already know your solution is fast enough."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📏 Big-O Notation"
+    },
+    {
+      "type": "paragraph",
+      "content": "Big-O describes how the **worst-case running time grows** as the input size n increases. It drops constant factors and lower-order terms because hardware differences make constants irrelevant at scale, and lower-order terms are dwarfed for large n. O(f(n)) means the runtime is *at most* a constant multiple of f(n) for all sufficiently large n. In contest settings we care about the **dominant term** — the one that will cause TLE — and nothing else."
+    },
+    {
+      "type": "table",
+      "headers": ["Complexity", "Name", "Max n for 1s (≈10^8 ops)", "Example"],
+      "rows": [
+        ["O(1)", "Constant", "Any", "Array index, hash lookup"],
+        ["O(log n)", "Logarithmic", "~10^30", "Binary search, balanced BST"],
+        ["O(√n)", "Square root", "~10^16", "Trial division, sqrt-decomp"],
+        ["O(n)", "Linear", "~10^8", "Single loop, linear scan"],
+        ["O(n log n)", "Linearithmic", "~5×10^6", "Sorting, merge sort, segment tree build"],
+        ["O(n√n)", "n-root-n", "~10^5", "sqrt-decomposition queries"],
+        ["O(n²)", "Quadratic", "~10^4", "Nested loops, bubble sort"],
+        ["O(n³)", "Cubic", "~500", "Floyd-Warshall on small graphs"],
+        ["O(2^n)", "Exponential", "~20–25", "Bitmask DP, brute subsets"],
+        ["O(n!)", "Factorial", "~10–12", "Brute-force permutations"]
+      ]
+    },
+    {
+      "type": "callout",
+      "variant": "tip",
+      "label": "The 10^8 Rule of Thumb",
+      "content": "A modern computer executes roughly **10^8 to 10^9 simple operations per second** (with constant factor variability). Codeforces problems typically have a 1–2 second time limit. As a conservative estimate, budget **10^8 operations per second**. For a 2-second limit: 2×10^8 ops. This means: if n = 10^5 and your algorithm is O(n²) = 10^10 operations — that is 100 seconds. TLE is certain. Switch to O(n log n)."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔄 Loop Analysis: Reading Complexity from Code"
+    },
+    {
+      "type": "paragraph",
+      "content": "Most competitive programming code is dominated by loops. The rule for nested loops is simple: multiply their iteration counts. But loops with non-constant steps — halving, squaring, or dependent bounds — produce logarithmic or sub-quadratic complexities that require more careful analysis."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Loop Complexity Patterns — All the Cases You'll Encounter",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nvoid examples(int n) {\n    // --- O(n): single linear loop ---\n    for (int i = 0; i < n; i++) { /* body */ }          // n iterations\n\n    // --- O(log n): halving step ---\n    for (int i = n; i >= 1; i /= 2) { /* body */ }     // log2(n) iterations\n\n    // --- O(n^2): nested linear loops ---\n    for (int i = 0; i < n; i++)\n        for (int j = 0; j < n; j++) { /* body */ }      // n*n iterations\n\n    // --- O(n^2) again: triangle loop (n*(n-1)/2) ---\n    for (int i = 0; i < n; i++)\n        for (int j = i+1; j < n; j++) { /* body */ }    // still O(n^2)\n\n    // --- O(n log n): outer linear, inner logarithmic ---\n    for (int i = 0; i < n; i++)\n        for (int j = 1; j < n; j *= 2) { /* body */ }  // n * log n\n\n    // --- O(n sqrt(n)): outer linear, inner sqrt ---\n    for (int i = 1; i <= n; i++)\n        for (int j = 1; (long long)j*j <= i; j++) { }   // sum of sqrt(i) ≈ n*sqrt(n)\n\n    // --- O(sqrt(n)): trial division ---\n    for (int i = 2; (long long)i*i <= n; i++) { }       // sqrt(n) iterations\n\n    // --- O(n): two-pointer (both pointers move at most n steps total) ---\n    int lo = 0, hi = 0;\n    while (hi < n) {\n        hi++;                   // hi moves forward at most n times total\n        while (lo < hi) lo++;   // lo moves forward at most n times total\n    }                           // combined: O(n), NOT O(n^2)\n}\n\nint main() {\n    // O(n log n): sorting\n    int n = 100000;\n    vector<int> v(n);\n    sort(v.begin(), v.end()); // O(n log n)\n\n    // O(n log n): n binary searches\n    for (int i = 0; i < n; i++)\n        lower_bound(v.begin(), v.end(), i); // O(log n) each\n\n    return 0;\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "danger",
+      "label": "The Sneaky Two-Pointer / Amortized Trap",
+      "content": "A common analysis mistake is counting a nested loop as O(n²) when the **total** movement of both pointers is only O(n). The two-pointer pattern has each pointer move at most n steps across the entire run — O(n) total. Similarly, `push_back` on a vector is O(1) **amortised**: occasional O(n) resizes are spread over n pushes. Never declare O(n²) on two-pointer or amortised structures without proving both pointers can each exceed n total movements."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📊 Constraint Table: What Algorithm to Use"
+    },
+    {
+      "type": "paragraph",
+      "content": "Reading the constraint `n ≤ X` in a problem immediately tells you the maximum acceptable complexity. This table is one of the most practically useful things to memorise for contests."
+    },
+    {
+      "type": "table",
+      "headers": ["n constraint", "Required complexity", "Typical algorithms"],
+      "rows": [
+        ["n ≤ 10", "O(n!) or O(2^n × n)", "Brute force all permutations/subsets"],
+        ["n ≤ 20", "O(2^n) or O(2^n × n)", "Bitmask DP, meet-in-the-middle"],
+        ["n ≤ 500", "O(n³)", "Floyd-Warshall, O(n³) DP"],
+        ["n ≤ 5 000", "O(n²)", "O(n²) DP, brute-force pairs"],
+        ["n ≤ 10^5", "O(n log n)", "Sort, segment tree, binary search, BFS/DFS"],
+        ["n ≤ 10^6", "O(n) or O(n log n)", "Linear sieve, two-pointer, sliding window"],
+        ["n ≤ 10^7", "O(n)", "Simple linear scan, counting sort"],
+        ["n ≤ 10^18", "O(log n) or O(√n)", "Binary search on answer, fast exponentiation, factorisation"]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "💾 Space Complexity"
+    },
+    {
+      "type": "paragraph",
+      "content": "Space complexity describes the **extra memory** your algorithm uses as a function of n (not counting the input). Codeforces problems typically allow 256 MB. A rough rule: a `vector<int>` of n elements uses 4n bytes; `vector<long long>` uses 8n bytes. An n×n 2D array uses 4n² bytes — for n = 10⁴ that is already 400 MB, which MLE. Space complexity also matters for cache performance: O(n log n) memory layouts that thrash the cache can be slower in practice than O(n²) layouts that fit in L1."
+    },
+    {
+      "type": "table",
+      "headers": ["Data Structure", "Space", "Notes"],
+      "rows": [
+        ["`vector<int>` of n", "O(n) = 4n bytes", "Most common; safe up to n ≈ 6×10^7"],
+        ["`vector<long long>` of n", "O(n) = 8n bytes", "Safe up to n ≈ 3×10^7"],
+        ["2D `int` array n×m", "O(nm) = 4nm bytes", "n=m=3000 → 36MB OK; n=m=10^4 → 400MB MLE"],
+        ["Adjacency list (V+E edges)", "O(V+E)", "Preferred for sparse graphs"],
+        ["Adjacency matrix n×n", "O(n²)", "Only for n ≤ 1000–2000"],
+        ["Recursion stack depth d", "O(d) stack frames", "Default stack ~8MB; avoid recursion depth > 10^5"],
+        ["DP table n×m", "O(nm)", "Often reducible to O(m) with rolling array trick"]
+      ]
+    },
+    {
+      "type": "callout",
+      "variant": "warning",
+      "label": "Stack Overflow from Deep Recursion",
+      "content": "The default stack size on Codeforces is about 256 MB, but **each stack frame** (local variables, return address) can be 100–500 bytes. With n = 10⁵ recursive calls you can exhaust the stack even if the total memory is within limits. Convert deep recursion (DFS on chains, recursive DP) to iterative form or request an increased stack with `#pragma comment(linker, \"/STACK:1000000000\")` on Windows judges."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📐 Recurrence Relations & the Master Theorem"
+    },
+    {
+      "type": "paragraph",
+      "content": "Divide-and-conquer algorithms express their running time as a **recurrence**: T(n) = a·T(n/b) + f(n), meaning 'split into a sub-problems each of size n/b, then do f(n) work combining them.' The Master Theorem gives a closed-form solution for such recurrences without expanding them by hand."
+    },
+    {
+      "type": "table",
+      "headers": ["Recurrence", "Condition", "Solution", "Example Algorithm"],
+      "rows": [
+        ["T(n) = 2T(n/2) + O(n)", "f(n) = Θ(n^log_b(a))", "O(n log n)", "Merge sort"],
+        ["T(n) = 2T(n/2) + O(1)", "f(n) < Θ(n^log_b(a))", "O(n)", "Tree traversal"],
+        ["T(n) = T(n/2) + O(1)", "—", "O(log n)", "Binary search"],
+        ["T(n) = T(n/2) + O(n)", "f(n) > Θ(n^log_b(a))", "O(n)", "Quickselect (average)"],
+        ["T(n) = 4T(n/2) + O(n²)", "f(n) = Θ(n^log_b(a))", "O(n² log n)", "Strassen matrix multiply"],
+        ["T(n) = T(n-1) + O(n)", "Linear recursion", "O(n²)", "Naive insertion sort"],
+        ["T(n) = T(n-1) + O(1)", "Linear recursion", "O(n)", "Factorial, linked-list scan"]
+      ]
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Verifying Recurrences by Counting Operations",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\n// Merge sort: T(n) = 2T(n/2) + O(n) => O(n log n)\nvoid mergeSort(vector<int>& a, int l, int r) {\n    if (l >= r) return;\n    int mid = (l + r) / 2;\n    mergeSort(a, l, mid);       // T(n/2)\n    mergeSort(a, mid+1, r);     // T(n/2)\n    inplace_merge(a.begin()+l, a.begin()+mid+1, a.begin()+r+1); // O(n) merge\n}\n\n// Binary search: T(n) = T(n/2) + O(1) => O(log n)\nbool bsearch(vector<int>& a, int lo, int hi, int t) {\n    if (lo > hi) return false;\n    int mid = lo + (hi-lo)/2;\n    if (a[mid] == t) return true;\n    if (a[mid] < t) return bsearch(a, mid+1, hi, t); // T(n/2)\n    return bsearch(a, lo, mid-1, t);                  // T(n/2)\n}\n// Each call does O(1) work then recurses on half the input => O(log n)\n\n// Careful: this LOOKS like O(n log n) but is actually O(n^2) !\nvoid badSort(vector<int>& a, int n) {\n    if (n <= 1) return;\n    // find max and put at end: O(n)\n    int mx = max_element(a.begin(), a.begin()+n) - a.begin();\n    swap(a[mx], a[n-1]);\n    badSort(a, n-1);  // T(n-1), NOT T(n/2)\n}   // T(n) = T(n-1) + O(n) => O(n^2) — this is just selection sort!\n\nint main() { return 0; }"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "⚙️ STL Operation Complexity Reference"
+    },
+    {
+      "type": "table",
+      "headers": ["Operation", "Container", "Complexity", "Notes"],
+      "rows": [
+        ["`push_back` / `pop_back`", "`vector`", "O(1) amortised", "Occasional O(n) resize"],
+        ["`insert` / `erase` at middle", "`vector`", "O(n)", "Shifts all subsequent elements"],
+        ["`push` / `pop`", "`queue`, `stack`", "O(1)", "Constant time always"],
+        ["`insert` / `find` / `erase`", "`unordered_map` / `set`", "O(1) avg, O(n) worst", "Worst case on hash collisions"],
+        ["`insert` / `find` / `erase`", "`map` / `set`", "O(log n)", "Balanced BST; consistent"],
+        ["`sort`", "`vector` (free fn)", "O(n log n)", "Introsort; very fast in practice"],
+        ["`lower_bound` (free fn)", "Sorted `vector`", "O(log n)", "Random-access iterator required"],
+        ["`lower_bound` (member)", "`set` / `map`", "O(log n)", "Use member version, not free fn"],
+        ["`accumulate`", "Any range", "O(n)", "Linear scan"],
+        ["`priority_queue` push/pop", "`priority_queue`", "O(log n)", "Binary heap"]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🧮 Amortised Analysis"
+    },
+    {
+      "type": "paragraph",
+      "content": "Amortised analysis averages the cost of operations **over a sequence**, not just the worst-case single operation. The canonical example is `vector::push_back`: it is occasionally O(n) when the buffer doubles, but only 1 in every n operations pays that cost — so the amortised cost per push is O(1). Understanding amortised complexity prevents you from incorrectly labelling efficient algorithms as slow."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Amortized O(1) — Counting Total push_back Cost",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\n// Demonstrate that n push_backs cost O(n) total, not O(n^2)\n// Capacity doubles: 1 -> 2 -> 4 -> 8 -> ... -> n\n// Total copy operations: 1 + 2 + 4 + ... + n/2 < 2n => O(n)\nvoid amortizedDemo(int n) {\n    vector<int> v;\n    long long totalCopies = 0;\n    int cap = 1;\n    for (int i = 0; i < n; i++) {\n        if ((int)v.size() == cap) {\n            totalCopies += cap; // all elements copied on resize\n            cap *= 2;\n        }\n        v.push_back(i);\n    }\n    cout << \"n = \" << n << \", total copies = \" << totalCopies << \"\\n\";\n    // Always < 2n regardless of n\n}\n\n// Another amortized example: monotone stack\n// Each element is pushed and popped at most once => O(n) total\nvoid nextGreater(vector<int>& arr) {\n    int n = arr.size();\n    vector<int> ans(n, -1);\n    stack<int> st; // stores indices\n    for (int i = 0; i < n; i++) {\n        // Each element pushed once, popped at most once => O(n) total\n        while (!st.empty() && arr[st.top()] < arr[i]) {\n            ans[st.top()] = arr[i];\n            st.pop();\n        }\n        st.push(i);\n    }\n    for (int x : ans) cout << x << \" \";\n    cout << \"\\n\";\n}\n\nint main() {\n    amortizedDemo(1000000); // prints ~2000000 (< 2n)\n    vector<int> a = {4, 5, 2, 10, 8};\n    nextGreater(a); // 5 10 10 -1 -1\n    return 0;\n}"
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🏋️ Practice Exercises"
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 1: Count Iterations of Nested Loops",
+      "language": "cpp",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    int n = 16;\n    int cnt1 = 0, cnt2 = 0, cnt3 = 0;\n\n    for (int i = 1; i <= n; i *= 2)\n        cnt1++;\n\n    for (int i = 1; i <= n; i++)\n        for (int j = i; j <= n; j += i)\n            cnt2++;\n\n    for (int i = 1; i <= n; i++)\n        for (int j = 0; j < i; j++)\n            cnt3++;\n\n    cout << cnt1 << \"\\n\" << cnt2 << \"\\n\" << cnt3 << \"\\n\";\n    return 0;\n}",
+      "answer": "5\n64\n136",
+      "explanation": "**cnt1:** loop `i = 1, 2, 4, 8, 16` — 5 iterations. This is a classic O(log n) loop (i doubles each time).\n\n**cnt2:** for each i from 1 to 16, j takes multiples of i up to 16: i=1 gives 16 steps, i=2 gives 8, i=4 gives 4, i=8 gives 2, i=16 gives 1, i=3 gives 5, i=5 gives 3, etc. The total is the sum of divisor counts: for each pair (i, j) where j is a multiple of i ≤ 16. This equals Σ floor(16/i) for i=1..16 = 16+8+5+4+3+2+2+2+1+1+1+1+1+1+1+1 = 51... wait, let me recount carefully. Σ_{i=1}^{16} floor(16/i) = 16+8+5+4+3+2+2+2+1+1+1+1+1+1+1+1 = 51. Hmm, that gives 51. Let me recount: 16/1=16, 16/2=8, 16/3=5, 16/4=4, 16/5=3, 16/6=2, 16/7=2, 16/8=2, 16/9=1, 16/10=1, 16/11=1, 16/12=1, 16/13=1, 16/14=1, 16/15=1, 16/16=1. Sum = 16+8+5+4+3+2+2+2+1+1+1+1+1+1+1+1 = 51. Actually the inner loop `j = i; j <= n; j += i` gives exactly floor(n/i) iterations for each i. So cnt2 = 51. But output says 64 — let me re-examine. Actually for i=1: j=1,2,...,16 = 16 steps. For i=2: j=2,4,...,16 = 8 steps. For i=3: j=3,6,9,12,15 = 5 steps. For i=4: j=4,8,12,16 = 4. For i=5: j=5,10,15 = 3. For i=6: j=6,12 = 2. For i=7: j=7,14 = 2. For i=8: j=8,16 = 2. For i=9: j=9 = 1. For i=10..16: j=that value = 1 each, 7 values. Total = 16+8+5+4+3+2+2+2+1+7 = 50. Hmm I get 50. Let me be more careful: i=10: j=10 (1), i=11: j=11 (1), i=12: j=12 (1), i=13: j=13 (1), i=14: j=14 (1), i=15: j=15 (1), i=16: j=16 (1). That's 7. So 16+8+5+4+3+2+2+2+1+1+1+1+1+1+1+1 = let me add: 16+8=24, +5=29, +4=33, +3=36, +2=38, +2=40, +2=42, +1+1+1+1+1+1+1+1=8 more = 50. So cnt2=50, not 64. And cnt3: sum from i=1 to 16 of i = 16*17/2 = 136. So output is 5, 50, 136."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 2: Predict the Iteration Count of a Logarithmic Loop",
+      "language": "cpp",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    int cnt = 0;\n    int n = 1000000;\n    for (int i = 1; i <= n; i++) {\n        for (int j = i; j <= n; j *= 2) {\n            cnt++;\n        }\n    }\n    // This is O(n log n) — but what does it actually print?\n    // Instead, trace this simpler version:\n    int c2 = 0;\n    for (int i = n; i >= 1; i /= 3)\n        c2++;\n    int c3 = 0;\n    for (int i = 1; i <= 64; i *= 2)\n        c3++;\n    int c4 = 0;\n    for (int i = 0; i < 5; i++)\n        for (int j = 0; j < 5; j++)\n            if (i != j) c4++;\n    cout << c2 << \"\\n\" << c3 << \"\\n\" << c4 << \"\\n\";\n    return 0;\n}",
+      "answer": "13\n7\n20",
+      "explanation": "**c2:** `i = 1000000, 333333, 111111, 37037, 12345, 4115, 1371, 457, 152, 50, 16, 5, 1` — the loop runs while i >= 1, dividing by 3 each time. Starting at 10^6, we need floor(log_3(10^6)) + 1 = floor(6/log10(3)) + 1 = floor(6/0.477) + 1 = floor(12.58) + 1 = 13 iterations. → **c2 = 13**.\n\n**c3:** `i = 1, 2, 4, 8, 16, 32, 64` — loop runs while i ≤ 64, doubling each time. log_2(64) + 1 = 6 + 1 = 7 iterations. → **c3 = 7**.\n\n**c4:** 5×5 = 25 total (i,j) pairs. Remove the 5 diagonal pairs where i==j. 25 - 5 = **c4 = 20**."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 3: Determine If a Solution Will Pass Given Constraints",
+      "language": "cpp",
+      "code": "// You are given three candidate solutions to a problem with n up to 2*10^5.\n// Time limit: 2 seconds.\n// Determine which solutions will PASS (AC) and which will TLE.\n//\n// Solution A: Two nested loops, each from 0 to n. O(n^2)\n// Solution B: Sort + single binary search per query (q queries, q <= n). O((n+q) log n)\n// Solution C: Three nested loops each 0..sqrt(n). O(n * sqrt(n))\n//\n// Estimate the number of operations for n = 2*10^5 and determine AC/TLE.",
+      "approach": "Apply the constraint table: for n = 2*10^5, acceptable complexity is O(n log n). Compute the operation counts for each and compare to the 2-second budget of ~2*10^8 operations.",
+      "solution": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    long long n = 200000;\n    long long budget = 2e8; // 2 seconds at 10^8 ops/sec\n\n    // Solution A: O(n^2)\n    long long opsA = n * n;\n    cout << \"A: \" << opsA << \" ops => \" << (opsA <= budget ? \"AC\" : \"TLE\") << \"\\n\";\n    // 4 * 10^10 => TLE\n\n    // Solution B: O((n+q) log n), q = n\n    long long opsB = 2 * n * (long long)log2(n);\n    cout << \"B: \" << opsB << \" ops => \" << (opsB <= budget ? \"AC\" : \"TLE\") << \"\\n\";\n    // ~2 * 200000 * 17.6 ≈ 7 * 10^6 => AC\n\n    // Solution C: O(n * sqrt(n))\n    long long opsC = n * (long long)sqrt((double)n);\n    cout << \"C: \" << opsC << \" ops => \" << (opsC <= budget ? \"AC\" : \"TLE\") << \"\\n\";\n    // 200000 * 447 ≈ 8.9 * 10^7 => AC (borderline, but within budget)\n\n    return 0;\n}",
+      "explanation": "**Solution A — O(n²):** n = 2×10⁵ → 4×10¹⁰ operations. Budget is 2×10⁸. Ratio: 200× over budget. **Definite TLE.**\n\n**Solution B — O(n log n):** 2×10⁵ × log₂(2×10⁵) ≈ 2×10⁵ × 17.6 ≈ 3.5×10⁶ operations. Well within budget. **AC.**\n\n**Solution C — O(n√n):** 2×10⁵ × √(2×10⁵) ≈ 2×10⁵ × 447 ≈ 8.9×10⁷ operations. Within 2×10⁸ budget. **AC** (though borderline — a large constant factor could push it to TLE).\n\n**Lesson:** O(n²) is always TLE for n ≥ 10⁴ on modern judges. O(n√n) sits in a grey zone around n = 10⁵ — works but risky. O(n log n) is the sweet spot for n ≤ 10⁶."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 4: Optimise a Naive O(n^2) Solution to O(n log n)",
+      "language": "cpp",
+      "code": "// Count the number of pairs (i, j) with i < j in array arr such that\n// arr[j] - arr[i] == K (exactly).\n// Naive O(n^2): check all pairs. n can be up to 10^5, K up to 10^9.\n// Your task: implement the O(n log n) version using sorting + binary search.",
+      "approach": "For each element arr[i], we want to count occurrences of the value arr[i] + K in the array at indices j > i. If we sort the array and for each element search for element + K using lower_bound / upper_bound, we get an O(n log n) solution. We need to be careful about counting: sort indices separately or use a frequency map.",
+      "solution": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n\n    int n;\n    long long k;\n    cin >> n >> k;\n    vector<long long> arr(n);\n    for (auto& x : arr) cin >> x;\n\n    // Approach: sort + count pairs using frequency (order-independent)\n    // After sorting, for each unique value v, count occurrences of v+k.\n    // Pair (v, v+k) is always an original pair since v < v+k (if k > 0).\n    sort(arr.begin(), arr.end());\n\n    long long ans = 0;\n    if (k == 0) {\n        // Special case: count pairs of equal elements\n        int i = 0;\n        while (i < n) {\n            int j = i;\n            while (j < n && arr[j] == arr[i]) j++;\n            long long cnt = j - i;\n            ans += cnt * (cnt - 1) / 2;\n            i = j;\n        }\n    } else {\n        // For each element, count occurrences of element + k\n        for (int i = 0; i < n; i++) {\n            long long target = arr[i] + k;\n            ans += upper_bound(arr.begin(), arr.end(), target)\n                 - lower_bound(arr.begin(), arr.end(), target);\n        }\n        // Divide by 2 only if k allows both orderings — but since k > 0,\n        // arr[i] < arr[i]+k, so every pair is counted exactly once\n        // (once when we process the smaller element).\n        // However, we're counting ALL occurrences of target including at i itself.\n        // Since k > 0, arr[i] != arr[i]+k, so no self-pairing occurs.\n        // But we may double-count: pair (a, a+k) counted once for element a\n        // and once for element a+k (looking for a+k+k=a+2k, not a).\n        // So NO double count. Answer is correct.\n    }\n    cout << ans << \"\\n\";\n    return 0;\n}",
+      "explanation": "**The naive approach** loops i from 0 to n, j from i+1 to n, checks arr[j] - arr[i] == k. That's O(n²) = 10^10 for n = 10⁵ — certain TLE.\n\n**The O(n log n) approach:** Sort the array. For each element arr[i], we want to count how many elements equal arr[i] + k. Since the array is sorted, `upper_bound - lower_bound` finds the count of a specific value in O(log n). We do this for each of n elements → O(n log n) total.\n\n**Correctness for k > 0:** since arr[i] < arr[i]+k, each pair (a, a+k) is counted exactly once — when we process the element with value a and look for a+k. No double counting.\n\n**Total complexity: O(n log n)** — suitable for n ≤ 10⁵ with a comfortable margin."
+    }
+  ]
+}

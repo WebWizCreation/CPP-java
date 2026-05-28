@@ -1,0 +1,186 @@
+{
+  "id": "CPP_Ch9_Binary_Search",
+  "track": "cpp",
+  "chapter": 9,
+  "title": "Binary Search",
+  "description": "Master the universal binary search template, parametric search on answers, and STL bounds to transform brute-force solutions into O(log n) elegance on Codeforces.",
+  "sections": [
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔍 Binary Search in Competitive Programming"
+    },
+    {
+      "type": "paragraph",
+      "content": "Binary search is one of the most recognisable patterns in competitive programming — and also one of the most misapplied. Beyond searching in a sorted array, the real power lies in **binary searching on the answer itself**: any time the feasibility of a value is monotonic (once X works, every value > X also works — or vice-versa), you can binary search. Problems rated 1200–1800 on Codeforces routinely hide this pattern behind phrases like *'minimise the maximum'*, *'maximise the minimum'*, or *'can you achieve X in at most K steps?'* Recognising that signal and setting up a correct `check()` function is the entire skill."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📐 The Universal Binary Search Template"
+    },
+    {
+      "type": "paragraph",
+      "content": "Two styles dominate contest code: the **closed-interval** style `[lo, hi]` with `while (lo <= hi)`, and the **half-open** style `[lo, hi)` with `while (lo < hi)`. Both are correct when used consistently. The closed-interval style is slightly easier to reason about for beginners; the half-open style mirrors how `std::lower_bound` works internally. Pick one and commit — mixing them within a single binary search is the root cause of most infinite-loop bugs."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Closed-Interval Template — First Index Where Condition Is True",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\n// Finds the FIRST index in arr where arr[idx] >= target.\n// Returns arr.size() if no such index exists.\n// Precondition: arr is sorted ascending.\nint lowerBoundManual(vector<int>& arr, int target) {\n    int lo = 0, hi = (int)arr.size() - 1;\n    int ans = (int)arr.size(); // default: not found\n    while (lo <= hi) {\n        int mid = lo + (hi - lo) / 2; // NEVER use (lo+hi)/2 — can overflow!\n        if (arr[mid] >= target) {\n            ans = mid;    // mid is a candidate; try to go further left\n            hi = mid - 1;\n        } else {\n            lo = mid + 1;\n        }\n    }\n    return ans;\n}\n\n// Finds the LAST index where arr[idx] <= target.\n// Returns -1 if all elements are greater than target.\nint upperBoundManual(vector<int>& arr, int target) {\n    int lo = 0, hi = (int)arr.size() - 1;\n    int ans = -1;\n    while (lo <= hi) {\n        int mid = lo + (hi - lo) / 2;\n        if (arr[mid] <= target) {\n            ans = mid;    // mid is a candidate; try to go further right\n            lo = mid + 1;\n        } else {\n            hi = mid - 1;\n        }\n    }\n    return ans;\n}\n\nint main() {\n    vector<int> arr = {1, 3, 5, 7, 9, 11};\n\n    cout << lowerBoundManual(arr, 5)  << \"\\n\"; // 2 (index of 5)\n    cout << lowerBoundManual(arr, 6)  << \"\\n\"; // 3 (first >= 6 is 7)\n    cout << lowerBoundManual(arr, 12) << \"\\n\"; // 6 (past end)\n\n    cout << upperBoundManual(arr, 7)  << \"\\n\"; // 3 (index of 7)\n    cout << upperBoundManual(arr, 8)  << \"\\n\"; // 3 (last <= 8 is 7)\n    cout << upperBoundManual(arr, 0)  << \"\\n\"; // -1 (nothing <= 0)\n    return 0;\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "danger",
+      "label": "The Two Bugs That Kill Binary Search in Contests",
+      "content": "**Bug 1 — Overflow:** `mid = (lo + hi) / 2` overflows when lo + hi > 2^31 - 1 (common when searching answer ranges up to 10^9 or 10^18). Always write `mid = lo + (hi - lo) / 2`. **Bug 2 — Infinite loop:** In a half-open `[lo, hi)` style, writing `hi = mid - 1` instead of `hi = mid` causes an infinite loop when lo and hi differ by 1. Dry-run your template on a 2-element array before every contest."
+    },
+    {
+      "type": "callout",
+      "variant": "tip",
+      "label": "Dry-Run Checklist for Any Binary Search",
+      "content": "Before submitting, verify your template on three edge cases: (1) the target is the first element, (2) the target is the last element, (3) the target does not exist. These three cases catch 90% of off-by-one bugs without needing to think about invariants abstractly."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔧 STL Binary Search Functions"
+    },
+    {
+      "type": "paragraph",
+      "content": "The C++ STL provides four binary-search utilities that operate on any **sorted range** in O(log n). They all accept iterators, so they work on `vector`, `array`, and sorted `deque`. For `set` and `map`, use the member `.lower_bound()` method instead — the free-function versions will degrade to O(n) on those containers because they lack random-access iterators."
+    },
+    {
+      "type": "table",
+      "headers": ["Function", "Returns", "Key Use Case"],
+      "rows": [
+        ["`lower_bound(b, e, x)`", "Iterator to first element **≥ x**", "Insertion point; count of elements < x"],
+        ["`upper_bound(b, e, x)`", "Iterator to first element **> x**", "End of equal range; count of elements ≤ x"],
+        ["`binary_search(b, e, x)`", "`true` if x exists in range", "Simple existence check (returns bool, no position)"],
+        ["`equal_range(b, e, x)`", "`pair<it,it>` = (lower, upper) bound", "All occurrences of x at once"]
+      ]
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "STL Bounds — Contest-Ready Patterns",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    vector<int> v = {10, 20, 20, 30, 40, 40, 40, 50};\n\n    // --- Count occurrences ---\n    int cnt20 = upper_bound(v.begin(), v.end(), 20)\n              - lower_bound(v.begin(), v.end(), 20); // 2\n    int cnt40 = upper_bound(v.begin(), v.end(), 40)\n              - lower_bound(v.begin(), v.end(), 40); // 3\n    cout << cnt20 << \" \" << cnt40 << \"\\n\"; // 2 3\n\n    // --- Largest element <= query ---\n    auto it = upper_bound(v.begin(), v.end(), 35);\n    if (it != v.begin()) cout << *prev(it) << \"\\n\"; // 30\n\n    // --- Smallest element >= query ---\n    auto it2 = lower_bound(v.begin(), v.end(), 25);\n    if (it2 != v.end()) cout << *it2 << \"\\n\"; // 30\n\n    // --- Number of elements strictly less than query ---\n    int less30 = lower_bound(v.begin(), v.end(), 30) - v.begin(); // 3\n    cout << less30 << \"\\n\";\n\n    // --- Does value exist? ---\n    cout << binary_search(v.begin(), v.end(), 20) << \"\\n\"; // 1\n    cout << binary_search(v.begin(), v.end(), 25) << \"\\n\"; // 0\n\n    // --- Member lower_bound on set (O(log n), not O(n)) ---\n    set<int> s = {5, 10, 15, 20};\n    auto sit = s.lower_bound(12); // iterator to 15\n    cout << *sit << \"\\n\"; // 15\n\n    return 0;\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🎯 Binary Search on Answer (Parametric Search)"
+    },
+    {
+      "type": "paragraph",
+      "content": "The most powerful form of binary search in CP does **not** search inside an existing array. Instead, you binary search over the **range of possible answer values**. The template: define `check(mid)` that returns `true` if answer value `mid` is achievable/feasible. If the feasibility function is **monotonic** — once `mid` is feasible, `mid+1` is also feasible (or vice-versa) — binary search finds the boundary in O(log V) calls to `check()`, where V is the answer range. The total complexity is O(check_cost × log V)."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Parametric Search — Allocate Minimum Pages",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\n// Problem: n books with pages[i] pages each. Distribute to m students\n// as contiguous segments. Minimise the maximum pages any student reads.\n\nbool check(vector<int>& pages, int m, long long maxPages) {\n    int students = 1;\n    long long running = 0;\n    for (int p : pages) {\n        if ((long long)p > maxPages) return false; // single book exceeds cap\n        if (running + p > maxPages) {\n            students++;         // start a new student\n            running = p;\n            if (students > m) return false;\n        } else {\n            running += p;\n        }\n    }\n    return true;\n}\n\nint main() {\n    int n, m;\n    cin >> n >> m;\n    vector<int> pages(n);\n    for (int& x : pages) cin >> x;\n\n    // Search space: [max single book, sum of all books]\n    long long lo = *max_element(pages.begin(), pages.end());\n    long long hi = accumulate(pages.begin(), pages.end(), 0LL);\n    long long ans = hi;\n\n    while (lo <= hi) {\n        long long mid = lo + (hi - lo) / 2;\n        if (check(pages, m, mid)) {\n            ans = mid;    // feasible — try to do better (smaller)\n            hi = mid - 1;\n        } else {\n            lo = mid + 1; // not feasible — need a bigger cap\n        }\n    }\n    cout << ans << \"\\n\";\n    return 0;\n}\n// Input: 4 2   pages: 12 34 67 90   =>  Output: 113"
+    },
+    {
+      "type": "callout",
+      "variant": "note",
+      "label": "Four Signals That Scream 'Binary Search on Answer'",
+      "content": "1. **Minimise the maximum** value of something across groups/segments. 2. **Maximise the minimum** distance/gap between placed objects. 3. **'Can you do X in at most K moves/operations?'** (check returns bool). 4. The answer is a non-negative integer or real value in a bounded range and the feasibility check is a simple greedy scan. If you see any of these, immediately ask: *Is the check function monotonic?*"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "⚡ Real-Valued Binary Search"
+    },
+    {
+      "type": "paragraph",
+      "content": "Binary search also applies to **continuous domains**. When the answer is a real number, replace the integer loop with a fixed iteration count (100 iterations gives ~30 decimal digits of precision — far more than any judge needs). Do **not** use `while (hi - lo > 1e-9)` as the termination condition; floating-point rounding can cause it to loop forever."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Real-Valued Binary Search — Rope Cutting",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\n// Given n ropes of integer lengths, cut them all into pieces of length L.\n// Find the maximum L such that you get at least k pieces.\nbool canGet(vector<int>& ropes, int k, double L) {\n    long long total = 0;\n    for (int r : ropes) total += (long long)(r / L);\n    return total >= k;\n}\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n\n    int n, k;\n    cin >> n >> k;\n    vector<int> ropes(n);\n    for (int& r : ropes) cin >> r;\n\n    double lo = 0, hi = *max_element(ropes.begin(), ropes.end());\n    for (int iter = 0; iter < 100; iter++) { // 100 iterations ~ 30 decimal places\n        double mid = (lo + hi) / 2.0;\n        if (canGet(ropes, k, mid)) lo = mid;\n        else hi = mid;\n    }\n\n    cout << fixed << setprecision(2) << lo << \"\\n\";\n    return 0;\n}\n// Input: 4 11   ropes: 802 743 457 539   =>  Output: 200.00"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📊 Binary Search Pattern Reference"
+    },
+    {
+      "type": "table",
+      "headers": ["Pattern", "Search Space", "check() Cost", "Total Complexity", "Classic Example"],
+      "rows": [
+        ["Classic sorted array", "n elements", "O(1)", "O(log n)", "Find insertion point"],
+        ["First/last occurrence", "n elements", "O(1)", "O(log n)", "Count of duplicates"],
+        ["Answer search (integer)", "Value range ≤ 10^9", "O(n) greedy", "O(n log V)", "Aggressive cows, min-pages"],
+        ["Answer search (real)", "Continuous [0, max]", "O(n)", "O(100n)", "Rope cutting, max radius"],
+        ["BS + prefix sum / DS", "Sorted + augmented", "O(log n)", "O(log² n)", "K-th element in range"]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔢 First and Last Occurrence"
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Finding First and Last Occurrence Without STL",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint first(vector<int>& a, int t) {\n    int lo = 0, hi = (int)a.size()-1, ans = -1;\n    while (lo <= hi) {\n        int mid = lo + (hi-lo)/2;\n        if (a[mid] == t) { ans = mid; hi = mid-1; } // record, go left\n        else if (a[mid] < t) lo = mid+1;\n        else hi = mid-1;\n    }\n    return ans;\n}\n\nint last(vector<int>& a, int t) {\n    int lo = 0, hi = (int)a.size()-1, ans = -1;\n    while (lo <= hi) {\n        int mid = lo + (hi-lo)/2;\n        if (a[mid] == t) { ans = mid; lo = mid+1; } // record, go right\n        else if (a[mid] < t) lo = mid+1;\n        else hi = mid-1;\n    }\n    return ans;\n}\n\nint main() {\n    vector<int> a = {2, 4, 4, 4, 6, 8, 8};\n    cout << first(a, 4) << \" \" << last(a, 4) << \"\\n\"; // 1 3\n    cout << first(a, 8) << \" \" << last(a, 8) << \"\\n\"; // 5 6\n    cout << first(a, 5) << \" \" << last(a, 5) << \"\\n\"; // -1 -1\n    // STL equivalent:\n    // count = upper_bound - lower_bound\n    int cnt = upper_bound(a.begin(), a.end(), 4)\n            - lower_bound(a.begin(), a.end(), 4); // 3\n    cout << cnt << \"\\n\";\n    return 0;\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "warning",
+      "label": "Binary Search Requires a Sorted (or Monotonic) Domain",
+      "content": "Binary search **only works** when the predicate transitions from false to true exactly once across the search space (monotonic). If the answer space has multiple true/false boundaries, binary search will silently return a wrong answer — it won't crash. Always verify monotonicity before applying the pattern."
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🏋️ Practice Exercises"
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 1: Tracing lower_bound and upper_bound Arithmetic",
+      "language": "cpp",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    vector<int> v = {10, 20, 20, 30, 40};\n    int a = lower_bound(v.begin(), v.end(), 20) - v.begin();\n    int b = upper_bound(v.begin(), v.end(), 20) - v.begin();\n    int c = lower_bound(v.begin(), v.end(), 25) - v.begin();\n    int d = lower_bound(v.begin(), v.end(), 50) - v.begin();\n    cout << a << \"\\n\";\n    cout << b << \"\\n\";\n    cout << c << \"\\n\";\n    cout << d << \"\\n\";\n    cout << b - a << \"\\n\";\n    return 0;\n}",
+      "answer": "1\n3\n3\n5\n2",
+      "explanation": "Vector is {10, 20, 20, 30, 40} at indices 0–4.\n\n**a:** `lower_bound(v, 20)` — first element ≥ 20. That is index 1 (value 20). → **a = 1**.\n\n**b:** `upper_bound(v, 20)` — first element > 20. Index 0 is 10 (≤20), 1 and 2 are 20 (≤20), index 3 is 30 (>20). → **b = 3**.\n\n**c:** `lower_bound(v, 25)` — first element ≥ 25. Index 3 has value 30 ≥ 25. → **c = 3**.\n\n**d:** `lower_bound(v, 50)` — no element ≥ 50 exists; iterator falls off the end = v.begin() + 5. → **d = 5**.\n\n**b - a = 3 - 1 = 2** — this is the count of occurrences of 20 in the vector, a classic trick."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 2: Count Pairs with Sum Strictly Less Than K",
+      "language": "cpp",
+      "code": "// Given a sorted array of n integers and an integer k,\n// count pairs (i, j) with i < j and arr[i] + arr[j] < k.\n// Constraints: 1 <= n <= 2e5, 0 <= arr[i] <= 1e9, 1 <= k <= 2e9\n// Example: arr = [1, 2, 3, 4, 5], k = 7 => 6\n// Valid pairs: (1,2),(1,3),(1,4),(1,5),(2,3),(2,4)",
+      "approach": "Fix i, then count valid j > i: we need arr[j] < k - arr[i]. Since arr is sorted, all valid j's form a contiguous prefix of arr[i+1..n-1]. Use lower_bound to find the first index where arr[j] >= (k - arr[i]) — everything before that index is valid. This is O(n log n) total.",
+      "solution": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n\n    int n;\n    long long k;\n    cin >> n >> k;\n    vector<long long> arr(n);\n    for (auto& x : arr) cin >> x;\n    sort(arr.begin(), arr.end());\n\n    long long ans = 0;\n    for (int i = 0; i < n - 1; i++) {\n        long long limit = k - arr[i]; // need arr[j] < limit\n        // lower_bound gives first index with arr[j] >= limit\n        // everything before it satisfies arr[j] < limit\n        auto it = lower_bound(arr.begin() + i + 1, arr.end(), limit);\n        ans += (it - (arr.begin() + i + 1));\n    }\n    cout << ans << \"\\n\";\n    return 0;\n}",
+      "explanation": "For each fixed i, the search range is `arr[i+1 .. n-1]`. We want count of elements strictly less than `limit = k - arr[i]`. `lower_bound` on this subrange returns an iterator to the first element ≥ limit. The number of elements before it is `it - (arr.begin() + i + 1)`.\n\nCorrectness: the array is sorted, so all valid j's are a contiguous prefix of the search range — binary search applies cleanly.\n\n**Complexity:** O(n log n) sort + O(n log n) for the loop = **O(n log n)** total. For n = 2×10⁵ this is ~3.4×10⁶ operations — comfortably within a 1-second time limit."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 3: Aggressive Cows (Classic Parametric Search)",
+      "language": "cpp",
+      "code": "// n stalls at given positions. Place c cows into stalls such that the\n// minimum distance between any two cows is MAXIMISED. Print that max distance.\n// Constraints: 2 <= c <= n <= 1e5, 0 <= pos[i] <= 1e9\n// Example: n=5 c=3, positions=[1,2,8,4,9] => answer = 3",
+      "approach": "Binary search on the answer D (the minimum distance). check(D): greedily place cows — always place the next cow at the earliest stall that is >= D away from the last placed cow. If we can fit all c cows, D is feasible. Feasibility is monotonically decreasing: if D works, D-1 also works. So binary search for the maximum feasible D.",
+      "solution": "#include <bits/stdc++.h>\nusing namespace std;\n\nbool check(vector<int>& pos, int c, int minDist) {\n    int placed = 1, last = pos[0];\n    for (int i = 1; i < (int)pos.size(); i++) {\n        if (pos[i] - last >= minDist) {\n            placed++;\n            last = pos[i];\n            if (placed == c) return true;\n        }\n    }\n    return placed >= c;\n}\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n\n    int n, c;\n    cin >> n >> c;\n    vector<int> pos(n);\n    for (int& x : pos) cin >> x;\n    sort(pos.begin(), pos.end());\n\n    int lo = 1, hi = pos.back() - pos.front();\n    int ans = 0;\n    while (lo <= hi) {\n        int mid = lo + (hi - lo) / 2;\n        if (check(pos, c, mid)) {\n            ans = mid;    // feasible — try a larger minimum distance\n            lo = mid + 1;\n        } else {\n            hi = mid - 1; // not feasible — need smaller distance\n        }\n    }\n    cout << ans << \"\\n\";\n    return 0;\n}",
+      "explanation": "**Why greedy check works:** after sorting stalls, to maximise the minimum gap we want to spread cows as far apart as possible. Greedy — place each cow at the earliest available stall respecting the current distance threshold — is provably optimal for this feasibility question.\n\n**Monotonicity:** if distance D is feasible (we can place all c cows), then D-1 is also feasible (relaxing the constraint never reduces feasibility). This guarantees binary search is valid.\n\n**Complexity:** O(n log n) sort + O(log(max_gap)) × O(n) for check = **O(n log V)** where V ≤ 10⁹. For n = 10⁵ this is roughly 5×10⁶ operations."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 4: K-th Smallest in an M×N Multiplication Table",
+      "language": "cpp",
+      "code": "// The M x N multiplication table has entry (i,j) = i*j for 1<=i<=M, 1<=j<=N.\n// Find the k-th smallest value in this table.\n// Constraints: 1 <= M, N <= 3e4, 1 <= k <= M*N\n// Example: M=3 N=3 k=5 => 3\n// Table sorted: 1,2,2,3,3,4,6,6,9",
+      "approach": "Binary search on the answer value x. For a given x, count how many table entries are <= x: row i contributes min(floor(x/i), N) entries (values i, 2i, ..., up to x capped at Ni). Sum over all rows. Find the smallest x where count(x) >= k.",
+      "solution": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n\n    long long M, N, k;\n    cin >> M >> N >> k;\n\n    // How many table entries are <= x?\n    auto countLE = [&](long long x) -> long long {\n        long long total = 0;\n        for (long long i = 1; i <= M; i++)\n            total += min(x / i, N);\n        return total;\n    };\n\n    long long lo = 1, hi = M * N, ans = hi;\n    while (lo <= hi) {\n        long long mid = lo + (hi - lo) / 2;\n        if (countLE(mid) >= k) {\n            ans = mid;\n            hi = mid - 1; // try to find a smaller value that also satisfies\n        } else {\n            lo = mid + 1;\n        }\n    }\n    cout << ans << \"\\n\";\n    return 0;\n}",
+      "explanation": "**Key insight:** `countLE(x)` is monotonically non-decreasing in x, so binary search applies. We want the smallest x with countLE(x) >= k.\n\n**Why ans is always in the table:** the binary search lands on the smallest x where the count jumps to >= k. Suppose x is not in the table; then countLE(x) == countLE(x-1) (no new entries introduced at x), so countLE(x-1) >= k too — contradicting x being the minimum. Therefore ans is always an actual table entry.\n\n**countLE derivation:** row i has entries {i, 2i, 3i, ..., Ni}. Entries ≤ x in row i = floor(x/i) but capped at N columns = min(x/i, N).\n\n**Complexity:** O(M × log(M×N)). For M = N = 3×10⁴, log(MN) ≈ 30 → ~9×10⁵ operations."
+    }
+  ]
+}

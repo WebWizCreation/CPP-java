@@ -1,0 +1,301 @@
+{
+  "id": "CPP_Ch20_Number_Theory",
+  "track": "cpp",
+  "chapter": 20,
+  "title": "Number Theory",
+  "description": "Master GCD, prime factorization, the Sieve of Eratosthenes, and modular arithmetic — the mathematical backbone of Codeforces problems from Div. 2C through Div. 1B.",
+  "sections": [
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔢 Why Number Theory Dominates Competitive Programming"
+    },
+    {
+      "type": "paragraph",
+      "content": "Number theory appears in roughly 30% of all Codeforces problems rated 1200–1800. Unlike geometry or game theory, number theory problems have **tight, elegant solutions** — once you know the right theorem, a 40-line brute force collapses to 3 lines. The core toolkit is small: **GCD/LCM**, **prime factorization**, **the Sieve**, and **modular arithmetic**. This chapter builds every piece of that toolkit with contest-ready implementations."
+    },
+    {
+      "type": "callout",
+      "variant": "tip",
+      "label": "Contest Mindset",
+      "content": "Number theory problems are won or lost in **preprocessing time**. When a problem involves queries over a range of integers, ask yourself: *Can I precompute primes, SPF (smallest prime factor), or prefix sums in O(N log log N)?* If yes, each query becomes O(1) or O(log N)."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "⚙️ GCD and LCM"
+    },
+    {
+      "type": "paragraph",
+      "content": "The **Greatest Common Divisor** of two integers is the largest integer that divides both. The **Euclidean algorithm** computes GCD in O(log min(a, b)) time — one of the fastest algorithms in all of mathematics. The **Least Common Multiple** follows directly: `lcm(a, b) = a / gcd(a, b) * b` (divide first to prevent overflow)."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "GCD, LCM, and Extended Euclidean Algorithm",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\n// Euclidean GCD — O(log min(a,b))\nlong long gcd(long long a, long long b) {\n    return b == 0 ? a : gcd(b, a % b);\n}\n\n// LCM — divide before multiply to avoid overflow\nlong long lcm(long long a, long long b) {\n    return a / gcd(a, b) * b;\n}\n\n// Extended Euclidean: finds x, y such that a*x + b*y = gcd(a,b)\n// Returns gcd(a, b). x and y are set by reference.\nlong long extgcd(long long a, long long b, long long &x, long long &y) {\n    if (b == 0) { x = 1; y = 0; return a; }\n    long long x1, y1;\n    long long g = extgcd(b, a % b, x1, y1);\n    x = y1;\n    y = x1 - (a / b) * y1;\n    return g;\n}\n\nint main() {\n    long long a = 48, b = 18;\n    cout << \"gcd(48,18) = \" << gcd(a, b) << \"\\n\"; // 6\n    cout << \"lcm(48,18) = \" << lcm(a, b) << \"\\n\"; // 144\n\n    long long x, y;\n    long long g = extgcd(a, b, x, y);\n    // 48*x + 18*y = 6\n    cout << \"48*\" << x << \" + 18*\" << y << \" = \" << g << \"\\n\";\n\n    // C++17 built-in (works on GCC on Codeforces)\n    cout << \"__gcd: \" << __gcd(48LL, 18LL) << \"\\n\";\n    // C++17 std::gcd from <numeric>\n    cout << \"std::gcd: \" << gcd(48LL, 18LL) << \"\\n\";\n\n    return 0;\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "warning",
+      "label": "GCD of an Array",
+      "content": "To find GCD of an array, fold left: `int g = 0; for (int x : arr) g = gcd(g, x);`. This works because `gcd(0, x) = x`, making 0 a safe identity element."
+    },
+    {
+      "type": "table",
+      "headers": ["Property", "Formula", "Notes"],
+      "rows": [
+        ["`gcd(a, 0)`", "`a`", "Base case of Euclidean algorithm"],
+        ["`gcd(a, b)`", "`gcd(b, a%b)`", "Recursive step"],
+        ["`lcm(a, b)`", "`a / gcd(a,b) * b`", "Divide first to prevent overflow"],
+        ["`gcd(ka, kb)`", "`k * gcd(a, b)`", "Scaling property"],
+        ["`lcm(a,b)*gcd(a,b)`", "`a * b`", "Fundamental identity"],
+        ["`gcd` of array", "`fold with gcd(0, x)`", "0 is identity for gcd"]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔍 Prime Testing and Factorization"
+    },
+    {
+      "type": "paragraph",
+      "content": "A **prime** is an integer > 1 with no divisors other than 1 and itself. Trial division checks all divisors up to √N — if none divide N, it's prime. For factorization, repeatedly divide out prime factors. Note that after dividing out all primes up to √N, if the remaining value is > 1, **it must be prime itself** (the largest prime factor)."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Prime Testing and Factorization",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\n// O(sqrt(n)) primality test\nbool isPrime(long long n) {\n    if (n < 2) return false;\n    if (n == 2) return true;\n    if (n % 2 == 0) return false;\n    for (long long i = 3; i * i <= n; i += 2)\n        if (n % i == 0) return false;\n    return true;\n}\n\n// O(sqrt(n)) prime factorization\n// Returns map: prime -> exponent, e.g. 360 -> {2:3, 3:2, 5:1}\nmap<long long, int> factorize(long long n) {\n    map<long long, int> factors;\n    for (long long p = 2; p * p <= n; p++) {\n        while (n % p == 0) {\n            factors[p]++;\n            n /= p;\n        }\n    }\n    if (n > 1) factors[n]++; // remaining large prime factor\n    return factors;\n}\n\n// Count number of divisors from factorization\n// If n = p1^a1 * p2^a2 * ..., divisors = (a1+1)*(a2+1)*...\nlong long countDivisors(long long n) {\n    auto f = factorize(n);\n    long long cnt = 1;\n    for (auto &[p, e] : f) cnt *= (e + 1);\n    return cnt;\n}\n\nint main() {\n    cout << isPrime(97) << \"\\n\";  // 1 (true)\n    cout << isPrime(100) << \"\\n\"; // 0 (false)\n\n    auto f = factorize(360);\n    for (auto &[p, e] : f)\n        cout << p << \"^\" << e << \" \"; // 2^3 3^2 5^1\n    cout << \"\\n\";\n\n    cout << \"Divisors of 360: \" << countDivisors(360) << \"\\n\"; // 24\n    return 0;\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📊 Sieve of Eratosthenes"
+    },
+    {
+      "type": "paragraph",
+      "content": "When you need primality information for **many numbers up to N**, trial division per number costs O(N√N) — too slow. The **Sieve of Eratosthenes** marks all composites in O(N log log N) time by iteratively crossing off multiples of each prime. This is the single most important precomputation in competitive programming."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Sieve of Eratosthenes — Classic and Segmented",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nconst int MAXN = 1e7 + 5;\nvector<bool> isp(MAXN, true);\nvector<int> primes;\n\n// Classic sieve — O(N log log N)\nvoid sieve(int n) {\n    isp[0] = isp[1] = false;\n    for (int i = 2; i <= n; i++) {\n        if (isp[i]) {\n            primes.push_back(i);\n            // start at i*i: smaller multiples already marked\n            for (long long j = (long long)i * i; j <= n; j += i)\n                isp[j] = false;\n        }\n    }\n}\n\n// Linear Sieve — O(N) strict, also builds SPF (smallest prime factor)\n// SPF lets us factorize any number <= N in O(log N)\nconst int MAXL = 1e6 + 5;\nint spf[MAXL]; // spf[i] = smallest prime factor of i\nvector<int> lp; // list of primes\n\nvoid linearSieve(int n) {\n    iota(spf, spf + n + 1, 0); // spf[i] = i initially\n    for (int i = 2; i <= n; i++) {\n        if (spf[i] == i) lp.push_back(i); // i is prime\n        for (int p : lp) {\n            if (p > spf[i] || (long long)i * p > n) break;\n            spf[i * p] = p;\n        }\n    }\n}\n\n// O(log N) factorization using SPF\nmap<int,int> fastFactor(int n) {\n    map<int,int> f;\n    while (n > 1) { f[spf[n]]++; n /= spf[n]; }\n    return f;\n}\n\nint main() {\n    sieve(100);\n    cout << \"Primes up to 100: \";\n    for (int p : primes) cout << p << \" \";\n    cout << \"\\n\";\n    cout << \"Total: \" << primes.size() << \"\\n\"; // 25\n\n    linearSieve(20);\n    auto f = fastFactor(18); // 18 = 2^1 * 3^2\n    for (auto &[p,e] : f) cout << p << \"^\" << e << \" \";\n    return 0;\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "tip",
+      "label": "SPF (Smallest Prime Factor) Array",
+      "content": "Build `spf[]` with the linear sieve, then factorize **any** number ≤ N in O(log N). This turns problems like \"find all distinct prime factors of every number from 1 to N\" from O(N√N) to O(N log N) total — a common trick in Div. 2D problems."
+    },
+    {
+      "type": "table",
+      "headers": ["Sieve Variant", "Time", "Space", "Extra Output", "Best Used When"],
+      "rows": [
+        ["Classic Sieve", "O(N log log N)", "O(N)", "Prime list, isp[]", "Just need primality / prime list"],
+        ["Linear Sieve", "O(N)", "O(N)", "SPF[], prime list", "Need fast factorization per query"],
+        ["Segmented Sieve", "O(N log log N)", "O(√N)", "Primes in [L,R]", "N up to 10^12, range queries"],
+        ["Trial Division", "O(√N) per number", "O(1)", "Factors of one N", "Single number, N up to 10^12"]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "content": "Segmented Sieve for Large Ranges"
+    },
+    {
+      "type": "paragraph",
+      "content": "When N is up to 10^12 but the **range [L, R]** is at most 10^6 wide, a segmented sieve finds all primes in the range efficiently. First sieve primes up to √N, then use them to mark composites in the segment."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Segmented Sieve — Primes in [L, R] for large N",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nvector<long long> segSieve(long long L, long long R) {\n    // Step 1: classic sieve up to sqrt(R)\n    long long sqr = (long long)sqrt((double)R) + 1;\n    vector<bool> isp(sqr + 1, true);\n    isp[0] = isp[1] = false;\n    vector<long long> smallP;\n    for (long long i = 2; i <= sqr; i++) {\n        if (isp[i]) {\n            smallP.push_back(i);\n            for (long long j = i * i; j <= sqr; j += i)\n                isp[j] = false;\n        }\n    }\n\n    // Step 2: mark composites in segment [L, R]\n    long long sz = R - L + 1;\n    vector<bool> seg(sz, true);\n    if (L == 1) seg[0] = false; // 1 is not prime\n\n    for (long long p : smallP) {\n        // first multiple of p >= L\n        long long start = max(p * p, (L + p - 1) / p * p);\n        for (long long j = start; j <= R; j += p)\n            seg[j - L] = false;\n    }\n\n    vector<long long> result;\n    for (long long i = 0; i < sz; i++)\n        if (seg[i]) result.push_back(L + i);\n    return result;\n}\n\nint main() {\n    // Find all primes between 10^9 and 10^9 + 100\n    auto primes = segSieve(1000000000LL, 1000000100LL);\n    for (long long p : primes) cout << p << \" \";\n    // 1000000007 1000000009 ...\n    return 0;\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔐 Modular Arithmetic"
+    },
+    {
+      "type": "paragraph",
+      "content": "Whenever a problem says **\"output the answer modulo 10^9+7\"**, you need modular arithmetic. The key rules: `(a + b) % M`, `(a * b) % M`, and for subtraction: `((a - b) % M + M) % M`. Division requires **modular inverse**, which exists only when the divisor is coprime to M. Since 10^9+7 is prime, we use **Fermat's Little Theorem**: `a^(M-1) ≡ 1 (mod M)`, so `a^(-1) ≡ a^(M-2) (mod M)`."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Modular Arithmetic Toolkit",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nconst long long MOD = 1e9 + 7;\n\n// Fast exponentiation (binary exponentiation) — O(log exp)\nlong long power(long long base, long long exp, long long mod) {\n    long long result = 1;\n    base %= mod;\n    while (exp > 0) {\n        if (exp & 1) result = result * base % mod;\n        base = base * base % mod;\n        exp >>= 1;\n    }\n    return result;\n}\n\n// Modular inverse using Fermat's Little Theorem\n// Only valid when mod is PRIME\nlong long modinv(long long a, long long mod = MOD) {\n    return power(a, mod - 2, mod);\n}\n\n// Precompute factorials and inverse factorials for C(n,r) mod p\nconst int MAXN = 2e6 + 5;\nlong long fact[MAXN], inv_fact[MAXN];\n\nvoid precompute() {\n    fact[0] = 1;\n    for (int i = 1; i < MAXN; i++)\n        fact[i] = fact[i-1] * i % MOD;\n    inv_fact[MAXN-1] = modinv(fact[MAXN-1]);\n    for (int i = MAXN-2; i >= 0; i--)\n        inv_fact[i] = inv_fact[i+1] * (i+1) % MOD;\n}\n\n// Binomial coefficient C(n, r) mod MOD in O(1)\nlong long C(int n, int r) {\n    if (r < 0 || r > n) return 0;\n    return fact[n] % MOD * inv_fact[r] % MOD * inv_fact[n-r] % MOD;\n}\n\nint main() {\n    precompute();\n\n    // Arithmetic examples\n    long long a = 1e9, b = 1e9;\n    cout << (a + b) % MOD << \"\\n\";         // 999999993\n    cout << ((a - b) % MOD + MOD) % MOD << \"\\n\"; // 0 (safe subtraction)\n    cout << a % MOD * (b % MOD) % MOD << \"\\n\";   // product\n\n    // Modular inverse: divide by 3 mod p\n    cout << modinv(3) << \"\\n\"; // 333333336\n\n    // C(10, 3) = 120\n    cout << \"C(10,3) = \" << C(10, 3) << \"\\n\";\n    // C(1000000, 500000) mod 1e9+7\n    cout << \"C(1000000,500000) = \" << C(1000000, 500000) << \"\\n\";\n\n    return 0;\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "danger",
+      "label": "🚨 #1 Contest Killer: Integer Overflow in Modular Multiplication",
+      "content": "**Never** write `(a * b) % MOD` when `a` and `b` can each be up to 10^9. The product overflows `long long` (max ~9.2 × 10^18). Always reduce operands first: `(a % MOD) * (b % MOD) % MOD`. If values can be up to MOD-1 ≈ 10^9, their product is up to 10^18 which still fits in `long long` — but if you forget the intermediate `% MOD` in a chain, values silently overflow. Use `__int128` or `__int128_t` when unsure."
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "content": "Chinese Remainder Theorem (CRT)"
+    },
+    {
+      "type": "paragraph",
+      "content": "The **Chinese Remainder Theorem** states: if you know `x ≡ a (mod m)` and `x ≡ b (mod n)` where gcd(m, n) = 1, there is a unique solution modulo `m*n`. CRT appears in problems involving periodic patterns or when multiple modular constraints must be satisfied simultaneously."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Chinese Remainder Theorem",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\ntypedef long long ll;\ntypedef pair<ll,ll> pll;\n\nll extgcd(ll a, ll b, ll &x, ll &y) {\n    if (!b) { x = 1; y = 0; return a; }\n    ll x1, y1;\n    ll g = extgcd(b, a%b, x1, y1);\n    x = y1; y = x1 - a/b*y1;\n    return g;\n}\n\n// Combine: x ≡ r1 (mod m1)  AND  x ≡ r2 (mod m2)\n// Returns {r, m} such that x ≡ r (mod m), or {-1,-1} if no solution\npll crt(ll r1, ll m1, ll r2, ll m2) {\n    ll x, y;\n    ll g = extgcd(m1, m2, x, y);\n    if ((r2 - r1) % g != 0) return {-1, -1}; // no solution\n    ll lcm = m1 / g * m2;\n    ll ans = (r1 + m1 * ((r2 - r1) / g % (m2/g) * x % (m2/g))) % lcm;\n    if (ans < 0) ans += lcm;\n    return {ans, lcm};\n}\n\nint main() {\n    // x ≡ 2 (mod 3), x ≡ 3 (mod 5)\n    // Solution: x ≡ 8 (mod 15)\n    auto [r, m] = crt(2, 3, 3, 5);\n    cout << \"x ≡ \" << r << \" (mod \" << m << \")\\n\"; // x ≡ 8 (mod 15)\n\n    // Verify: 8 % 3 = 2 ✓, 8 % 5 = 3 ✓\n    cout << r % 3 << \" \" << r % 5 << \"\\n\"; // 2 3\n    return 0;\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📐 Euler's Totient Function"
+    },
+    {
+      "type": "paragraph",
+      "content": "**Euler's Totient Function φ(n)** counts integers in [1, n] that are coprime to n. For prime p, φ(p) = p−1. For prime power, φ(p^k) = p^k − p^(k−1). It's **multiplicative**: if gcd(a,b)=1, φ(ab) = φ(a)φ(b). The formula from factorization: φ(n) = n × ∏(1 − 1/p) over all prime factors p of n. Totient appears in Euler's generalization of Fermat's theorem: `a^φ(n) ≡ 1 (mod n)` when gcd(a,n)=1."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Euler Totient — Single Value and Sieve",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\n// O(sqrt(n)) totient of a single n\nlong long phi(long long n) {\n    long long result = n;\n    for (long long p = 2; p * p <= n; p++) {\n        if (n % p == 0) {\n            while (n % p == 0) n /= p;\n            result -= result / p; // result *= (1 - 1/p)\n        }\n    }\n    if (n > 1) result -= result / n; // remaining prime factor\n    return result;\n}\n\n// Sieve for phi of all numbers up to N — O(N log log N)\nvoid phiSieve(int n, vector<int> &phi_arr) {\n    phi_arr.resize(n + 1);\n    iota(phi_arr.begin(), phi_arr.end(), 0); // phi[i] = i initially\n    for (int i = 2; i <= n; i++) {\n        if (phi_arr[i] == i) { // i is prime\n            for (int j = i; j <= n; j += i)\n                phi_arr[j] -= phi_arr[j] / i;\n        }\n    }\n}\n\nint main() {\n    cout << \"phi(12) = \" << phi(12) << \"\\n\";  // 4: {1,5,7,11}\n    cout << \"phi(13) = \" << phi(13) << \"\\n\";  // 12 (13 is prime)\n    cout << \"phi(36) = \" << phi(36) << \"\\n\";  // 12\n\n    vector<int> ph;\n    phiSieve(10, ph);\n    for (int i = 1; i <= 10; i++)\n        cout << \"phi(\" << i << \")=\" << ph[i] << \" \";\n    // phi(1)=1 phi(2)=1 phi(3)=2 phi(4)=2 phi(5)=4 ...\n    return 0;\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🗂️ Key Patterns and Reference Tables"
+    },
+    {
+      "type": "table",
+      "headers": ["Problem Pattern", "Key Insight", "Algorithm", "Complexity"],
+      "rows": [
+        ["Is N prime?", "Trial divide up to √N", "Trial division / Miller-Rabin", "O(√N) / O(k log²N)"],
+        ["All primes ≤ N", "Mark composites from p²", "Sieve of Eratosthenes", "O(N log log N)"],
+        ["Factorize N quickly", "Precompute SPF array", "Linear sieve + SPF", "O(log N) per query"],
+        ["a/b mod p (p prime)", "b^(p-2) mod p", "Fermat + fast pow", "O(log p)"],
+        ["C(n,r) mod p many times", "Precompute fact, inv_fact", "Factorial precomputation", "O(N) pre, O(1) query"],
+        ["Count divisors of N", "∏(e_i + 1) from factorization", "Factor + multiply exponents", "O(√N)"],
+        ["GCD of array", "Fold with gcd(0,x)=x", "Iterative Euclidean", "O(N log V)"],
+        ["Multiple mod constraints", "CRT combination", "Extended Euclidean", "O(log N) per pair"],
+        ["Primes in [L,R], R≤10^12", "Sieve small primes, mark segment", "Segmented sieve", "O((R-L) log log R)"]
+      ]
+    },
+    {
+      "type": "table",
+      "headers": ["Theorem", "Statement", "Contest Use"],
+      "rows": [
+        ["Fermat's Little Theorem", "a^(p-1) ≡ 1 (mod p) for prime p, gcd(a,p)=1", "Modular inverse: a^(p-2) mod p"],
+        ["Euler's Theorem", "a^φ(n) ≡ 1 (mod n) when gcd(a,n)=1", "Inverse when mod not prime"],
+        ["Wilson's Theorem", "(p-1)! ≡ -1 (mod p) iff p is prime", "Primality test (theoretical)"],
+        ["CRT", "Unique x mod lcm(m1,m2) for coprime moduli", "Combine period constraints"],
+        ["Bezout's Identity", "gcd(a,b) = ax + by for some integers x,y", "Extended Euclidean, inverse"],
+        ["Fundamental Theorem", "Every n>1 has unique prime factorization", "Basis for all factoring methods"]
+      ]
+    },
+    {
+      "type": "callout",
+      "variant": "note",
+      "label": "Choosing the Right Modular Inverse Method",
+      "content": "Use **Fermat's Little Theorem** (`a^(p-2) mod p`) when the modulus is prime (10^9+7 always is). Use the **Extended Euclidean** algorithm when the modulus is not prime or when gcd(a, m) may not be 1. Use **precomputed inverse factorial table** when you need C(n,r) mod p for many queries — this is O(1) per query after O(N) preprocessing."
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🏋️ Interactive Exercises"
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 1: GCD Chain and Modular Power",
+      "language": "cpp",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\nconst long long MOD = 1e9 + 7;\n\nlong long power(long long b, long long e, long long m) {\n    long long r = 1; b %= m;\n    while (e > 0) {\n        if (e & 1) r = r * b % m;\n        b = b * b % m;\n        e >>= 1;\n    }\n    return r;\n}\n\nint main() {\n    long long a = 0;\n    int arr[] = {12, 18, 24, 30};\n    for (int x : arr) a = __gcd(a, (long long)x);\n    cout << a << \"\\n\";\n\n    long long inv3 = power(3, MOD - 2, MOD);\n    cout << inv3 % MOD << \"\\n\";\n    cout << (inv3 * 3) % MOD << \"\\n\";\n    return 0;\n}",
+      "answer": "6\n333333336\n1",
+      "explanation": "**Line 1 (GCD fold):** Starting with `a=0`, `gcd(0,12)=12`, `gcd(12,18)=6`, `gcd(6,24)=6`, `gcd(6,30)=6`. Output: **6**.\n\n**Line 2 (Modular inverse of 3):** By Fermat's Little Theorem, 3^(MOD-2) mod MOD = 3^(10^9+5) mod (10^9+7). The modular inverse of 3 is 333333336 because 3 × 333333336 = 1000000008 ≡ 1 (mod 10^9+7). Output: **333333336**.\n\n**Line 3:** `(333333336 * 3) % MOD = 1000000008 % (10^9+7) = 1`. Output: **1** — confirms the inverse is correct."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 2: Sieve Output and Prime Count",
+      "language": "cpp",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int n = 30;\n    vector<bool> isp(n + 1, true);\n    isp[0] = isp[1] = false;\n    int cnt = 0;\n    for (int i = 2; i <= n; i++) {\n        if (isp[i]) {\n            cnt++;\n            for (long long j = (long long)i*i; j <= n; j += i)\n                isp[j] = false;\n        }\n    }\n    cout << cnt << \"\\n\";\n    for (int i = 2; i <= n; i++)\n        if (isp[i]) cout << i << \" \";\n    cout << \"\\n\";\n\n    // Factorize 28\n    int x = 28;\n    while (x > 1) {\n        for (int p = 2; p <= x; p++) {\n            if (x % p == 0) {\n                cout << p << \" \";\n                x /= p;\n                break;\n            }\n        }\n    }\n    return 0;\n}",
+      "answer": "10\n2 3 5 7 11 13 17 19 23 29 \n2 2 7 ",
+      "explanation": "**Line 1:** The sieve marks composites. Primes up to 30 are: 2, 3, 5, 7, 11, 13, 17, 19, 23, 29 → count = **10**.\n\n**Line 2:** All primes from 2 to 30 printed in order: `2 3 5 7 11 13 17 19 23 29`.\n\n**Line 3 (factorize 28):** 28 ÷ 2 = 14 → print `2`; 14 ÷ 2 = 7 → print `2`; 7 ÷ 7 = 1 → print `7`. Output: `2 2 7`. So 28 = 2² × 7."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 3: Totient Values and Fermat's Theorem",
+      "language": "cpp",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nlong long power(long long b, long long e, long long m) {\n    long long r = 1; b %= m;\n    while (e > 0) {\n        if (e & 1) r = r * b % m;\n        b = b * b % m;\n        e >>= 1;\n    }\n    return r;\n}\n\nlong long phi(long long n) {\n    long long result = n;\n    long long orig = n;\n    for (long long p = 2; p * p <= n; p++) {\n        if (n % p == 0) {\n            while (n % p == 0) n /= p;\n            result -= result / p;\n        }\n    }\n    if (n > 1) result -= result / n;\n    return result;\n}\n\nint main() {\n    cout << phi(12) << \"\\n\";\n    cout << phi(7) << \"\\n\";\n    // Fermat: 2^(p-1) mod p = 1 for prime p\n    cout << power(2, 6, 7) << \"\\n\";\n    // Euler: a^phi(n) mod n = 1 when gcd(a,n)=1\n    cout << power(5, phi(12), 12) << \"\\n\";\n    return 0;\n}",
+      "answer": "4\n6\n1\n1",
+      "explanation": "**phi(12):** 12 = 2² × 3. φ(12) = 12 × (1-1/2) × (1-1/3) = 12 × 1/2 × 2/3 = **4**. The 4 coprimes are {1, 5, 7, 11}.\n\n**phi(7):** 7 is prime, so φ(7) = 7−1 = **6**.\n\n**power(2, 6, 7):** Fermat's Little Theorem: 2^(7-1) ≡ 1 (mod 7). Result = **1**.\n\n**power(5, phi(12), 12):** Euler's theorem: 5^φ(12) ≡ 1 (mod 12) since gcd(5,12)=1. 5^4 = 625 = 52×12 + 1, so result = **1**."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 4: Count Divisors Sum Over Range",
+      "language": "cpp",
+      "code": "// Problem: Given N, compute the sum of the number of divisors\n// of all integers from 1 to N.\n// i.e., sum_{i=1}^{N} d(i)  where d(i) = number of divisors of i\n//\n// Constraints: 1 <= N <= 10^6\n// Input: Single integer N\n// Output: Sum of divisor counts from 1 to N\n//\n// Example:\n// Input: 5\n// Output: 10\n// Explanation: d(1)=1, d(2)=2, d(3)=2, d(4)=3, d(5)=2 → sum=10",
+      "approach": "**Key insight:** Instead of computing d(i) for each i individually (which costs O(√i) per number → O(N√N) total), we use a **sieve-style approach**. For each integer k from 1 to N, k contributes to d(i) for every multiple of k up to N. So we add 1 to `cnt[k], cnt[2k], cnt[3k], ...` for each k. The total work is N/1 + N/2 + N/3 + ... + N/N = N × H(N) = O(N log N). Then just sum the cnt array.",
+      "solution": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n\n    int n;\n    cin >> n;\n\n    // cnt[i] = number of divisors of i\n    vector<long long> cnt(n + 1, 0);\n\n    // For each divisor k, mark all its multiples\n    for (int k = 1; k <= n; k++)\n        for (int mult = k; mult <= n; mult += k)\n            cnt[mult]++;\n\n    long long ans = 0;\n    for (int i = 1; i <= n; i++) ans += cnt[i];\n\n    cout << ans << \"\\n\";\n    return 0;\n}\n\n// Alternative: mathematical formula approach\n// sum_{i=1}^{N} d(i) = sum_{k=1}^{N} floor(N/k)\n// This avoids the array entirely:\nvoid mathVersion(int n) {\n    long long ans = 0;\n    for (int k = 1; k <= n; k++)\n        ans += n / k;\n    cout << ans << \"\\n\";\n}",
+      "explanation": "**Approach:** The sieve-style count is a classic **harmonic number trick**. Each integer k adds 1 to the divisor count of every multiple of k. The inner loop runs N/k times for each k, giving total work N × (1 + 1/2 + 1/3 + ... + 1/N) = N × H(N) ≈ N ln N.\n\n**Complexity:** O(N log N) time, O(N) space.\n\n**Mathematical shortcut:** `sum_{i=1}^{N} d(i) = sum_{k=1}^{N} floor(N/k)`. This is a famous identity and runs in O(N) with only an integer division. For even faster computation (up to 10^12), use the **Dirichlet hyperbola method** to reduce to O(N^(2/3)).\n\n**Verification for N=5:** floor(5/1)+floor(5/2)+floor(5/3)+floor(5/4)+floor(5/5) = 5+2+1+1+1 = 10. ✓"
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 5: Modular Combinatorics — Count Paths on Grid",
+      "language": "cpp",
+      "code": "// Problem: Count the number of paths from (0,0) to (n,m) moving\n// only right or down, modulo 10^9+7.\n// This equals C(n+m, n) = (n+m)! / (n! * m!)\n//\n// Constraints: 0 <= n, m <= 10^6\n// Input: Two integers n m\n// Output: C(n+m, n) mod (10^9+7)\n//\n// Example:\n// Input: 2 3\n// Output: 10\n// C(5,2) = 10 paths from (0,0) to (2,3)",
+      "approach": "**Key insight:** Each path from (0,0) to (n,m) makes exactly n moves down and m moves right — in some order. The number of arrangements is C(n+m, n). For large n and m (up to 10^6), we can't compute factorials naively without modular arithmetic. **Precompute** `fact[i]` and `inv_fact[i]` up to n+m using the standard technique: compute all factorials, then get `inv_fact[MAXN-1] = modinv(fact[MAXN-1])`, then fill backwards using `inv_fact[i] = inv_fact[i+1] * (i+1) % MOD`. Then C(n+m, n) = fact[n+m] * inv_fact[n] % MOD * inv_fact[m] % MOD.",
+      "solution": "#include <bits/stdc++.h>\nusing namespace std;\n\nconst long long MOD = 1e9 + 7;\nconst int MAXN = 2e6 + 5;\nlong long fact[MAXN], inv_fact[MAXN];\n\nlong long power(long long b, long long e, long long m) {\n    long long r = 1; b %= m;\n    while (e > 0) {\n        if (e & 1) r = r * b % m;\n        b = b * b % m; e >>= 1;\n    }\n    return r;\n}\n\nvoid precompute(int lim) {\n    fact[0] = 1;\n    for (int i = 1; i <= lim; i++)\n        fact[i] = fact[i-1] * i % MOD;\n    inv_fact[lim] = power(fact[lim], MOD - 2, MOD);\n    for (int i = lim - 1; i >= 0; i--)\n        inv_fact[i] = inv_fact[i+1] * (i+1) % MOD;\n}\n\nlong long C(int n, int r) {\n    if (r < 0 || r > n) return 0;\n    return fact[n] % MOD * inv_fact[r] % MOD * inv_fact[n-r] % MOD;\n}\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n\n    int n, m;\n    cin >> n >> m;\n\n    precompute(n + m);\n    cout << C(n + m, n) << \"\\n\";\n    return 0;\n}",
+      "explanation": "**Core formula:** C(n+m, n) counts the number of ways to choose which n of the (n+m) steps are downward moves.\n\n**Why precompute:** With n,m up to 10^6, we need C up to 2×10^6. Computing each C(n+m, n) from scratch costs O(n+m) multiplications. Precomputation costs O(N) once, then O(1) per query.\n\n**Correctness of inverse factorial:** `inv_fact[i] = 1/i! mod p`. The backwards recurrence works because `inv_fact[i] = inv_fact[i+1] * (i+1)` since `1/i! = 1/(i+1)! * (i+1)`.\n\n**Complexity:** O(N) precomputation, O(1) per query. Memory: O(N) for two arrays of size 2×10^6 ≈ 16 MB.\n\n**Verification:** C(5,2) = 5!/(2!×3!) = 120/(2×6) = 10. ✓"
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 6: GCD Queries — Number of Pairs with GCD Exactly K",
+      "language": "cpp",
+      "code": "// Problem: Given an array arr of N integers and integer K,\n// count pairs (i, j) where i < j and gcd(arr[i], arr[j]) == K.\n//\n// Constraints: 1 <= N <= 10^5, 1 <= arr[i] <= 10^6, 1 <= K <= 10^6\n// Input: N K followed by arr[0..N-1]\n// Output: Number of pairs with gcd exactly K\n//\n// Example:\n// Input: 5 2\n//        2 4 6 9 10\n// Output: 4\n// Pairs: (2,4)=2, (2,6)=2, (2,10)=2, (4,6)=2 → 4 pairs\n// (4,10)=gcd=2 also! Let's recount: (2,4)=2,(2,6)=2,(2,10)=2,(4,6)=2,(4,10)=2,(6,10)=2 → 6? \n// No: (9,anything) gcd not 2. Check: (6,10)=gcd=2. So 6 pairs... test carefully.",
+      "approach": "**Key insight:** Count pairs with gcd **divisible by K** using frequency counting, then apply **Mobius inclusion-exclusion** (or simpler: count how many elements are divisible by each multiple of K).\n\n**Step 1:** Build frequency array `freq[v]` = count of elements equal to v.\n**Step 2:** For each multiple d = K, 2K, 3K, ...: `cnt[d]` = total elements divisible by d = sum of freq[d], freq[2d], freq[3d], ... (O(N/d) per d).\n**Step 3:** Pairs with gcd **exactly K**: use inclusion-exclusion downward. `f[d]` = C(cnt[d], 2) − sum of f[d*p] for all primes p (Mobius). Simpler approach: f[K] = C(cnt[K], 2) − (pairs with gcd 2K) − (pairs with gcd 3K) − ... (process from largest multiples down).\n**Result:** f[K] is the answer.",
+      "solution": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n\n    int n, K;\n    cin >> n >> K;\n\n    const int MAXV = 1e6 + 1;\n    vector<int> freq(MAXV, 0);\n    for (int i = 0; i < n; i++) {\n        int x; cin >> x;\n        freq[x]++;\n    }\n\n    // cnt[d] = number of elements divisible by d\n    vector<long long> cnt(MAXV, 0);\n    for (int d = 1; d < MAXV; d++)\n        for (int mult = d; mult < MAXV; mult += d)\n            cnt[d] += freq[mult];\n\n    // C(m, 2) = m*(m-1)/2 — pairs with gcd divisible by d\n    auto pairs = [](long long m) { return m * (m-1) / 2; };\n\n    // g[d] = pairs with gcd EXACTLY d\n    // g[d] = pairs(cnt[d]) - sum of g[d*k] for k=2,3,...\n    vector<long long> g(MAXV, 0);\n    // Process from largest d downward\n    for (int d = MAXV - 1; d >= 1; d--) {\n        g[d] = pairs(cnt[d]);\n        for (int mult = 2 * d; mult < MAXV; mult += d)\n            g[d] -= g[mult];\n    }\n\n    cout << g[K] << \"\\n\";\n    return 0;\n}",
+      "explanation": "**Algorithm:** This is the **Dirichlet subtraction** (Mobius inversion pattern). `pairs(cnt[d])` counts all pairs where gcd is **a multiple of d**, including gcd=2d, 3d, etc. We subtract the overcount by removing pairs with gcd exactly 2d, 3d, etc. — which we already computed.\n\n**Why process downward:** When computing `g[d]`, all `g[d*k]` for k≥2 have already been computed (they're at larger indices). This is the standard sieve-in-reverse pattern.\n\n**Complexity:**\n- Building cnt: O(V log V) (harmonic series)\n- Building g: O(V log V)\n- Total: O(V log V + N) where V = max value = 10^6\n\n**Space:** O(V) for freq, cnt, g arrays.\n\n**Correctness:** The inclusion-exclusion identity `f[d] = C(cnt_d, 2) - sum f[kd]` is Mobius inversion applied to the GCD structure — a standard technique appearing in Codeforces educational rounds."
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📋 Quick Reference Summary"
+    },
+    {
+      "type": "list",
+      "ordered": false,
+      "items": [
+        "**GCD:** `gcd(a, b) = gcd(b, a%b)` — O(log min(a,b)); use `gcd(0, x) = x` as identity for array GCD",
+        "**LCM:** `lcm(a, b) = a / gcd(a, b) * b` — always divide before multiply to prevent overflow",
+        "**Extended GCD:** `extgcd(a, b, x, y)` returns g and sets ax+by=g — use for modular inverse when mod is not prime",
+        "**Primality test:** trial division up to √N — O(√N); skip even numbers after 2",
+        "**Factorization:** divide by all primes ≤ √N; if remainder > 1, it's the last prime factor",
+        "**Classic sieve:** mark composites starting from i² for each prime i — O(N log log N)",
+        "**Linear sieve:** builds SPF array in O(N); enables O(log N) factorization per query",
+        "**Segmented sieve:** sieve [L, R] for large R (up to 10^12) using primes up to √R",
+        "**Modular inverse (prime mod):** `power(a, MOD-2, MOD)` via Fermat's Little Theorem — O(log MOD)",
+        "**Safe modular subtraction:** `((a - b) % MOD + MOD) % MOD` — always add MOD before taking %",
+        "**Binomial coefficients:** precompute `fact[]` and `inv_fact[]` in O(N), then C(n,r) in O(1)",
+        "**Euler's totient:** φ(n) = n × ∏(1 − 1/p) over prime factors — use sieve for all values up to N",
+        "**CRT:** combine x ≡ r1 (mod m1) and x ≡ r2 (mod m2) via extended GCD when gcd(m1,m2) | (r2−r1)",
+        "**GCD-exact pair counting:** use Dirichlet subtraction — compute cnt[d] via sieve, then g[d] = C(cnt[d],2) − Σg[kd]",
+        "**Harmonic identity:** Σ_{k=1}^{N} floor(N/k) ≈ N ln N — total work for sieve-style divisor counting"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,451 @@
+{
+  "id": "Java_Ch16_Strings_Builder",
+  "track": "java",
+  "chapter": 16,
+  "title": "Strings & StringBuilder",
+  "description": "Master Java String immutability, the full method toolkit, and StringBuilder's mutable API \u2014 the concepts that generate the most output-prediction and error-identification questions in CSE110 exams.",
+  "sections": [
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "\ud83d\udcdd Why Strings Are Exam Favourites"
+    },
+    {
+      "type": "paragraph",
+      "content": "CSE110 exams love String questions because they test three concepts simultaneously: **immutability** (does the original change?), **reference vs value comparison** (`==` vs `.equals()`), and **method chaining** (what does a sequence of calls actually return?). A solid mental model of how Strings work in the JVM saves you from the most common point-losing mistakes."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "\ud83e\uddca String Immutability"
+    },
+    {
+      "type": "paragraph",
+      "content": "In Java, `String` objects are **immutable** \u2014 once created, their character sequence can never change. Every method that appears to modify a String (like `toUpperCase()`, `replace()`, `trim()`) actually **returns a new String** object and leaves the original unchanged. If you don't capture the return value, the modification is silently lost."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Immutability \u2014 Modifications Return New Strings",
+      "code": "public class ImmutableDemo {\n    public static void main(String[] args) {\n        String s = \"hello\";\n        s.toUpperCase();          // WRONG: creates new String, discards it\n        System.out.println(s);    // still prints: hello\n\n        s = s.toUpperCase();      // CORRECT: reassign\n        System.out.println(s);    // prints: HELLO\n\n        String a = \"  spaces  \";\n        a.trim();                  // WRONG: original unchanged\n        System.out.println(\"'\" + a + \"'\");       // '  spaces  '\n\n        a = a.trim();              // CORRECT\n        System.out.println(\"'\" + a + \"'\");       // 'spaces'\n    }\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "danger",
+      "label": "\ud83d\udea8 #1 Exam Mistake: Ignoring the Return Value",
+      "content": "Calling `s.replace('a', 'b')` or `s.toUpperCase()` **does nothing** unless you capture the return value. In predict-output questions, always check whether the result of a String method is **reassigned** or **used directly**. If it's called but not used, the String is unchanged."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "\ud83d\udd17 String Pool and the == vs .equals() Trap"
+    },
+    {
+      "type": "paragraph",
+      "content": "String literals (`\"hello\"`) are stored in the **String Pool** (a special area of the heap). Two literals with the same content share the same object, so `==` returns `true`. But Strings created with `new String(\"hello\")` always create a fresh heap object, so `==` returns `false` even if the content is identical. Always use `.equals()` for content comparison."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "String Pool: == vs .equals()",
+      "code": "public class StringPoolDemo {\n    public static void main(String[] args) {\n        String a = \"java\";\n        String b = \"java\";               // same pool object\n        String c = new String(\"java\");   // new heap object\n        String d = \"ja\" + \"va\";          // compile-time constant \u2192 pool\n\n        System.out.println(a == b);       // true  (same pool reference)\n        System.out.println(a == c);       // false (different heap object)\n        System.out.println(a == d);       // true  (\"java\" is a compile-time constant)\n        System.out.println(a.equals(c));  // true  (same content)\n\n        String x = \"ja\";\n        String y = x + \"va\";             // runtime concatenation \u2192 new object\n        System.out.println(a == y);       // false (runtime concat, not interned)\n        System.out.println(a.equals(y));  // true\n    }\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "warning",
+      "label": "Compile-Time vs Runtime Concatenation",
+      "content": "When both operands of `+` are **compile-time constants** (literals or `final` variables), the result is interned into the pool. When at least one operand is a **variable** (non-final), the result is a new heap object. This is why `\"ja\" + \"va\" == \"java\"` is `true` but `x + \"va\" == \"java\"` is `false` when `x` is a non-final variable."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "\ud83d\udee0\ufe0f Essential String Methods Reference"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "Method",
+        "Returns",
+        "Description",
+        "Example"
+      ],
+      "rows": [
+        [
+          "`length()`",
+          "`int`",
+          "Number of characters",
+          "`\"hello\".length()` \u2192 5"
+        ],
+        [
+          "`charAt(i)`",
+          "`char`",
+          "Char at index i",
+          "`\"abc\".charAt(1)` \u2192 `'b'`"
+        ],
+        [
+          "`indexOf(s)`",
+          "`int`",
+          "First index of substring (-1 if absent)",
+          "`\"hello\".indexOf(\"ll\")` \u2192 2"
+        ],
+        [
+          "`lastIndexOf(s)`",
+          "`int`",
+          "Last index of substring",
+          "`\"abab\".lastIndexOf(\"b\")` \u2192 3"
+        ],
+        [
+          "`substring(i)`",
+          "`String`",
+          "From index i to end",
+          "`\"hello\".substring(2)` \u2192 `\"llo\"`"
+        ],
+        [
+          "`substring(i,j)`",
+          "`String`",
+          "From i (inclusive) to j (exclusive)",
+          "`\"hello\".substring(1,3)` \u2192 `\"el\"`"
+        ],
+        [
+          "`toUpperCase()`",
+          "`String`",
+          "All chars uppercase",
+          "`\"hi\".toUpperCase()` \u2192 `\"HI\"`"
+        ],
+        [
+          "`toLowerCase()`",
+          "`String`",
+          "All chars lowercase",
+          "`\"HI\".toLowerCase()` \u2192 `\"hi\"`"
+        ],
+        [
+          "`trim()`",
+          "`String`",
+          "Remove leading/trailing whitespace",
+          "`\" hi \".trim()` \u2192 `\"hi\"`"
+        ],
+        [
+          "`replace(old,new)`",
+          "`String`",
+          "Replace all occurrences",
+          "`\"aab\".replace('a','x')` \u2192 `\"xxb\"`"
+        ],
+        [
+          "`contains(s)`",
+          "`boolean`",
+          "True if substring exists",
+          "`\"hello\".contains(\"ell\")` \u2192 `true`"
+        ],
+        [
+          "`startsWith(s)`",
+          "`boolean`",
+          "True if starts with s",
+          "`\"hello\".startsWith(\"he\")` \u2192 `true`"
+        ],
+        [
+          "`endsWith(s)`",
+          "`boolean`",
+          "True if ends with s",
+          "`\"hello\".endsWith(\"lo\")` \u2192 `true`"
+        ],
+        [
+          "`equals(s)`",
+          "`boolean`",
+          "Content equality",
+          "`\"ab\".equals(\"ab\")` \u2192 `true`"
+        ],
+        [
+          "`equalsIgnoreCase(s)`",
+          "`boolean`",
+          "Case-insensitive equality",
+          "`\"Hi\".equalsIgnoreCase(\"hi\")` \u2192 `true`"
+        ],
+        [
+          "`compareTo(s)`",
+          "`int`",
+          "Lexicographic comparison (0 if equal)",
+          "`\"a\".compareTo(\"b\")` \u2192 negative"
+        ],
+        [
+          "`split(regex)`",
+          "`String[]`",
+          "Split into array by regex",
+          "`\"a,b\".split(\",\")` \u2192 `[\"a\",\"b\"]`"
+        ],
+        [
+          "`valueOf(x)`",
+          "`String`",
+          "Convert any type to String",
+          "`String.valueOf(42)` \u2192 `\"42\"`"
+        ],
+        [
+          "`toCharArray()`",
+          "`char[]`",
+          "Convert to character array",
+          "`\"abc\".toCharArray()` \u2192 `['a','b','c']`"
+        ],
+        [
+          "`isEmpty()`",
+          "`boolean`",
+          "True if length == 0",
+          "`\"\".isEmpty()` \u2192 `true`"
+        ],
+        [
+          "`isBlank()`",
+          "`boolean`",
+          "True if empty or only whitespace (Java 11+)",
+          "`\" \".isBlank()` \u2192 `true`"
+        ]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "\ud83d\udd22 String Index Rules"
+    },
+    {
+      "type": "paragraph",
+      "content": "Indices are **zero-based**: the first character is at index 0, the last at `length()-1`. `substring(i, j)` includes index `i` but **excludes** index `j` \u2014 so the result has `j - i` characters. Accessing an invalid index throws `StringIndexOutOfBoundsException` at **runtime**."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "substring() Indexing \u2014 Common Exam Trace",
+      "code": "public class SubstringDemo {\n    public static void main(String[] args) {\n        String s = \"Programming\";\n        //          0123456789...\n        System.out.println(s.length());          // 11\n        System.out.println(s.charAt(0));         // P\n        System.out.println(s.charAt(10));        // g\n        System.out.println(s.substring(0, 7));   // Program   (indices 0-6)\n        System.out.println(s.substring(7));      // ming      (index 7 to end)\n        System.out.println(s.substring(3, 3));   // \"\"        (empty: j==i)\n        // s.charAt(11); // throws StringIndexOutOfBoundsException\n    }\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "\ud83c\udfd7\ufe0f StringBuilder \u2014 Mutable String Building"
+    },
+    {
+      "type": "paragraph",
+      "content": "`StringBuilder` is a **mutable** sequence of characters. Unlike `String`, its methods modify the object **in place** \u2014 there is no discarded return value problem. It is preferred over String concatenation inside loops because repeated `+` on Strings creates O(n) new objects; `StringBuilder.append()` is O(1) amortized. `StringBuffer` is the thread-safe (synchronized) variant \u2014 in single-threaded exam code, always use `StringBuilder`."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "StringBuilder API Showcase",
+      "code": "public class StringBuilderDemo {\n    public static void main(String[] args) {\n        StringBuilder sb = new StringBuilder(\"Hello\");\n\n        sb.append(\" World\");          // append at end\n        System.out.println(sb);       // Hello World\n\n        sb.insert(5, \",\");            // insert at index 5\n        System.out.println(sb);       // Hello, World\n\n        sb.delete(5, 7);              // delete indices 5 (incl) to 7 (excl)\n        System.out.println(sb);       // HelloWorld\n\n        sb.replace(0, 5, \"Goodbye\");  // replace indices 0-4 with \"Goodbye\"\n        System.out.println(sb);       // GoodbyeWorld\n\n        sb.reverse();\n        System.out.println(sb);       // dlroWeybdooG\n\n        sb.deleteCharAt(0);           // delete char at index 0\n        System.out.println(sb);       // lroWeybdooG\n\n        System.out.println(sb.length());   // 11\n        System.out.println(sb.charAt(0));  // l\n        System.out.println(sb.indexOf(\"W\")); // 3\n\n        // Convert back to String\n        String result = sb.toString();\n        System.out.println(result);   // lroWeybdooG\n    }\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "\ud83d\udcca StringBuilder Method Reference"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "Method",
+        "Returns",
+        "Effect"
+      ],
+      "rows": [
+        [
+          "`append(x)`",
+          "`StringBuilder`",
+          "Appends x (any type) to end; modifies in place"
+        ],
+        [
+          "`insert(i, x)`",
+          "`StringBuilder`",
+          "Inserts x at position i; shifts rest right"
+        ],
+        [
+          "`delete(i, j)`",
+          "`StringBuilder`",
+          "Removes characters from i (incl) to j (excl)"
+        ],
+        [
+          "`deleteCharAt(i)`",
+          "`StringBuilder`",
+          "Removes single char at index i"
+        ],
+        [
+          "`replace(i, j, s)`",
+          "`StringBuilder`",
+          "Replaces indices i..j-1 with String s"
+        ],
+        [
+          "`reverse()`",
+          "`StringBuilder`",
+          "Reverses the entire sequence in place"
+        ],
+        [
+          "`charAt(i)`",
+          "`char`",
+          "Returns char at index i (same as String)"
+        ],
+        [
+          "`setCharAt(i, c)`",
+          "`void`",
+          "Sets char at index i to c"
+        ],
+        [
+          "`indexOf(s)`",
+          "`int`",
+          "First index of substring s (-1 if absent)"
+        ],
+        [
+          "`length()`",
+          "`int`",
+          "Current number of characters"
+        ],
+        [
+          "`toString()`",
+          "`String`",
+          "Converts to immutable String"
+        ]
+      ]
+    },
+    {
+      "type": "callout",
+      "variant": "tip",
+      "label": "StringBuilder Methods Return `this`",
+      "content": "Most StringBuilder methods return the **same** StringBuilder object (`this`), enabling method chaining: `sb.append(\"a\").append(\"b\").reverse()`. The chained result is still the **same** object as `sb`. This is the opposite of String, where every method returns a **new** object."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "\u26a1 String vs StringBuilder Performance"
+    },
+    {
+      "type": "paragraph",
+      "content": "Concatenating `n` strings in a loop using `+` creates O(n) intermediate String objects and copies O(n\u00b2) total characters \u2014 extremely wasteful. `StringBuilder.append()` in a loop is O(n) total. This difference is tested conceptually in exams as a design question."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "String Loop vs StringBuilder Loop",
+      "code": "public class PerformanceDemo {\n    public static void main(String[] args) {\n        // BAD: creates n intermediate String objects\n        String bad = \"\";\n        for (int i = 0; i < 5; i++) bad += i; // new String each iteration\n        System.out.println(bad); // 01234\n\n        // GOOD: single StringBuilder, O(n) total\n        StringBuilder sb = new StringBuilder();\n        for (int i = 0; i < 5; i++) sb.append(i);\n        System.out.println(sb.toString()); // 01234\n\n        // Both give the same result but very different performance\n        // At n=100000, String loop is ~100x slower\n    }\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "\ud83d\udd04 String \u2194 Numeric Conversions"
+    },
+    {
+      "type": "table",
+      "headers": [
+        "Conversion",
+        "Method",
+        "Example"
+      ],
+      "rows": [
+        [
+          "int \u2192 String",
+          "`String.valueOf(n)` or `\"\" + n`",
+          "`String.valueOf(42)` \u2192 `\"42\"`"
+        ],
+        [
+          "String \u2192 int",
+          "`Integer.parseInt(s)`",
+          "`Integer.parseInt(\"42\")` \u2192 `42`"
+        ],
+        [
+          "double \u2192 String",
+          "`String.valueOf(d)` or `\"\" + d`",
+          "`String.valueOf(3.14)` \u2192 `\"3.14\"`"
+        ],
+        [
+          "String \u2192 double",
+          "`Double.parseDouble(s)`",
+          "`Double.parseDouble(\"3.14\")` \u2192 `3.14`"
+        ],
+        [
+          "char \u2192 String",
+          "`String.valueOf(c)` or `Character.toString(c)`",
+          "`String.valueOf('A')` \u2192 `\"A\"`"
+        ],
+        [
+          "String \u2192 char[]",
+          "`.toCharArray()`",
+          "`\"abc\".toCharArray()` \u2192 `['a','b','c']`"
+        ],
+        [
+          "char[] \u2192 String",
+          "`new String(charArr)`",
+          "`new String(new char[]{'a','b'})` \u2192 `\"ab\"`"
+        ]
+      ]
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "\ud83c\udfcb\ufe0f Practice Exercises"
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 1: Immutability \u2014 What Does Each Line Print?",
+      "language": "java",
+      "code": "public class Q1 {\n    public static void main(String[] args) {\n        String s = \"Hello World\";\n        s.replace(\"World\", \"Java\");\n        System.out.println(s);\n\n        String t = s.replace(\"Hello\", \"Hi\");\n        System.out.println(s);\n        System.out.println(t);\n\n        s = s.toUpperCase().substring(0, 5);\n        System.out.println(s);\n    }\n}",
+      "answer": "Hello World\nHello World\nHi World\nHELLO",
+      "explanation": "Line by line:\n1. `s.replace(\"World\",\"Java\")` \u2014 creates a new String \"Hello Java\" but the result is **discarded**. `s` still references \"Hello World\".\n   \u2192 prints: `Hello World`\n2. `t = s.replace(\"Hello\",\"Hi\")` \u2014 creates new String \"Hi World\" and assigns it to `t`. `s` is still unchanged.\n   \u2192 `System.out.println(s)` prints: `Hello World`\n   \u2192 `System.out.println(t)` prints: `Hi World`\n3. `s.toUpperCase()` creates `\"HELLO WORLD\"`, then `.substring(0,5)` extracts `\"HELLO\"` (indices 0\u20134). This new String is reassigned to `s`.\n   \u2192 prints: `HELLO`"
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 2: StringBuilder Chaining and Mutation",
+      "language": "java",
+      "code": "public class Q2 {\n    public static void main(String[] args) {\n        StringBuilder sb = new StringBuilder(\"abcdef\");\n        sb.delete(2, 4);           // step 1\n        System.out.println(sb);\n        sb.insert(2, \"XY\");        // step 2\n        System.out.println(sb);\n        sb.reverse();              // step 3\n        System.out.println(sb);\n        System.out.println(sb.length());\n    }\n}",
+      "answer": "abef\nabXYef\nfeYXba\n6",
+      "explanation": "Initial: `\"abcdef\"` (length 6)\nStep 1: `delete(2,4)` removes indices 2 (inclusive) to 4 (exclusive) \u2014 removes chars 'c','d'. Result: `\"abef\"` (length 4).\nStep 2: `insert(2, \"XY\")` inserts at position 2. Characters at index 2+ shift right. Result: `\"abXYef\"` (length 6).\nStep 3: `reverse()` reverses in place. `\"abXYef\"` reversed character by character is `\"feYXba\"`. Note: 'X'\u2192'X', 'Y'\u2192'Y', case preserved.\nLength of `\"feYXba\"` = 6."
+    },
+    {
+      "type": "accordion",
+      "variant": "find-error",
+      "title": "Exercise 3: Bug in String Comparison and Mutation",
+      "language": "java",
+      "code": "public class Q3 {\n    public static void main(String[] args) {\n        String password = \"Secret123\";\n        String input = new String(\"Secret123\");\n\n        if (input == password) {\n            System.out.println(\"Access granted\");\n        } else {\n            System.out.println(\"Access denied\");\n        }\n\n        password.toLowerCase();\n        System.out.println(password);\n    }\n}",
+      "error": "Line 6: `input == password` compares **references**, not content \u2014 this is a logical error. Because `input` was created with `new String(...)`, it is a different heap object from the literal `\"Secret123\"` even though they contain the same characters. The condition evaluates to `false` and prints \"Access denied\" instead of \"Access granted\". Line 11: `password.toLowerCase()` result is discarded \u2014 logical error. `password` remains `\"Secret123\"`.",
+      "fix": "public class Q3 {\n    public static void main(String[] args) {\n        String password = \"Secret123\";\n        String input = new String(\"Secret123\");\n\n        if (input.equals(password)) {  // FIX 1: use .equals() for content comparison\n            System.out.println(\"Access granted\");\n        } else {\n            System.out.println(\"Access denied\");\n        }\n\n        password = password.toLowerCase();  // FIX 2: capture the return value\n        System.out.println(password);       // secret123\n    }\n}",
+      "explanation": "Two separate bugs: (1) `==` on Strings compares object identity, not content. `new String(\"Secret123\")` always allocates a fresh object on the heap, so its reference can never be `==` to the literal's pool reference. The fix is `.equals()`, which compares the actual character sequences. (2) `String.toLowerCase()` (like all String methods) returns a NEW String and leaves the original unchanged. Without reassigning `password = password.toLowerCase()`, the method call has no observable effect. Both are **logical errors** \u2014 the code compiles and runs, just produces the wrong output."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 4: Method Chaining and String Arithmetic",
+      "language": "java",
+      "code": "public class Q4 {\n    public static void main(String[] args) {\n        String s = \"  Java Programming  \";\n        System.out.println(s.trim().length());\n        System.out.println(s.trim().substring(5).toUpperCase());\n        System.out.println(s.trim().replace(\"a\", \"@\").replace(\"@\", \"A\"));\n        System.out.println(s.indexOf(\"a\"));\n        System.out.println(s.trim().indexOf(\"a\"));\n    }\n}",
+      "answer": "16\nPROGRAMMING\nJAvA ProgrAmming\n3\n1",
+      "explanation": "s = \"  Java Programming  \" (20 chars including spaces)\n\n1. s.trim() \u2192 \"Java Programming\" (16 chars). .length() \u2192 16.\n\n2. s.trim() \u2192 \"Java Programming\", .substring(5) \u2192 \"Programming\" (indices 5 to end). .toUpperCase() \u2192 \"PROGRAMMING\".\n\n3. s.trim() \u2192 \"Java Programming\". First .replace(\"a\",\"@\") \u2192 \"J@v@ Progr@mming\". Then .replace(\"@\",\"A\") \u2192 \"JAvA ProgrAmming\". The second replace only targets @, not original a characters (already replaced in step one).\n\n4. s.indexOf(\"a\") searches original s (with leading spaces). Characters: index 0=' ', 1=' ', 2='J', 3='a'. First 'a' is at index 3.\n\n5. s.trim().indexOf(\"a\"): trimmed string is \"Java Programming\". Characters: 0='J', 1='a'. First 'a' is at index 1."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 5: Reverse Words in a Sentence",
+      "language": "java",
+      "code": "// Write a method that takes a String sentence and returns the sentence\n// with the ORDER of words reversed, but each word's characters in\n// their original order. Words are separated by single spaces.\n// Input:  \"The quick brown fox\"\n// Output: \"fox brown quick The\"\n// Hint: use split(), StringBuilder or array reversal.",
+      "approach": "1. Split the string by spaces using String.split(\" \") to get an array of words.\n2. Iterate the array in reverse order, appending each word to a StringBuilder.\n3. Add a space between words (but not after the last one).\n4. Return sb.toString().",
+      "solution": "public class ReverseWords {\n    public static String reverseWords(String sentence) {\n        String[] words = sentence.split(\" \");\n        StringBuilder sb = new StringBuilder();\n        for (int i = words.length - 1; i >= 0; i--) {\n            sb.append(words[i]);\n            if (i > 0) sb.append(\" \"); // space between words only\n        }\n        return sb.toString();\n    }\n\n    public static void main(String[] args) {\n        System.out.println(reverseWords(\"The quick brown fox\"));\n        // Output: fox brown quick The\n\n        System.out.println(reverseWords(\"Hello World\"));\n        // Output: World Hello\n\n        System.out.println(reverseWords(\"single\"));\n        // Output: single\n    }\n}",
+      "explanation": "split(\" \") breaks the sentence into an array at each space. Iterating backwards from words.length-1 to 0 appends words in reverse order. The `if (i > 0)` guard adds a space between consecutive words but skips the trailing space after the last word. StringBuilder is preferred over String concatenation in the loop to avoid O(n\u00b2) copies. Edge case: single-word input \u2014 the loop runs once, `i > 0` is false, so no space is appended. Result is just that word."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "\ud83d\udccb Quick Reference Summary"
+    },
+    {
+      "type": "list",
+      "ordered": false,
+      "items": [
+        "**String is immutable**: all methods return a NEW String; original is unchanged unless you reassign (`s = s.toUpperCase()`)",
+        "**== vs .equals()**: use `==` for reference identity (pool/object), `.equals()` for content comparison \u2014 almost always use `.equals()`",
+        "**String literals** share pool objects; `new String(...)` always creates a new heap object",
+        "**Compile-time concatenation** (`\"a\" + \"b\"`) is interned; **runtime concatenation** (variable + anything) creates new heap object",
+        "**substring(i, j)**: i is inclusive, j is exclusive; result has `j - i` characters; `substring(i, i)` returns empty string",
+        "**charAt(i)**: 0-based index; throws `StringIndexOutOfBoundsException` at runtime if `i < 0` or `i >= length()`",
+        "**StringBuilder is mutable**: methods like `append()`, `delete()`, `reverse()` modify the SAME object in place",
+        "**StringBuilder chaining**: methods return `this` (same object), enabling `sb.append(\"x\").append(\"y\")`",
+        "**String loop performance**: prefer `StringBuilder.append()` in loops over repeated `+` concatenation (avoids O(n\u00b2) copies)",
+        "**Conversions**: `Integer.parseInt(s)` for String\u2192int; `String.valueOf(n)` for int\u2192String; `toCharArray()` for String\u2192char[]",
+        "**isEmpty()** checks length==0; **isBlank()** (Java 11+) also returns true for whitespace-only strings",
+        "**StringBuffer** = thread-safe StringBuilder; in single-threaded code, always use **StringBuilder** (faster)"
+      ]
+    }
+  ]
+}

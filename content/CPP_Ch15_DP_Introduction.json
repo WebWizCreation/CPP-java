@@ -1,0 +1,223 @@
+{
+  "id": "CPP_Ch15_DP_Introduction",
+  "track": "cpp",
+  "chapter": 15,
+  "title": "Dynamic Programming: Introduction",
+  "description": "Build the DP mindset from scratch — learn to identify overlapping subproblems, formulate recurrences, and transition fluently between top-down memoization and bottom-up tabulation to crack Codeforces problems up to rating 1600.",
+  "sections": [
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🧠 What Is Dynamic Programming?"
+    },
+    {
+      "type": "paragraph",
+      "content": "**Dynamic Programming (DP)** is an algorithm design technique for problems with two key properties: **overlapping subproblems** (the same sub-calculation is needed multiple times) and **optimal substructure** (an optimal solution is composed of optimal solutions to subproblems). DP eliminates redundant recomputation by storing results — turning exponential brute-force into polynomial solutions. On Codeforces, DP is the single most important topic for reaching 1600+ rating."
+    },
+    {
+      "type": "callout",
+      "variant": "tip",
+      "label": "DP Recognition Pattern",
+      "content": "A problem likely has a DP solution if it asks: **minimum/maximum** cost of doing something, **number of ways** to achieve something, or **whether it is possible** to reach a state — and the constraints are small enough (n ≤ 10^3 to 10^5 depending on dimensions). Greedy fails? Think DP."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔑 Two Implementations: Memoization vs Tabulation"
+    },
+    {
+      "type": "paragraph",
+      "content": "Every DP can be written either **top-down** (memoization: recursion + cache) or **bottom-up** (tabulation: iterative, fill table in dependency order). Both are O(states × cost-per-transition). Top-down is often easier to derive; bottom-up is usually faster in practice (no recursion overhead, better cache locality)."
+    },
+    {
+      "type": "table",
+      "headers": ["Aspect", "Top-Down (Memoization)", "Bottom-Up (Tabulation)"],
+      "rows": [
+        ["Code style", "Recursive function + memo array", "Iterative loops filling dp[]"],
+        ["Transition direction", "Natural from problem definition", "Must determine fill order"],
+        ["Stack overflow risk", "Yes, for large n", "No"],
+        ["Speed in practice", "Slightly slower (function call overhead)", "Faster (cache-friendly iteration)"],
+        ["Handles only needed states", "Yes (lazy evaluation)", "No (computes all states)"],
+        ["Easier for beginners", "Usually yes", "Requires careful ordering"],
+        ["CF contest preference", "Either; tabulation preferred at high levels", "Often preferred"]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🪜 Step-by-Step DP Framework"
+    },
+    {
+      "type": "list",
+      "ordered": true,
+      "items": [
+        "**Define the state**: What does `dp[i]` (or `dp[i][j]`) represent? Be precise.",
+        "**Write the recurrence**: How does `dp[i]` depend on smaller states?",
+        "**Identify base cases**: What are the trivially known values?",
+        "**Determine the answer**: Which state(s) hold the final answer?",
+        "**Choose top-down or bottom-up**: Verify fill order for tabulation.",
+        "**Analyze complexity**: States × transitions. Verify it fits within time limits."
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🎯 Canonical Example 1: Fibonacci (Warm-Up)"
+    },
+    {
+      "type": "paragraph",
+      "content": "Fibonacci is the \"Hello World\" of DP. Naive recursion is O(2^n); with memoization it becomes O(n). While trivial, it perfectly illustrates the two DP implementations."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Fibonacci — Top-Down vs Bottom-Up",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\n// --- TOP-DOWN (Memoization) ---\nconst int MAXN = 1e6 + 5;\nlong long memo[MAXN];\n\nlong long fib_top(int n) {\n    if (n <= 1) return n;\n    if (memo[n] != -1) return memo[n];\n    return memo[n] = fib_top(n-1) + fib_top(n-2);\n}\n\n// --- BOTTOM-UP (Tabulation) ---\nlong long fib_bottom(int n) {\n    if (n <= 1) return n;\n    vector<long long> dp(n+1);\n    dp[0] = 0; dp[1] = 1;\n    for (int i = 2; i <= n; i++)\n        dp[i] = dp[i-1] + dp[i-2];\n    return dp[n];\n}\n\nint main() {\n    memset(memo, -1, sizeof(memo));\n    int n; cin >> n;\n    cout << fib_top(n) << \"\\n\";\n    cout << fib_bottom(n) << \"\\n\";\n    return 0;\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🪙 Canonical Example 2: Coin Change (Minimum Coins)"
+    },
+    {
+      "type": "paragraph",
+      "content": "**Problem**: Given coin denominations and a target amount, find the minimum number of coins needed. This is the poster child for DP — greedy fails for non-canonical coin systems (e.g., coins `{1,3,4}`, target `6`: greedy gives `4+1+1=3` coins, DP gives `3+3=2` coins)."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Coin Change — Bottom-Up Tabulation",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n\n    int n, amount;\n    cin >> n >> amount;\n    vector<int> coins(n);\n    for (auto& c : coins) cin >> c;\n\n    // dp[i] = minimum coins to make amount i\n    // Base: dp[0] = 0\n    // Recurrence: dp[i] = min over all coins c where c<=i of (dp[i-c] + 1)\n    const int INF = 1e9;\n    vector<int> dp(amount + 1, INF);\n    dp[0] = 0;\n\n    for (int i = 1; i <= amount; i++) {\n        for (int c : coins) {\n            if (c <= i && dp[i - c] != INF)\n                dp[i] = min(dp[i], dp[i - c] + 1);\n        }\n    }\n\n    if (dp[amount] == INF) cout << -1 << \"\\n\";\n    else cout << dp[amount] << \"\\n\";\n    return 0;\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "danger",
+      "label": "#1 DP Bug in Contests",
+      "content": "Initializing the DP array to `0` instead of `INT_MAX`/`INF` for minimization problems (or to `INF` for maximization). Also: when using `INF = INT_MAX`, doing `dp[i-c] + 1` overflows to a negative number — always use a safe sentinel like `1e9` and check `dp[i-c] != INF` before adding."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🧮 Canonical Example 3: 0/1 Knapsack (2D DP)"
+    },
+    {
+      "type": "paragraph",
+      "content": "The **0/1 Knapsack** problem introduces 2D DP states. Each item can either be taken (0) or not taken (1). State: `dp[i][w]` = maximum value using first `i` items with weight capacity `w`."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "0/1 Knapsack — 2D Tabulation + Space Optimization",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n\n    int n, W;\n    cin >> n >> W;\n    vector<int> wt(n), val(n);\n    for (int i = 0; i < n; i++) cin >> wt[i] >> val[i];\n\n    // SPACE-OPTIMIZED: 1D dp array, iterate weight BACKWARDS\n    // dp[w] = max value with capacity w\n    vector<int> dp(W + 1, 0);\n\n    for (int i = 0; i < n; i++) {\n        // Iterate backwards to prevent using item i more than once\n        for (int w = W; w >= wt[i]; w--) {\n            dp[w] = max(dp[w], dp[w - wt[i]] + val[i]);\n        }\n    }\n\n    cout << dp[W] << \"\\n\";\n    return 0;\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "warning",
+      "label": "0/1 vs Unbounded Knapsack",
+      "content": "In **0/1 knapsack**, iterate weights **backwards** (prevents reuse of same item). In **unbounded knapsack** (unlimited copies of each item), iterate weights **forwards**. Getting this direction wrong is an extremely common contest mistake."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📈 Canonical Example 4: Longest Increasing Subsequence (LIS)"
+    },
+    {
+      "type": "paragraph",
+      "content": "**LIS** is a landmark DP problem. O(n²) DP is straightforward; the O(n log n) patience-sort approach using binary search is the contest standard. Understanding LIS deeply prepares you for dozens of related problems."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "LIS — O(n²) DP and O(n log n) Optimized",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\n// O(n^2) DP: dp[i] = length of LIS ending at index i\nint lis_n2(vector<int>& a) {\n    int n = a.size();\n    vector<int> dp(n, 1);\n    for (int i = 1; i < n; i++)\n        for (int j = 0; j < i; j++)\n            if (a[j] < a[i])\n                dp[i] = max(dp[i], dp[j] + 1);\n    return *max_element(dp.begin(), dp.end());\n}\n\n// O(n log n): patience sorting with binary search\nint lis_nlogn(vector<int>& a) {\n    vector<int> tails; // tails[i] = smallest tail of IS of length i+1\n    for (int x : a) {\n        auto it = lower_bound(tails.begin(), tails.end(), x);\n        if (it == tails.end()) tails.push_back(x);\n        else *it = x;\n    }\n    return tails.size();\n}\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n    int n; cin >> n;\n    vector<int> a(n);\n    for (auto& x : a) cin >> x;\n    cout << lis_nlogn(a) << \"\\n\";\n    return 0;\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📊 DP Complexity Reference"
+    },
+    {
+      "type": "table",
+      "headers": ["Problem", "State Definition", "Recurrence", "Complexity"],
+      "rows": [
+        ["Fibonacci", "dp[i] = i-th Fibonacci", "dp[i] = dp[i-1]+dp[i-2]", "O(n)"],
+        ["Coin change (min)", "dp[i] = min coins for amount i", "dp[i] = min(dp[i-c]+1) for c in coins", "O(n × amount)"],
+        ["0/1 Knapsack", "dp[i][w] = max val, i items, capacity w", "dp[w] = max(dp[w], dp[w-wt]+val)", "O(n × W)"],
+        ["LIS (n²)", "dp[i] = LIS length ending at i", "dp[i] = max(dp[j]+1) for j<i, a[j]<a[i]", "O(n²)"],
+        ["LIS (optimized)", "tails[] patience sort", "Binary search + replace", "O(n log n)"],
+        ["Grid path count", "dp[i][j] = ways to reach (i,j)", "dp[i][j] = dp[i-1][j]+dp[i][j-1]", "O(n×m)"]
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🗺️ Grid DP: Paths in a Grid"
+    },
+    {
+      "type": "paragraph",
+      "content": "Grid DP is one of the most common introductory DP patterns. Count the number of paths from top-left to bottom-right moving only right or down. State: `dp[i][j]` = number of paths to reach cell `(i,j)`."
+    },
+    {
+      "type": "code",
+      "language": "cpp",
+      "title": "Count Paths in Grid (with Obstacles)",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n\n    int n, m;\n    cin >> n >> m;\n    vector<string> grid(n);\n    for (auto& row : grid) cin >> row;\n    // '.' = open, '#' = blocked\n\n    const long long MOD = 1e9 + 7;\n    vector<vector<long long>> dp(n, vector<long long>(m, 0));\n\n    // Base case\n    dp[0][0] = (grid[0][0] == '.' ? 1 : 0);\n\n    for (int i = 0; i < n; i++) {\n        for (int j = 0; j < m; j++) {\n            if (i == 0 && j == 0) continue;\n            if (grid[i][j] == '#') { dp[i][j] = 0; continue; }\n            if (i > 0) dp[i][j] = (dp[i][j] + dp[i-1][j]) % MOD;\n            if (j > 0) dp[i][j] = (dp[i][j] + dp[i][j-1]) % MOD;\n        }\n    }\n\n    cout << dp[n-1][m-1] << \"\\n\";\n    return 0;\n}"
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🧪 Interactive Exercises"
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 1: Trace the Coin Change DP Table",
+      "language": "cpp",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    int amount = 5;\n    vector<int> coins = {1, 3};\n    const int INF = 1e9;\n    vector<int> dp(amount + 1, INF);\n    dp[0] = 0;\n    for (int i = 1; i <= amount; i++)\n        for (int c : coins)\n            if (c <= i && dp[i-c] != INF)\n                dp[i] = min(dp[i], dp[i-c] + 1);\n    for (int i = 0; i <= amount; i++)\n        cout << dp[i] << \" \";\n    return 0;\n}",
+      "answer": "0 1 2 1 2 3",
+      "explanation": "Coins = {1,3}, amount = 5.\n- dp[0] = 0 (base)\n- dp[1]: try c=1: dp[0]+1=1. dp[1]=1\n- dp[2]: try c=1: dp[1]+1=2. dp[2]=2\n- dp[3]: try c=1: dp[2]+1=3; try c=3: dp[0]+1=1 → dp[3]=1\n- dp[4]: try c=1: dp[3]+1=2; try c=3: dp[1]+1=2 → dp[4]=2\n- dp[5]: try c=1: dp[4]+1=3; try c=3: dp[2]+1=3 → dp[5]=3\nPrinted: **0 1 2 1 2 3**"
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 2: Trace the LIS O(n²) DP",
+      "language": "cpp",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    vector<int> a = {3, 1, 4, 1, 5, 9, 2, 6};\n    int n = a.size();\n    vector<int> dp(n, 1);\n    for (int i = 1; i < n; i++)\n        for (int j = 0; j < i; j++)\n            if (a[j] < a[i])\n                dp[i] = max(dp[i], dp[j] + 1);\n    cout << *max_element(dp.begin(), dp.end()) << \"\\n\";\n    return 0;\n}",
+      "answer": "4",
+      "explanation": "Array: {3,1,4,1,5,9,2,6}. DP trace:\n- dp[0]=1 (just {3})\n- dp[1]=1 (just {1})\n- dp[2]=2: a[0]=3<4→dp[0]+1=2; a[1]=1<4→dp[1]+1=2 → dp[2]=2\n- dp[3]=1 (nothing < a[3]=1 to extend from — 3>1, 4>1)\n- dp[4]=3: a[0]=3<5→2, a[1]=1<5→2, a[2]=4<5→3, a[3]=1<5→2 → dp[4]=3\n- dp[5]=4: best extends dp[4]=3 → dp[5]=4\n- dp[6]=2: a[1]=1<2→2, a[3]=1<2→2 → dp[6]=2\n- dp[7]=4: a[1]=1<6→3, a[3]=1<6→3, a[4]=5<6→4, etc. → dp[7]=4 (e.g. {1,4,5,6})\nmax dp = **4**"
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 3: Maximum Sum Subarray (Kadane's Algorithm as DP)",
+      "language": "cpp",
+      "code": "// Given an array of n integers (possibly negative),\n// find the maximum sum of any contiguous non-empty subarray.\n// Input: n, then n integers\n// Example: n=8, a={-2,1,-3,4,-1,2,1,-5,4} => output: 6  (subarray {4,-1,2,1})\n// Example: n=3, a={-1,-2,-3} => output: -1\n// Constraints: 1<=n<=1e5, -1e9<=a[i]<=1e9",
+      "approach": "DP state: `dp[i]` = maximum subarray sum ending exactly at index `i`. Recurrence: `dp[i] = max(a[i], dp[i-1] + a[i])` — either start a new subarray at i, or extend the previous best. Answer = max over all dp[i]. This is Kadane's algorithm. Space-optimize to O(1) by keeping only `cur` and `best`.",
+      "solution": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n    int n; cin >> n;\n    vector<long long> a(n);\n    for (auto& x : a) cin >> x;\n\n    long long cur = a[0], best = a[0];\n    for (int i = 1; i < n; i++) {\n        cur = max(a[i], cur + a[i]);  // extend or restart\n        best = max(best, cur);\n    }\n    cout << best << \"\\n\";\n    return 0;\n}",
+      "explanation": "**State**: `cur` represents `dp[i]` — max subarray sum ending at `i`. Recurrence: extend previous (`cur + a[i]`) or start fresh (`a[i]`), take the maximum.\n**Trace on example**: a={-2,1,-3,4,-1,2,1,-5,4}. cur/best: -2/-2, 1/1, -2/1, 4/4, 3/4, 5/5, 6/6, 1/6, 5/6. Answer = **6**.\n**All-negative case**: Starting `best = a[0]` handles this correctly — we take the least-negative element.\n**Complexity**: O(n) time, O(1) space — optimal."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 4: Count Ways to Climb Stairs",
+      "language": "cpp",
+      "code": "// You can climb 1 or 2 stairs at a time.\n// How many distinct ways are there to reach stair n?\n// Input: n (1 <= n <= 40)\n// Example: n=1 => output: 1\n// Example: n=2 => output: 2\n// Example: n=5 => output: 8\n// (This is Fibonacci with offset — trace it carefully)",
+      "approach": "DP state: `dp[i]` = number of ways to reach stair `i`. Base cases: `dp[0]=1` (one way to stand at start), `dp[1]=1`. Recurrence: `dp[i] = dp[i-1] + dp[i-2]` — we arrived from stair `i-1` (took 1 step) or from stair `i-2` (took 2 steps). This is Fibonacci(n+1).",
+      "solution": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    int n; cin >> n;\n    if (n == 1) { cout << 1; return 0; }\n    vector<long long> dp(n + 1);\n    dp[0] = 1; dp[1] = 1;\n    for (int i = 2; i <= n; i++)\n        dp[i] = dp[i-1] + dp[i-2];\n    cout << dp[n] << \"\\n\";\n    return 0;\n}",
+      "explanation": "**Trace for n=5**: dp = {1,1,2,3,5,8}. dp[5]=**8** ✓.\nThe 8 ways for n=5: {1+1+1+1+1, 1+1+1+2, 1+1+2+1, 1+2+1+1, 2+1+1+1, 1+2+2, 2+1+2, 2+2+1}.\n**Complexity**: O(n) time, O(n) space (or O(1) with rolling variables)."
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 5: Codeforces-Style — Minimum Cost Path in Grid",
+      "language": "cpp",
+      "code": "// Given an n×m grid where each cell has a non-negative cost,\n// find the minimum cost path from (0,0) to (n-1,m-1).\n// You can only move right or down.\n// Input: n m, then n rows of m integers each.\n// Example: n=3 m=3\n// Grid: 1 3 1\n//       1 5 1\n//       4 2 1\n// Output: 7  (path: 1->3->1->1->1 = 7)\n// Constraints: 1<=n,m<=1000, 0<=cost<=100",
+      "approach": "DP state: `dp[i][j]` = minimum cost to reach cell (i,j). Base: `dp[0][0] = grid[0][0]`. First row: `dp[0][j] = dp[0][j-1] + grid[0][j]` (only can come from left). First col: `dp[i][0] = dp[i-1][0] + grid[i][0]` (only from above). General: `dp[i][j] = min(dp[i-1][j], dp[i][j-1]) + grid[i][j]`.",
+      "solution": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n    int n, m; cin >> n >> m;\n    vector<vector<int>> g(n, vector<int>(m));\n    for (auto& row : g) for (auto& x : row) cin >> x;\n\n    vector<vector<long long>> dp(n, vector<long long>(m, 1e18));\n    dp[0][0] = g[0][0];\n\n    for (int j = 1; j < m; j++) dp[0][j] = dp[0][j-1] + g[0][j];\n    for (int i = 1; i < n; i++) dp[i][0] = dp[i-1][0] + g[i][0];\n\n    for (int i = 1; i < n; i++)\n        for (int j = 1; j < m; j++)\n            dp[i][j] = min(dp[i-1][j], dp[i][j-1]) + g[i][j];\n\n    cout << dp[n-1][m-1] << \"\\n\";\n    return 0;\n}",
+      "explanation": "**Trace on example**: After filling:\n```\ndp:\n1  4  5\n2  7  6\n6  8  7\n```\ndp[2][2] = **7** ✓ (path: 1→1→1→1→1→1→1 does not exist; 1→3→1→1→1=7 via top row then down right)\n**Complexity**: O(n×m) time and space — optimal. Can space-optimize to O(m) using rolling array if n×m is large."
+    }
+  ]
+}

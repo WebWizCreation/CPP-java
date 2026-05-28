@@ -1,0 +1,235 @@
+{
+  "id": "Java_Ch14_Encapsulation",
+  "track": "java",
+  "chapter": 14,
+  "title": "Encapsulation",
+  "description": "Master Java's access control system — private, protected, and public — and understand how getters, setters, and data hiding produce robust, exam-tested OOP designs that CSE110 assessors specifically target.",
+  "sections": [
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔒 Why Encapsulation Matters in CSE110 Exams"
+    },
+    {
+      "type": "paragraph",
+      "content": "**Encapsulation** is the OOP principle of bundling data (fields) and the methods that operate on that data into a single class, while restricting direct external access to the data. CSE110 exams test encapsulation in three ways: **access modifier questions** (what compiles, what doesn't), **getter/setter tracing** (what value is returned after a sequence of calls), and **design questions** (why should a field be `private`). Getting this chapter right is guaranteed marks."
+    },
+    {
+      "type": "callout",
+      "variant": "tip",
+      "label": "Exam Strategy",
+      "content": "On CSE110 exams, whenever you see a field declared `private` and a question asks what the output is after calling `obj.fieldName`, the answer is always a **compile error** — direct access to private fields from outside the class is illegal. Watch for this trap in every output-prediction question."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🏷️ Access Modifiers: The Four Levels"
+    },
+    {
+      "type": "paragraph",
+      "content": "Java has four access levels. Three are explicit keywords (`private`, `protected`, `public`) and one is the default (package-private, when no keyword is used). Understanding exactly **what each level allows and forbids** is the foundation of encapsulation questions."
+    },
+    {
+      "type": "table",
+      "headers": [
+        "Modifier",
+        "Same Class",
+        "Same Package",
+        "Subclass (diff pkg)",
+        "Anywhere"
+      ],
+      "rows": [
+        [
+          "`private`",
+          "✅ Yes",
+          "❌ No",
+          "❌ No",
+          "❌ No"
+        ],
+        [
+          "*(default/package)*",
+          "✅ Yes",
+          "✅ Yes",
+          "❌ No",
+          "❌ No"
+        ],
+        [
+          "`protected`",
+          "✅ Yes",
+          "✅ Yes",
+          "✅ Yes",
+          "❌ No"
+        ],
+        [
+          "`public`",
+          "✅ Yes",
+          "✅ Yes",
+          "✅ Yes",
+          "✅ Yes"
+        ]
+      ]
+    },
+    {
+      "type": "callout",
+      "variant": "danger",
+      "label": "Most Common Exam Mistake",
+      "content": "Students confuse `protected` with `private`. `protected` members ARE accessible in subclasses — even in different packages — via inheritance. `private` members are NEVER accessible outside the class, not even in subclasses. A subclass cannot access `super.privateField` directly."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔧 Getters and Setters: The Standard Pattern"
+    },
+    {
+      "type": "paragraph",
+      "content": "The canonical encapsulation pattern: declare fields `private`, then provide `public` **accessor** (getter) and **mutator** (setter) methods. Getters return the field value; setters validate and assign new values. This gives the class author full control over how data is read and written."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Classic Encapsulation — BankAccount with Validation",
+      "code": "public class BankAccount {\n    private String owner;\n    private double balance;\n    private int accountNumber;\n\n    // Constructor\n    public BankAccount(String owner, int accountNumber, double initialBalance) {\n        this.owner = owner;\n        this.accountNumber = accountNumber;\n        this.balance = (initialBalance >= 0) ? initialBalance : 0;\n    }\n\n    // Getter: read-only access to balance\n    public double getBalance() {\n        return balance;\n    }\n\n    // Getter for owner\n    public String getOwner() {\n        return owner;\n    }\n\n    // accountNumber has NO setter — immutable after construction\n    public int getAccountNumber() {\n        return accountNumber;\n    }\n\n    // Setter with validation\n    public boolean deposit(double amount) {\n        if (amount <= 0) return false;  // reject invalid deposit\n        balance += amount;\n        return true;\n    }\n\n    public boolean withdraw(double amount) {\n        if (amount <= 0 || amount > balance) return false;\n        balance -= amount;\n        return true;\n    }\n\n    @Override\n    public String toString() {\n        return \"Account[\" + accountNumber + \"] \" + owner + \": $\" + balance;\n    }\n\n    public static void main(String[] args) {\n        BankAccount acc = new BankAccount(\"Alice\", 1001, 500.0);\n        System.out.println(acc.getBalance());       // 500.0\n        acc.deposit(200.0);\n        System.out.println(acc.getBalance());       // 700.0\n        acc.withdraw(1000.0);                       // fails silently\n        System.out.println(acc.getBalance());       // 700.0\n        System.out.println(acc);                    // Account[1001] Alice: $700.0\n    }\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🔑 The `this` Keyword in Setters"
+    },
+    {
+      "type": "paragraph",
+      "content": "Inside instance methods and constructors, `this` refers to the current object. It is essential in setters when the parameter name matches the field name — without `this`, the assignment `name = name` would do nothing (assigning the parameter to itself)."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "The this Keyword — Correct vs Wrong Setter",
+      "code": "public class Student {\n    private String name;\n    private int age;\n\n    // CORRECT: this.name distinguishes field from parameter\n    public void setName(String name) {\n        this.name = name;  // field = parameter\n    }\n\n    // WRONG: name = name assigns the parameter to itself!\n    // The field remains unchanged. This is a LOGICAL error.\n    public void setNameWrong(String name) {\n        name = name;  // Bug: shadowing, field never updated\n    }\n\n    public void setAge(int age) {\n        if (age >= 0 && age <= 150)\n            this.age = age;\n    }\n\n    public String getName() { return name; }\n    public int getAge() { return age; }\n\n    public static void main(String[] args) {\n        Student s = new Student();\n        s.setName(\"Ashik\");\n        s.setAge(20);\n        System.out.println(s.getName() + \", \" + s.getAge()); // Ashik, 20\n\n        Student s2 = new Student();\n        s2.setNameWrong(\"Bob\");\n        System.out.println(s2.getName()); // null  (field was never set!)\n    }\n}"
+    },
+    {
+      "type": "callout",
+      "variant": "warning",
+      "label": "Subtle this Bug",
+      "content": "If a class field and a local variable/parameter share the same name, the local variable **shadows** the field. Without `this.fieldName`, you're operating on the local variable, not the field. This produces a **logical error** — the code compiles but behaves incorrectly."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🏗️ Encapsulation with Inheritance: protected vs private"
+    },
+    {
+      "type": "paragraph",
+      "content": "When a class is designed to be extended, choosing between `private` and `protected` for fields has important consequences. `private` fields are inherited (the subclass object has them) but are **not directly accessible** in the subclass — only through the parent's `public`/`protected` methods. `protected` fields are accessible directly in subclasses."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "private vs protected in Inheritance",
+      "code": "class Animal {\n    private String name;       // not directly accessible in subclasses\n    protected int age;         // directly accessible in subclasses\n    public String species;     // accessible everywhere\n\n    public Animal(String name, int age, String species) {\n        this.name = name;\n        this.age = age;\n        this.species = species;\n    }\n\n    public String getName() { return name; }  // public gateway to private field\n}\n\nclass Dog extends Animal {\n    private String breed;\n\n    public Dog(String name, int age, String breed) {\n        super(name, age, \"Canine\");\n        this.breed = breed;\n    }\n\n    public void display() {\n        // System.out.println(name);  // ERROR: name is private in Animal\n        System.out.println(getName());  // OK: using public getter\n        System.out.println(age);        // OK: age is protected\n        System.out.println(species);    // OK: species is public\n        System.out.println(breed);      // OK: own private field\n    }\n}\n\npublic class Main {\n    public static void main(String[] args) {\n        Dog d = new Dog(\"Rex\", 3, \"Labrador\");\n        d.display();\n        // d.name;   // ERROR: private\n        // d.age;    // OK (protected, same package)\n        // d.breed;  // ERROR: private\n    }\n}"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📋 Immutable Classes: Read-Only Encapsulation"
+    },
+    {
+      "type": "paragraph",
+      "content": "An **immutable class** has all fields `private` and `final`, no setters, and all fields set only in the constructor. Once created, the object's state cannot change. Java's `String` class is the most famous example. Immutable objects are inherently thread-safe and prevent accidental modification."
+    },
+    {
+      "type": "code",
+      "language": "java",
+      "title": "Immutable Point Class",
+      "code": "public final class Point {          // final: can't be subclassed\n    private final double x;         // final: must be set in constructor\n    private final double y;\n\n    public Point(double x, double y) {\n        this.x = x;\n        this.y = y;\n    }\n\n    public double getX() { return x; }\n    public double getY() { return y; }\n\n    // No setters — immutable!\n    // To \"modify\", return a new Point\n    public Point translate(double dx, double dy) {\n        return new Point(x + dx, y + dy);  // new object, original unchanged\n    }\n\n    @Override\n    public String toString() {\n        return \"(\" + x + \", \" + y + \")\";\n    }\n\n    public static void main(String[] args) {\n        Point p1 = new Point(2.0, 3.0);\n        Point p2 = p1.translate(1.0, -1.0);\n        System.out.println(p1);  // (2.0, 3.0) — unchanged\n        System.out.println(p2);  // (3.0, 2.0)\n    }\n}"
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "🧪 Interactive Exercises"
+    },
+    {
+      "type": "accordion",
+      "variant": "find-error",
+      "title": "Exercise 1: Broken Setter Assignment",
+      "language": "java",
+      "code": "public class Rectangle {\n    private double width;\n    private double height;\n\n    public void setWidth(double width) {\n        width = width;\n    }\n\n    public void setHeight(double height) {\n        height = height;\n    }\n\n    public double getArea() {\n        return width * height;\n    }\n\n    public static void main(String[] args) {\n        Rectangle r = new Rectangle();\n        r.setWidth(5.0);\n        r.setHeight(3.0);\n        System.out.println(r.getArea());  // Expected: 15.0, Actual: 0.0\n    }\n}",
+      "error": "Lines 5 and 9: `width = width` and `height = height` are logical errors — the parameter is assigned to itself, leaving the private fields at their default value of 0.0.",
+      "fix": "public class Rectangle {\n    private double width;\n    private double height;\n\n    public void setWidth(double width) {\n        this.width = width;   // fixed: this.width refers to the field\n    }\n\n    public void setHeight(double height) {\n        this.height = height;  // fixed\n    }\n\n    public double getArea() {\n        return width * height;\n    }\n\n    public static void main(String[] args) {\n        Rectangle r = new Rectangle();\n        r.setWidth(5.0);\n        r.setHeight(3.0);\n        System.out.println(r.getArea());  // 15.0\n    }\n}",
+      "explanation": "This is a **logical error** — it compiles successfully but produces wrong results. When the parameter name is the same as the field name, `width = width` simply assigns the parameter to itself (a no-op), because the parameter name shadows the field name in that scope. The `private` field `width` is never updated and retains its default value `0.0`. The fix is to use `this.width = width` so the left-hand side explicitly refers to the instance field."
+    },
+    {
+      "type": "accordion",
+      "variant": "find-error",
+      "title": "Exercise 2: Illegal Direct Private Access",
+      "language": "java",
+      "code": "class Person {\n    private String name;\n    private int age;\n\n    public Person(String name, int age) {\n        this.name = name;\n        this.age = age;\n    }\n}\n\npublic class TestPerson {\n    public static void main(String[] args) {\n        Person p = new Person(\"Alice\", 25);\n        System.out.println(p.name);  // print the name\n        System.out.println(p.age);   // print the age\n    }\n}",
+      "error": "Lines 13-14 (in TestPerson.main): `p.name` and `p.age` cause compile-time errors. Both fields are declared `private` in the `Person` class, making them inaccessible from any external class, including `TestPerson`.",
+      "fix": "class Person {\n    private String name;\n    private int age;\n\n    public Person(String name, int age) {\n        this.name = name;\n        this.age = age;\n    }\n\n    public String getName() { return name; }   // added getter\n    public int getAge() { return age; }         // added getter\n}\n\npublic class TestPerson {\n    public static void main(String[] args) {\n        Person p = new Person(\"Alice\", 25);\n        System.out.println(p.getName());  // Alice\n        System.out.println(p.getAge());   // 25\n    }\n}",
+      "explanation": "This is a **compile-time error**. The `private` access modifier means the field is only accessible within the class that declared it (`Person`). Any attempt to read or write `p.name` or `p.age` from `TestPerson` causes: `error: name has private access in Person`. The fix is to add `public` getter methods inside `Person` that return the field values — this is the standard encapsulation pattern."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 3: Getter/Setter Trace with Validation",
+      "language": "java",
+      "code": "public class Temperature {\n    private double celsius;\n\n    public Temperature(double c) {\n        setCelsius(c);\n    }\n\n    public void setCelsius(double c) {\n        if (c >= -273.15)\n            this.celsius = c;\n        else\n            this.celsius = -273.15;\n    }\n\n    public double getCelsius() { return celsius; }\n    public double getFahrenheit() { return celsius * 9.0 / 5.0 + 32; }\n\n    public static void main(String[] args) {\n        Temperature t = new Temperature(100.0);\n        System.out.println(t.getCelsius());\n        t.setCelsius(-300.0);\n        System.out.println(t.getCelsius());\n        System.out.println(t.getFahrenheit());\n    }\n}",
+      "answer": "100.0\n-273.15\n-459.67",
+      "explanation": "Line-by-line trace:\n1. `new Temperature(100.0)` calls `setCelsius(100.0)`. 100.0 >= -273.15 → `celsius = 100.0`.\n2. `getCelsius()` returns `100.0` → prints **100.0**.\n3. `setCelsius(-300.0)`: -300.0 < -273.15 → enters else branch → `celsius = -273.15`.\n4. `getCelsius()` returns **-273.15**.\n5. `getFahrenheit()`: -273.15 × 9/5 + 32 = -491.67 + 32 = **-459.67**. Note: 9.0/5.0 = 1.8, 1.8 × -273.15 = -491.67, + 32 = -459.67."
+    },
+    {
+      "type": "accordion",
+      "variant": "predict-output",
+      "title": "Exercise 4: protected Field Access in Subclass",
+      "language": "java",
+      "code": "class Vehicle {\n    protected int speed;\n    private String fuel;\n\n    public Vehicle(int speed, String fuel) {\n        this.speed = speed;\n        this.fuel = fuel;\n    }\n    public String getFuel() { return fuel; }\n}\n\nclass Car extends Vehicle {\n    private int doors;\n    public Car(int speed, String fuel, int doors) {\n        super(speed, fuel);\n        this.doors = doors;\n    }\n    public void show() {\n        speed += 10;    // OK: protected field\n        System.out.println(speed);\n        System.out.println(getFuel());\n        System.out.println(doors);\n    }\n}\n\npublic class Main {\n    public static void main(String[] args) {\n        Car c = new Car(80, \"Petrol\", 4);\n        c.show();\n    }\n}",
+      "answer": "90\nPetrol\n4",
+      "explanation": "1. `new Car(80, \"Petrol\", 4)`: calls `super(80,\"Petrol\")` → `speed=80`, `fuel=\"Petrol\"` (private), then `doors=4`.\n2. `c.show()`: `speed += 10` → speed becomes **90** (protected field accessed directly in subclass ✓). Prints **90**.\n3. `getFuel()`: inherited public method, returns `fuel` = **Petrol**.\n4. `doors` = **4**. (Note: `fuel` is private in Vehicle; `c.fuel` would be a compile error, but `getFuel()` is the public accessor used here correctly.)"
+    },
+    {
+      "type": "accordion",
+      "variant": "find-error",
+      "title": "Exercise 5: Final Field Assigned Twice",
+      "language": "java",
+      "code": "public class Circle {\n    private final double PI = 3.14159;\n    private double radius;\n\n    public Circle(double radius) {\n        this.radius = radius;\n        PI = 3.14159265;   // try to be more precise\n    }\n\n    public double getArea() {\n        return PI * radius * radius;\n    }\n\n    public static void main(String[] args) {\n        Circle c = new Circle(5.0);\n        System.out.println(c.getArea());\n    }\n}",
+      "error": "Line 7 (inside constructor): `PI = 3.14159265` is a compile-time error. `PI` is declared `final` and already initialized at the declaration site (`private final double PI = 3.14159`). A `final` field can only be assigned once — either at declaration OR in the constructor, never both.",
+      "fix": "public class Circle {\n    private final double PI;        // declare without initializing\n    private double radius;\n\n    public Circle(double radius) {\n        this.radius = radius;\n        PI = 3.14159265;            // assigned exactly once, in constructor\n    }\n\n    public double getArea() {\n        return PI * radius * radius;\n    }\n\n    public static void main(String[] args) {\n        Circle c = new Circle(5.0);\n        System.out.println(c.getArea());  // 78.539816...\n    }\n}",
+      "explanation": "This is a **compile-time error**: `cannot assign a value to final variable PI`. A `final` instance variable must be assigned **exactly once** — either when declared (inline initialization) or in the constructor, but **not both**. The fix removes the inline `= 3.14159` initialization so the constructor assignment becomes the sole, legal assignment. Alternatively, keep the inline initialization and remove the constructor assignment."
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "accordion",
+      "variant": "problem-solving",
+      "title": "Exercise 6: Design an Encapsulated Student Class",
+      "language": "java",
+      "code": "// Design a class Student with:\n// - private fields: name (String), gpa (double), id (int)\n// - Constructor: Student(int id, String name, double gpa)\n// - Getter for all three fields\n// - setGpa(double): only accepts 0.0 to 4.0, otherwise keeps old value\n// - toString(): returns \"Student{id=X, name=Y, gpa=Z}\"\n// - main: create Student(101, \"Ashik\", 3.8), print it,\n//         call setGpa(4.5) [rejected], setGpa(3.9) [accepted], print again",
+      "approach": "Declare all fields private. Write a constructor that initializes all three. Getters return field values directly. setGpa validates the range [0.0, 4.0] before updating the field. toString uses string concatenation with the field names. In main, trace the two setGpa calls — one invalid (4.5 > 4.0, rejected), one valid (3.9, accepted).",
+      "solution": "public class Student {\n    private int id;\n    private String name;\n    private double gpa;\n\n    public Student(int id, String name, double gpa) {\n        this.id = id;\n        this.name = name;\n        this.gpa = (gpa >= 0.0 && gpa <= 4.0) ? gpa : 0.0;\n    }\n\n    public int getId()     { return id; }\n    public String getName(){ return name; }\n    public double getGpa() { return gpa; }\n\n    public void setGpa(double gpa) {\n        if (gpa >= 0.0 && gpa <= 4.0)\n            this.gpa = gpa;\n        // else: silently reject, keep old value\n    }\n\n    @Override\n    public String toString() {\n        return \"Student{id=\" + id + \", name=\" + name + \", gpa=\" + gpa + \"}\";\n    }\n\n    public static void main(String[] args) {\n        Student s = new Student(101, \"Ashik\", 3.8);\n        System.out.println(s);          // Student{id=101, name=Ashik, gpa=3.8}\n        s.setGpa(4.5);                  // rejected: 4.5 > 4.0\n        s.setGpa(3.9);                  // accepted\n        System.out.println(s);          // Student{id=101, name=Ashik, gpa=3.9}\n    }\n}",
+      "explanation": "**Encapsulation design decisions**:\n- All fields `private` → external code cannot bypass validation.\n- `id` has no setter — it is immutable after construction (identity shouldn't change).\n- `setGpa` validates range before mutating → prevents invalid state (`gpa=5.0` could corrupt grade calculations).\n- Constructor also validates `gpa` defensively.\n**Output trace**: `toString()` after construction → `gpa=3.8`. After `setGpa(4.5)`: rejected (4.5 > 4.0), gpa stays 3.8. After `setGpa(3.9)`: accepted, gpa=3.9. Second `toString()` shows `gpa=3.9`."
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "content": "📋 Quick Reference Summary"
+    },
+    {
+      "type": "list",
+      "ordered": false,
+      "items": [
+        "**Encapsulation** = private fields + public getters/setters + validation in setters.",
+        "`private` is the most restrictive: only accessible within the declaring class itself — not even in subclasses.",
+        "`protected` is accessible in the same class, same package, AND subclasses (even in different packages).",
+        "Always use `this.fieldName = paramName` in setters when parameter name matches field name.",
+        "Omitting `this` when parameter shadows field is a **logical error** (compiles, wrong behavior).",
+        "A subclass **inherits** private fields but cannot access them directly — only through inherited public/protected methods.",
+        "`final` fields must be assigned **exactly once**: either at declaration OR in the constructor, never both and never neither.",
+        "**Immutable class** pattern: `private final` fields, no setters, all assignments in constructor, class declared `final`.",
+        "Access modifier violation (e.g., accessing private from outside) → **compile-time error**.",
+        "Getters that return mutable objects (like arrays) can break encapsulation — return a copy if needed."
+      ]
+    }
+  ]
+}
